@@ -1,0 +1,21 @@
+{
+  "name": "Skillful",
+  "short_name": "Skillful",
+  "description": "Skillful is a swipe-based real-life skills quiz app for parenting, communication, leadership, dating, interview prep, salary negotiation, and financial literacy.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#120A22",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

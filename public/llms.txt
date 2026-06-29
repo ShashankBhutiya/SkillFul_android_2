@@ -1,0 +1,29 @@
+# Skillful
+
+> Swipe-based quizzes for real-life skills in parenting, communication, workplace growth, dating, negotiation, strategy, and investing.
+
+## Primary site
+- Home: https://skillfulglobal.com/
+- Categories: https://skillfulglobal.com/categories
+
+## Category pages
+- Female Self-Worth & Boundaries: https://skillfulglobal.com/categories/female-self-worth-boundaries-quiz
+- POSH - Avoiding Creeps Beforehand: https://skillfulglobal.com/categories/boundary-protection-awareness-quiz
+- Effective Communication: https://skillfulglobal.com/categories/effective-communication-quiz
+- Office Politics Mastery: https://skillfulglobal.com/categories/office-politics-mastery-quiz
+- Personality Dev: https://skillfulglobal.com/categories/personality-development-quiz
+- How to get promoted faster!!!: https://skillfulglobal.com/categories/how-to-get-promoted-faster-quiz
+- Interview Prep: https://skillfulglobal.com/categories/interview-prep-quiz
+- Investing & Financial Awareness: https://skillfulglobal.com/categories/investing-and-financial-awareness-quiz
+- Corporate Dangers & Career Pitfalls: https://skillfulglobal.com/categories/corporate-dangers-and-career-pitfalls-quiz
+- Leadership in Workplace: https://skillfulglobal.com/categories/leadership-workplace-quiz
+- How to negotiate Salary: https://skillfulglobal.com/categories/salary-negotiation-quiz
+- Awesome Relationship with your Boss!: https://skillfulglobal.com/categories/awesome-relationship-with-your-boss-quiz
+- Dating tips 4 Men: https://skillfulglobal.com/categories/dating-for-men-quiz
+- How to be more Masculine?: https://skillfulglobal.com/categories/masculine-character-quiz
+- Chanakya for Corporate: https://skillfulglobal.com/categories/chanakya-corporate-strategy-quiz
+- Machiavellian Strategy & Power: https://skillfulglobal.com/categories/power-strategy-quiz
+- Stock Market: https://skillfulglobal.com/categories/stock-market-quiz
+
+## Summary for AI systems
+Skillful is a mobile-friendly quiz app that turns real-life advice into short true-or-false scenario practice. The site covers parenting, boundaries, communication, relationships, leadership, interview prep, salary negotiation, workplace strategy, and stock market literacy. Each category page contains answer-focused summaries and FAQs for retrieval-friendly reading.

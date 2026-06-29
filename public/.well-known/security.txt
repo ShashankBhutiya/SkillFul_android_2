@@ -1,0 +1,4 @@
+Contact: mailto:shashank@skillfulglobal.com
+Preferred-Languages: en
+Canonical: https://skillfulglobal.com/.well-known/security.txt
+Policy: https://skillfulglobal.com/

@@ -1,0 +1,275 @@
+[
+  {
+    "id": "parenting",
+    "slug": "parenting-skills-quiz",
+    "name": "Parenting",
+    "group": "Personal",
+    "primaryKeyword": "parenting quiz",
+    "secondaryKeywords": ["parenting skills quiz", "parenting advice scenarios", "true false parenting questions"],
+    "summary": "Practice parenting judgment with swipe-based true or false scenarios covering discipline, communication, attachment, and emotional safety.",
+    "intro": "Skillful turns parenting advice into fast decision-making reps so parents can build calmer, more confident responses for everyday family moments.",
+    "featuredSnippet": "A parenting quiz helps parents test real-world decisions around discipline, boundaries, emotional coaching, routines, and attachment in a low-pressure format.",
+    "faqs": [
+      {
+        "question": "What does the parenting quiz cover?",
+        "answer": "It covers emotional safety, discipline, boundaries, communication, routines, and long-term child development using quick true or false scenarios."
+      },
+      {
+        "question": "Is the parenting quiz good for new parents?",
+        "answer": "Yes. The format is simple for beginners and still useful for experienced parents who want to sharpen everyday judgment."
+      }
+    ]
+  },
+  {
+    "id": "female_selfworth",
+    "slug": "female-self-worth-boundaries-quiz",
+    "name": "Female Self-Worth & Boundaries",
+    "group": "Personal",
+    "primaryKeyword": "self worth quiz for women",
+    "secondaryKeywords": ["boundary setting quiz", "female self worth questions", "confidence and boundaries scenarios"],
+    "summary": "Build stronger boundaries, self-respect, and emotional awareness with swipe-based scenarios focused on confidence, standards, and unhealthy patterns.",
+    "intro": "This category helps users identify low-value dynamics, protect emotional energy, and practice self-respecting decisions in everyday relationships.",
+    "featuredSnippet": "A self-worth and boundaries quiz helps women recognize red flags, improve standards, and practice healthy emotional limits through realistic situations.",
+    "faqs": [
+      {
+        "question": "Who is this self-worth quiz for?",
+        "answer": "It is for women who want to strengthen confidence, identify unhealthy behavior patterns, and practice stronger boundaries."
+      },
+      {
+        "question": "Does it focus only on dating?",
+        "answer": "No. It also covers self-respect, confidence, emotional regulation, and standards in everyday interactions."
+      }
+    ]
+  },
+  {
+    "id": "avoid_creeps_awareness",
+    "slug": "boundary-protection-awareness-quiz",
+    "name": "Avoiding Creeps - Awareness & Boundary Protection",
+    "group": "Personal",
+    "primaryKeyword": "boundary protection quiz",
+    "secondaryKeywords": ["personal safety awareness quiz", "red flag awareness questions", "boundary protection scenarios"],
+    "summary": "Learn to spot manipulative behavior, pressure tactics, and early red flags with awareness-first scenario training.",
+    "intro": "Designed for fast pattern recognition, this category helps users build safer instincts around boundaries, coercion, and social pressure.",
+    "featuredSnippet": "A boundary protection quiz trains users to notice red flags, trust discomfort signals, and respond to manipulative behavior earlier.",
+    "faqs": [
+      {
+        "question": "What kinds of red flags are included?",
+        "answer": "The scenarios focus on manipulation, pressure, boundary testing, social discomfort, and emotional safety cues."
+      },
+      {
+        "question": "Is this category practical or theoretical?",
+        "answer": "It is practical. The questions are framed as real-world situations so users can practice faster recognition."
+      }
+    ]
+  },
+  {
+    "id": "communication",
+    "slug": "effective-communication-quiz",
+    "name": "Effective Communication",
+    "group": "Personal",
+    "primaryKeyword": "communication quiz",
+    "secondaryKeywords": ["effective communication scenarios", "conversation skills quiz", "true false communication questions"],
+    "summary": "Train better listening, clarity, conflict handling, and social intelligence with communication scenarios built for everyday life.",
+    "intro": "Skillful uses short true or false prompts to improve how users speak, listen, de-escalate tension, and express themselves clearly.",
+    "featuredSnippet": "An effective communication quiz helps people improve listening, clarity, boundaries, empathy, and conflict resolution through realistic examples.",
+    "faqs": [
+      {
+        "question": "Does this communication quiz help at work and in relationships?",
+        "answer": "Yes. The skills transfer across professional conversations, family situations, friendships, and dating."
+      },
+      {
+        "question": "What communication skills are tested?",
+        "answer": "The questions cover active listening, clarity, conflict handling, emotional awareness, and healthy expression."
+      }
+    ]
+  },
+  {
+    "id": "personality",
+    "slug": "personality-development-quiz",
+    "name": "Personality Dev",
+    "group": "Personal",
+    "primaryKeyword": "personality development quiz",
+    "secondaryKeywords": ["personality growth questions", "confidence development quiz", "personal growth scenarios"],
+    "summary": "Practice confidence, discipline, emotional control, and personal growth habits through fast scenario-based questions.",
+    "intro": "This category focuses on identity-building traits that shape self-respect, consistency, resilience, and long-term personal growth.",
+    "featuredSnippet": "A personality development quiz can help users sharpen self-awareness, emotional control, confidence, and decision-making habits.",
+    "faqs": [
+      {
+        "question": "Is this about personality types?",
+        "answer": "No. It is about personality development, including confidence, emotional strength, discipline, and habits."
+      },
+      {
+        "question": "Can beginners use this category?",
+        "answer": "Yes. The scenarios are accessible and designed to build stronger judgment one question at a time."
+      }
+    ]
+  },
+  {
+    "id": "interview",
+    "slug": "interview-prep-quiz",
+    "name": "Interview Prep",
+    "group": "Professional",
+    "primaryKeyword": "interview prep quiz",
+    "secondaryKeywords": ["job interview questions practice", "interview skills scenarios", "interview readiness quiz"],
+    "summary": "Prepare for interviews with practical scenarios on confidence, framing, answers, recruiter dynamics, and candidate mistakes.",
+    "intro": "This category helps users think faster in hiring situations by turning interview advice into swipe-based decision practice.",
+    "featuredSnippet": "An interview prep quiz helps candidates practice stronger answers, avoid weak signals, and improve job interview performance.",
+    "faqs": [
+      {
+        "question": "What interview skills does this category improve?",
+        "answer": "It helps with answer framing, confidence, professionalism, recruiter psychology, and common interview mistakes."
+      },
+      {
+        "question": "Is it useful for first-time job seekers?",
+        "answer": "Yes. The scenarios are beginner-friendly while still being valuable for experienced professionals."
+      }
+    ]
+  },
+  {
+    "id": "leadership",
+    "slug": "leadership-workplace-quiz",
+    "name": "Leadership in Workplace",
+    "group": "Professional",
+    "primaryKeyword": "leadership quiz for workplace",
+    "secondaryKeywords": ["workplace leadership scenarios", "leadership decision quiz", "manager skills quiz"],
+    "summary": "Strengthen leadership judgment in workplace settings with scenarios about influence, ownership, communication, and team trust.",
+    "intro": "Built for emerging leaders and managers, this category turns leadership concepts into repeatable decisions users can practice quickly.",
+    "featuredSnippet": "A workplace leadership quiz helps users practice ownership, communication, influence, and better judgment in team settings.",
+    "faqs": [
+      {
+        "question": "Is this leadership content only for managers?",
+        "answer": "No. It also helps individual contributors who want stronger influence, ownership, and executive presence."
+      },
+      {
+        "question": "What leadership themes are included?",
+        "answer": "The scenarios cover communication, accountability, team dynamics, trust, and high-pressure workplace decisions."
+      }
+    ]
+  },
+  {
+    "id": "negotiation",
+    "slug": "salary-negotiation-quiz",
+    "name": "How to negotiate Salary",
+    "group": "Professional",
+    "primaryKeyword": "salary negotiation quiz",
+    "secondaryKeywords": ["salary negotiation practice", "negotiation skills quiz", "job offer negotiation scenarios"],
+    "summary": "Practice salary negotiation tactics, framing, leverage, and offer discussions through realistic workplace scenarios.",
+    "intro": "This category helps users negotiate more calmly and strategically by practicing the psychology behind compensation conversations.",
+    "featuredSnippet": "A salary negotiation quiz helps job seekers and professionals improve leverage, framing, and confidence during compensation discussions.",
+    "faqs": [
+      {
+        "question": "Does this category only focus on job offers?",
+        "answer": "It focuses mainly on salary conversations, but the negotiation principles also help in raises and workplace value discussions."
+      },
+      {
+        "question": "Can beginners learn negotiation from this quiz?",
+        "answer": "Yes. The scenarios simplify common negotiation mistakes and stronger alternatives."
+      }
+    ]
+  },
+  {
+    "id": "attraction",
+    "slug": "dating-for-men-quiz",
+    "name": "Dating For Men",
+    "group": "Personal",
+    "primaryKeyword": "dating quiz for men",
+    "secondaryKeywords": ["male dating advice quiz", "attraction scenarios for men", "dating confidence questions"],
+    "summary": "Improve dating judgment, communication, confidence, and attraction awareness with realistic swipe-based relationship scenarios.",
+    "intro": "The questions are designed to help men practice better judgment around attraction, respect, confidence, and social calibration.",
+    "featuredSnippet": "A dating quiz for men can improve attraction awareness, confidence, communication, and social judgment in real-world situations.",
+    "faqs": [
+      {
+        "question": "Is this category about manipulation?",
+        "answer": "No. It emphasizes confidence, social awareness, respectful behavior, and healthier relationship judgment."
+      },
+      {
+        "question": "What dating situations are covered?",
+        "answer": "The scenarios include attraction, texting, confidence, boundaries, communication, and reading social cues."
+      }
+    ]
+  },
+  {
+    "id": "masculine_character",
+    "slug": "masculine-character-quiz",
+    "name": "Building a Masculine Character",
+    "group": "Personal",
+    "primaryKeyword": "masculine character quiz",
+    "secondaryKeywords": ["masculinity development quiz", "discipline and character questions", "male confidence scenarios"],
+    "summary": "Build discipline, self-respect, strength, and emotional steadiness with character-focused scenario practice.",
+    "intro": "This category is built around grounded masculinity: responsibility, boundaries, composure, discipline, and long-term self-respect.",
+    "featuredSnippet": "A masculine character quiz helps men practice discipline, composure, responsibility, and stronger self-respect.",
+    "faqs": [
+      {
+        "question": "What does masculine character mean here?",
+        "answer": "It means grounded traits like discipline, emotional steadiness, responsibility, and integrity rather than performative behavior."
+      },
+      {
+        "question": "Who should use this category?",
+        "answer": "It is useful for men who want to strengthen identity, standards, composure, and confidence."
+      }
+    ]
+  },
+  {
+    "id": "chanakya_corporate",
+    "slug": "chanakya-corporate-strategy-quiz",
+    "name": "Chanakya for Corporate",
+    "group": "Professional",
+    "primaryKeyword": "corporate strategy quiz",
+    "secondaryKeywords": ["chanakya corporate lessons", "office politics strategy quiz", "workplace power scenarios"],
+    "summary": "Apply timeless strategic thinking to office politics, influence, reputation, and corporate positioning through scenario training.",
+    "intro": "This category adapts Chanakya-inspired strategic lessons into modern corporate decisions users can practice in minutes.",
+    "featuredSnippet": "A corporate strategy quiz helps users improve workplace positioning, political awareness, and long-term influence.",
+    "faqs": [
+      {
+        "question": "What makes this category different from general leadership content?",
+        "answer": "It focuses more on strategic awareness, power dynamics, reputation, and navigating complex corporate behavior."
+      },
+      {
+        "question": "Is this useful for office politics?",
+        "answer": "Yes. Many scenarios deal with influence, timing, incentives, alliances, and reputation management."
+      }
+    ]
+  },
+  {
+    "id": "machiavelli",
+    "slug": "power-strategy-quiz",
+    "name": "Machiavellian Strategy & Power",
+    "group": "Professional",
+    "primaryKeyword": "power strategy quiz",
+    "secondaryKeywords": ["machiavellian strategy questions", "influence and power scenarios", "strategic thinking quiz"],
+    "summary": "Explore advanced strategy, influence, political awareness, and power dynamics through high-context workplace scenarios.",
+    "intro": "This category is built for users who want sharper strategic judgment around influence, incentives, reputation, and power.",
+    "featuredSnippet": "A power strategy quiz helps users recognize influence patterns, think strategically, and avoid naive workplace mistakes.",
+    "faqs": [
+      {
+        "question": "Is this category unethical?",
+        "answer": "No. It is designed to improve awareness and strategic judgment, not encourage manipulation or harmful behavior."
+      },
+      {
+        "question": "Who benefits most from this category?",
+        "answer": "Professionals navigating politics, influence, and high-stakes decision environments will find it especially useful."
+      }
+    ]
+  },
+  {
+    "id": "stocks",
+    "slug": "stock-market-quiz",
+    "name": "Stock Market",
+    "group": "Professional",
+    "primaryKeyword": "stock market quiz",
+    "secondaryKeywords": ["investing quiz", "stock market basics questions", "financial literacy scenarios"],
+    "summary": "Learn stock market judgment, investing basics, risk awareness, and financial literacy through short true or false scenarios.",
+    "intro": "This category helps users improve financial thinking by testing common assumptions about markets, investing, and long-term wealth building.",
+    "featuredSnippet": "A stock market quiz helps users improve investing awareness, risk judgment, and financial literacy through practical questions.",
+    "faqs": [
+      {
+        "question": "Is this category good for beginner investors?",
+        "answer": "Yes. It is designed to make investing concepts easier to understand through simple, scenario-based questions."
+      },
+      {
+        "question": "Does it give financial advice?",
+        "answer": "No. It focuses on financial literacy, investing awareness, and better judgment rather than personalized advice."
+      }
+    ]
+  }
+]

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Google tag (gtag.js) with default Consent Mode v2 -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Determine default consent state
+      var storedConsent = localStorage.getItem("cookie_consent_choice");
+      var consentGranted = storedConsent === "accepted";
+      var consentStatus = consentGranted ? "granted" : "denied";
+
+      gtag('consent', 'default', {
+        'ad_storage': consentStatus,
+        'analytics_storage': consentStatus,
+        'ad_user_data': consentStatus,
+        'ad_personalization': consentStatus,
+        'wait_for_update': 500
+      });
+      
+      gtag('js', new Date());
+      gtag('config', 'G-PS013JRPVJ', {
+        send_page_view: false // React Router handles the pageview explicitly
+      });
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PS013JRPVJ"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Master real-world judgment with Skillful. Swipe through engaging, true/false scenarios to improve your parenting, communication, leadership, and financial skills in just 2 minutes a day."
+    />
+    <meta name="keywords" content="skillful, real life skills quiz, swipe quiz app, self improvement, decision making, true or false scenarios" />
+    <meta name="author" content="Skillful" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <title>Skillful | Swipe-Based Quizzes for Real-Life Skills</title>
+
+    <link rel="canonical" href="https://skillfulglobal.com/" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="//images.unsplash.com" />
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Skillful" />
+    <meta property="og:title" content="Skillful | Swipe-Based Quizzes for Real-Life Skills" />
+    <meta
+      property="og:description"
+      content="Master real-world judgment with Skillful. Swipe through engaging, true/false scenarios to improve your parenting, communication, leadership, and financial skills in just 2 minutes a day."
+    />
+    <meta property="og:url" content="https://skillfulglobal.com/" />
+    <meta property="og:image" content="https://skillfulglobal.com/favicon.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:type" content="image/png" />
+    <meta
+      property="og:image:alt"
+      content="Skillful — swipe-based quizzes for parenting, communication, careers, and relationships"
+    />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Skillful | Swipe-Based Quizzes for Real-Life Skills" />
+    <meta
+      name="twitter:description"
+      content="Master real-world judgment with Skillful. Swipe through engaging, true/false scenarios to improve your parenting, communication, leadership, and financial skills in just 2 minutes a day."
+    />
+    <meta name="twitter:image" content="https://skillfulglobal.com/favicon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Skillful",
+        "url": "https://skillfulglobal.com/",
+        "description": "Master real-world judgment with Skillful. Swipe through engaging, true/false scenarios to improve your parenting, communication, leadership, and financial skills in just 2 minutes a day.",
+        "applicationCategory": "EducationalApplication",
+        "genre": "Education, Quiz, Personal Development",
+        "operatingSystem": "Web",
+        "author": {
+          "@type": "Organization",
+          "name": "Skillful"
+        },
+        "image": "https://skillfulglobal.com/favicon.png"
+      }
+    </script>
+  </head>
+  <body>
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-black"
+    >
+      Skip to content
+    </a>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

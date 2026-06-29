@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://skillfulglobal.com/sitemap.xml
+Host: skillfulglobal.com

@@ -1,0 +1,223 @@
+[
+  {
+    "id": "female_selfworth",
+    "name": "Female Self-Worth & Boundaries",
+    "type": "Personal",
+    "emoji": "🌺",
+    "gradient": "from-rose-400 to-pink-600",
+    "questionCount": 503,
+    "coverImage": "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "avoid_creeps_awareness",
+    "name": "POSH - Avoiding Creeps Beforehand",
+    "type": "Personal",
+    "emoji": "🚫",
+    "gradient": "from-rose-600 to-purple-900",
+    "questionCount": 200,
+    "coverImage": "https://images.unsplash.com/photo-1573497019236-17f8177b81e8?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "communication",
+    "name": "Effective Communication",
+    "type": "Personal",
+    "emoji": "🗣️",
+    "gradient": "from-emerald-500 to-teal-600",
+    "questionCount": 41,
+    "coverImage": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 7
+    }
+  },
+  {
+    "id": "office_politics",
+    "type": "Professional",
+    "name": "Office Politics Mastery",
+    "emoji": "♟️",
+    "gradient": "from-slate-600 to-indigo-700",
+    "questionCount": 160,
+    "coverImage": "https://images.unsplash.com/photo-1528819622765-d6bcf132f793?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 10
+    }
+  },
+  {
+    "id": "personality",
+    "name": "Personality Dev",
+    "type": "Personal",
+    "emoji": "🧠",
+    "gradient": "from-cyan-500 to-blue-600",
+    "questionCount": 20,
+    "coverImage": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 8
+    }
+  },
+  {
+    "id": "corporate_ladder_real_strategy",
+    "name": "How to get promoted faster!!!",
+    "type": "Professional",
+    "emoji": "📈",
+    "gradient": "from-slate-700 to-black",
+    "questionCount": 100,
+    "coverImage": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 10
+    }
+  },
+  {
+    "id": "interview",
+    "name": "Interview Prep",
+    "type": "Professional",
+    "emoji": "💼",
+    "gradient": "from-blue-500 to-indigo-600",
+    "questionCount": 500,
+    "coverImage": "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 3
+    }
+  },
+  {
+    "id": "investing_awareness_mastery",
+    "name": "Investing & Financial Awareness",
+    "type": "Professional",
+    "emoji": "📊",
+    "gradient": "from-emerald-600 to-slate-900",
+    "questionCount": 100,
+    "coverImage": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 8
+    }
+  },
+  {
+    "id": "corporate_dangers_awareness",
+    "name": "Corporate Dangers & Career Pitfalls",
+    "type": "Professional",
+    "emoji": "⚠️",
+    "gradient": "from-gray-700 to-black",
+    "questionCount": 200,
+    "coverImage": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 10
+    }
+  },
+  {
+    "id": "leadership",
+    "name": "Leadership in Workplace",
+    "type": "Professional",
+    "emoji": "🧠",
+    "gradient": "from-pink-500 to-rose-600",
+    "questionCount": 247,
+    "coverImage": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 3,
+      "workingLong": 10
+    }
+  },
+  {
+    "id": "negotiation",
+    "name": "How to negotiate Salary",
+    "type": "Professional",
+    "emoji": "🤝",
+    "gradient": "from-indigo-500 to-purple-600",
+    "questionCount": 500,
+    "coverImage": "https://images.unsplash.com/photo-1553028826-f4804a6dba3b?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "solid_relation_with_boss",
+    "name": "Awesome Relationship with your Boss!",
+    "type": "Professional",
+    "emoji": "🏢",
+    "gradient": "from-blue-700 to-slate-900",
+    "questionCount": 100,
+    "coverImage": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 6
+    }
+  },
+  {
+    "id": "attraction",
+    "name": "Dating tips 4 Men",
+    "type": "Personal",
+    "emoji": "👩‍🤝‍🧑",
+    "gradient": "from-purple-500 to-violet-600",
+    "questionCount": 132,
+    "coverImage": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "masculine_character",
+    "name": "How to be more Masculine?",
+    "type": "Personal",
+    "emoji": "🛡️",
+    "gradient": "from-slate-700 to-gray-900",
+    "questionCount": 100,
+    "coverImage": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "chanakya_corporate",
+    "name": "Chanakya for Corporate",
+    "type": "Professional",
+    "emoji": "🧭",
+    "gradient": "from-amber-700 to-stone-900",
+    "questionCount": 80,
+    "coverImage": "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 5,
+      "workingLong": 8
+    }
+  },
+  {
+    "id": "machiavelli",
+    "name": "Machiavellian Strategy & Power",
+    "type": "Professional",
+    "emoji": "♟️",
+    "gradient": "from-zinc-700 to-zinc-900",
+    "questionCount": 80,
+    "coverImage": "https://images.unsplash.com/photo-1560174038-da43ac74f01b?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 5,
+      "workingLong": 8
+    }
+  },
+  {
+    "id": "stocks",
+    "name": "Stock Market",
+    "type": "Professional",
+    "emoji": "📈",
+    "gradient": "from-teal-500 to-cyan-600",
+    "questionCount": 155,
+    "coverImage": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop",
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 8
+    }
+  }
+]
