@@ -9,7 +9,8 @@ import { LOCKED_CATEGORY_IDS, REFERRALS_PER_UNLOCK } from "@/config/lockedCatego
 type ExperienceLevel = "justStarted" | "workingLong" | null;
 import { MainLayout } from "@/components/layout/MainLayout";
 import { hapticLight, hapticError, hapticSuccess } from "@/hooks/useHaptics";
-import { Lock, MessageSquarePlus, Briefcase, Heart, ChevronLeft, ChevronRight, BookOpen, Search, ArrowRight } from "lucide-react";
+import { Lock, MessageSquarePlus, Briefcase, Heart, ChevronLeft, ChevronRight, Search, ArrowRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import ReferralModal from "./ReferralModal";
 import { supabase } from "@/lib/supabase";
 import { SeoHead } from "@/components/SeoHead";
@@ -101,80 +102,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const personalCats = filterCats(sortedCategories.filter((c) => c.type === "Personal"));
   const professionalCats = filterCats(sortedCategories.filter((c) => c.type !== "Personal"));
 
-  // Scroll control ref and state for Professional section
-  const professionalScrollRef = useRef<HTMLDivElement>(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-
-  const checkScroll = () => {
-    const el = professionalScrollRef.current;
-    if (el) {
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      setShowLeftArrow(scrollLeft > 10);
-      setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
-    }
-  };
-
-  useEffect(() => {
-    const el = professionalScrollRef.current;
-    if (el) {
-      el.addEventListener("scroll", checkScroll);
-      // Run an initial check after mounting
-      checkScroll();
-      // Handle window resizing
-      window.addEventListener("resize", checkScroll);
-      return () => {
-        el.removeEventListener("scroll", checkScroll);
-        window.removeEventListener("resize", checkScroll);
-      };
-    }
-  }, [professionalCats]);
-
-  const scrollProfessional = (direction: "left" | "right") => {
-    const el = professionalScrollRef.current;
-    if (el) {
-      const { clientWidth } = el;
-      const amount = direction === "left" ? -clientWidth * 0.75 : clientWidth * 0.75;
-      el.scrollBy({ left: amount, behavior: "smooth" });
-    }
-  };
-
-  // Scroll control ref and state for Personal section
-  const personalScrollRef = useRef<HTMLDivElement>(null);
-  const [showPersonalLeftArrow, setShowPersonalLeftArrow] = useState(false);
-  const [showPersonalRightArrow, setShowPersonalRightArrow] = useState(true);
-
-  const checkPersonalScroll = () => {
-    const el = personalScrollRef.current;
-    if (el) {
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      setShowPersonalLeftArrow(scrollLeft > 10);
-      setShowPersonalRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
-    }
-  };
-
-  useEffect(() => {
-    const el = personalScrollRef.current;
-    if (el) {
-      el.addEventListener("scroll", checkPersonalScroll);
-      checkPersonalScroll();
-      window.addEventListener("resize", checkPersonalScroll);
-      return () => {
-        el.removeEventListener("scroll", checkPersonalScroll);
-        window.removeEventListener("resize", checkPersonalScroll);
-      };
-    }
-  }, [personalCats]);
-
-  const scrollPersonal = (direction: "left" | "right") => {
-    const el = personalScrollRef.current;
-    if (el) {
-      const { clientWidth } = el;
-      const amount = direction === "left" ? -clientWidth * 0.75 : clientWidth * 0.75;
-      el.scrollBy({ left: amount, behavior: "smooth" });
-    }
-  };
-
   const renderCategoryList = (cats: CategorySummary[], startIndex: number, cardClassName?: string) =>
     cats.map((cat, i) => {
       const requiredRefs = getRequiredReferrals(cat.id);
@@ -221,32 +148,39 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
         id="categories"
         className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
       >
-        {/* Clean header */}
-        <div className="mb-8 text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground sm:text-4xl">
-            Pick a skill. Start swiping.
+        {/* Page header — left-aligned. Centred display type at the top
+            of a scrolling list reads as a landing page, not an app. */}
+        <div className="mb-6">
+          <h2 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
+            Pick a skill
           </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Short scenarios, one swipe at a time.
+          </p>
         </div>
 
-        {/* Skill of the Day Callout */}
+        {/* Skill of the Day — a plain surface with a labelled row.
+            The emphasis now comes from the label and the single filled
+            button, not from a gradient fill and a coloured border. */}
         {skillOfTheDay && (
-          <div className="mx-auto mb-10 max-w-2xl rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5 p-6 shadow-md hover:shadow-lg hover:border-primary/40 transition-all duration-300 group">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-              <div className="flex items-center gap-4 text-left">
-                <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${skillOfTheDay.gradient} text-3xl shadow-inner group-hover:scale-105 transition-transform duration-300`}>
+          <div className="surface mb-8 p-5">
+            <span className="section-label">Skill of the day</span>
+
+            <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3.5 text-left">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-2xl">
                   {skillOfTheDay.emoji}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-extrabold uppercase tracking-[0.15em] text-primary">Skill of the Day</span>
-                    <span className="inline-block h-1 w-1 rounded-full bg-primary/40" />
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {questionCountMap.get(skillOfTheDay.id) ?? skillOfTheDay.questionCount} Scenarios
-                    </span>
-                  </div>
-                  <h4 className="mt-1 font-display text-lg font-bold text-foreground group-hover:text-primary transition-colors sm:text-xl">{skillOfTheDay.name}</h4>
+                <div className="min-w-0">
+                  <h4 className="font-display text-base font-semibold text-foreground">
+                    {skillOfTheDay.name}
+                  </h4>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {questionCountMap.get(skillOfTheDay.id) ?? skillOfTheDay.questionCount} scenarios
+                  </p>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -258,17 +192,17 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
                     onSelect(skillOfTheDay.id);
                   }
                 }}
-                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 transition-all active:scale-[0.98] w-full sm:w-auto"
+                className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80 sm:w-auto"
               >
                 {isSkillOfTheDayLocked ? (
                   <>
-                    Unlock Skill
-                    <Lock className="h-4 w-4 opacity-90" />
+                    Unlock
+                    <Lock className="h-4 w-4" />
                   </>
                 ) : (
                   <>
-                    Start Swiping
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    Start
+                    <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
@@ -277,129 +211,44 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
         )}
 
         {/* Search input */}
-        <div className="relative mx-auto mb-8 max-w-md">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative mb-6">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search categories..."
-            className="w-full rounded-full border border-border/50 bg-card py-3 pl-11 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 transition-all"
+            placeholder="Search skills"
+            aria-label="Search skills"
+            className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus:ring-1 focus:ring-primary/25"
           />
         </div>
 
-        <div className="flex flex-col gap-8">
-          {/* Professional */}
-          <div className="rounded-2xl border border-border/50 bg-card shadow-sm">
-            <div className="p-5 sm:p-6">
-              <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/40 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-                    <Briefcase className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-foreground">Professional</h3>
-                    <p className="text-xs text-muted-foreground">Career & workplace</p>
-                  </div>
-                </div>
-                <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400">
-                  {professionalCats.length}
-                </span>
-              </div>
-              <div className="relative group/scroll-container">
-                {/* Left navigation arrow for desktop */}
-                {showLeftArrow && (
-                  <button
-                    type="button"
-                    onClick={() => scrollProfessional("left")}
-                    className="absolute -left-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 text-foreground shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:scale-110 active:scale-95 md:flex"
-                    aria-label="Scroll left"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                )}
+        <div className="flex flex-col gap-9">
+          <CategoryCarousel
+            title="Professional"
+            subtitle="Career & workplace"
+            icon={Briefcase}
+            count={professionalCats.length}
+          >
+            {renderCategoryList(
+              professionalCats,
+              0,
+              "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
+            )}
+          </CategoryCarousel>
 
-                {/* Right navigation arrow for desktop */}
-                {showRightArrow && (
-                  <button
-                    type="button"
-                    onClick={() => scrollProfessional("right")}
-                    className="absolute -right-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 text-foreground shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:scale-110 active:scale-95 md:flex"
-                    aria-label="Scroll right"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                )}
-
-                <div
-                  ref={professionalScrollRef}
-                  className="flex flex-row overflow-x-auto gap-4 pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory scroll-smooth"
-                >
-                  {renderCategoryList(
-                    professionalCats,
-                    0,
-                    "w-[140px] xs:w-[155px] sm:w-[170px] md:w-[185px] shrink-0 snap-start"
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Personal */}
-          <div className="rounded-2xl border border-border/50 bg-card shadow-sm">
-            <div className="p-5 sm:p-6">
-              <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/40 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-500">
-                    <Heart className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-foreground">Personal</h3>
-                    <p className="text-xs text-muted-foreground">Life & relationships</p>
-                  </div>
-                </div>
-                <span className="rounded-full bg-rose-500/10 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400">
-                  {personalCats.length}
-                </span>
-              </div>
-              <div className="relative group/scroll-container">
-                {/* Left navigation arrow for desktop */}
-                {showPersonalLeftArrow && (
-                  <button
-                    type="button"
-                    onClick={() => scrollPersonal("left")}
-                    className="absolute -left-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 text-foreground shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:scale-110 active:scale-95 md:flex"
-                    aria-label="Scroll left"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                )}
-
-                {/* Right navigation arrow for desktop */}
-                {showPersonalRightArrow && (
-                  <button
-                    type="button"
-                    onClick={() => scrollPersonal("right")}
-                    className="absolute -right-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 text-foreground shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:scale-110 active:scale-95 md:flex"
-                    aria-label="Scroll right"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                )}
-
-                <div
-                  ref={personalScrollRef}
-                  className="flex flex-row overflow-x-auto gap-4 pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory scroll-smooth"
-                >
-                  {renderCategoryList(
-                    personalCats,
-                    professionalCats.length,
-                    "w-[140px] xs:w-[155px] sm:w-[170px] md:w-[185px] shrink-0 snap-start"
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <CategoryCarousel
+            title="Personal"
+            subtitle="Life & relationships"
+            icon={Heart}
+            count={personalCats.length}
+          >
+            {renderCategoryList(
+              personalCats,
+              professionalCats.length,
+              "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
+            )}
+          </CategoryCarousel>
         </div>
 
         <button
@@ -408,9 +257,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             hapticLight();
             setShowRequestModal(true);
           }}
-          className="mt-8 flex w-full items-center justify-center gap-2 rounded-full border border-dashed border-primary/30 bg-primary/5 px-4 py-4 text-sm font-semibold text-primary transition-all hover:border-primary/50 hover:bg-primary/10"
+          className="mt-9 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-4 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
         >
-          <MessageSquarePlus className="h-5 w-5" />
+          <MessageSquarePlus className="h-4 w-4" />
           Request a new category
         </button>
       </section>
@@ -568,6 +417,111 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
 // Need Check icon for the request-sent state
 import { Check } from "lucide-react";
 
+interface CategoryCarouselProps {
+  title: string;
+  subtitle: string;
+  icon: LucideIcon;
+  count: number;
+  children: React.ReactNode;
+}
+
+/**
+ * Horizontally scrolling category section.
+ *
+ * Previously the Professional and Personal sections were two copies of
+ * the same ~55 lines, each with its own ref, arrow state, scroll handler
+ * and resize effect. They are one component now, so the scroll plumbing
+ * exists once.
+ */
+const CategoryCarousel = ({ title, subtitle, icon: Icon, count, children }: CategoryCarouselProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const check = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    };
+
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+
+    // Card widths settle after the cover images lay out, so re-measure
+    // on content changes as well as on scroll/resize.
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+      observer.disconnect();
+    };
+  }, [children]);
+
+  const scrollBy = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.75;
+    el.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
+  };
+
+  const arrowClass =
+    "absolute top-1/2 z-20 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted md:flex";
+
+  return (
+    <section>
+      {/* Section header sits directly on the page background. The old
+          version nested a bordered header inside a bordered card, which
+          gave every row two competing frames. */}
+      <div className="mb-4 flex items-center gap-2.5">
+        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
+        <h3 className="font-display text-[15px] font-semibold tracking-tight text-foreground">
+          {title}
+        </h3>
+        <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
+        <span className="ml-auto hidden text-xs text-muted-foreground sm:block">{subtitle}</span>
+      </div>
+
+      <div className="relative">
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollBy("left")}
+            className={`${arrowClass} -left-3`}
+            aria-label={`Scroll ${title} left`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
+
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollBy("right")}
+            className={`${arrowClass} -right-3`}
+            aria-label={`Scroll ${title} right`}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+
+        <div
+          ref={scrollRef}
+          className="flex snap-x snap-mandatory scroll-smooth flex-row gap-3 overflow-x-auto px-0.5 pb-2 pt-0.5 scrollbar-none"
+        >
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const CategoryCard = ({
   cat,
   isLocked,
@@ -586,11 +540,10 @@ const CategoryCard = ({
   return (
     <motion.button
       type="button"
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.05 + i * 0.03 }}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.04 + i * 0.025, duration: 0.25 }}
+      whileTap={{ scale: 0.985 }}
       onClick={() => {
         if (isLocked) {
           hapticError();
@@ -600,9 +553,9 @@ const CategoryCard = ({
           onSelect(cat.id);
         }
       }}
-      className={`group flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-background/90 text-left transition-all duration-300 hover:border-primary/40 hover:bg-card hover:shadow-lg hover:shadow-primary/5 ${className || "w-full"}`}
+      className={`surface-interactive group flex flex-col overflow-hidden text-left ${className || "w-full"}`}
     >
-      <div className="relative w-full h-24 sm:h-28 shrink-0 overflow-hidden rounded-t-2xl">
+      <div className="relative h-[88px] w-full shrink-0 overflow-hidden border-b border-border">
         {/* Loading skeleton */}
         {!imgLoaded && coverImage && (
           <div className="absolute inset-0 animate-pulse bg-muted" />
@@ -615,47 +568,44 @@ const CategoryCard = ({
             loading="lazy"
             decoding="async"
             onLoad={() => setImgLoaded(true)}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
               imgLoaded ? "opacity-100" : "opacity-0"
             } ${isLocked ? "grayscale" : ""}`}
           />
         )}
-        <div className="absolute inset-0 bg-black/5 transition-colors group-hover:bg-transparent" />
+        {isLocked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/55">
+            <Lock className="h-4 w-4 text-foreground/70" />
+          </div>
+        )}
       </div>
 
-      <div className="min-w-0 flex-1 p-3 flex flex-col justify-between gap-2">
-        <div className="flex items-start justify-between gap-1">
-          <span className="line-clamp-2 font-display text-[13px] font-bold leading-snug text-foreground sm:text-sm">
-            {cat.name}
-            {isLocked && <Lock className="ml-1 inline h-3.5 w-3.5 opacity-50" />}
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-primary mt-0.5" />
-        </div>
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 p-3">
+        <span className="line-clamp-2 font-display text-[13px] font-semibold leading-snug text-foreground">
+          {cat.name}
+        </span>
 
         {isLocked ? (
-          <p className="text-[11px] text-muted-foreground leading-tight">
-            Refer {requiredRefs} friend{requiredRefs > 1 ? "s" : ""} to unlock · {total} questions
+          <p className="text-[11px] leading-tight text-muted-foreground">
+            Refer {requiredRefs} friend{requiredRefs > 1 ? "s" : ""} to unlock
           </p>
         ) : (
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <BookOpen className="h-3 w-3 shrink-0" />
-              <span className="truncate">
-                <span className="font-semibold text-foreground">{practiced}</span>/{total} correct
-              </span>
+            {/* Progress bar carries the number, so the old icon +
+                "x/y correct" line is redundant alongside it. */}
+            <div className="h-1 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ delay: 0.15 + i * 0.03, duration: 0.5 }}
+                className="h-full rounded-full bg-primary"
+              />
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ delay: 0.2 + i * 0.04, duration: 0.6 }}
-                  className="h-full rounded-full bg-primary/70"
-                />
-              </div>
-              <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">
-                {Math.round(progress)}%
+            <div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
+              <span>
+                <span className="font-medium text-foreground">{practiced}</span>/{total}
               </span>
+              <span>{Math.round(progress)}%</span>
             </div>
           </div>
         )}

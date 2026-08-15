@@ -29,7 +29,6 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const ReferPage = lazy(() => import("./pages/ReferPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const InfoPage = lazy(() => import("./pages/InfoPage"));
-const PYQPage = lazy(() => import("./pages/PYQPage"));
 
 const queryClient = new QueryClient();
 
@@ -83,10 +82,7 @@ const App = () => {
             <PushNotificationInitializer />
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
-                <Route path="/" element={<Navigate to="/pyq" replace />} />
-                <Route path="/pyq" element={<PYQPage />} />
-                <Route path="/pyq/:exam" element={<PYQPage />} />
-                <Route path="/pyq/:exam/:subjectId" element={<PYQPage />} />
+                <Route path="/" element={<Navigate to="/skills" replace />} />
                 <Route path="/skills" element={<SkillsPage />} />
                 <Route path="/skills/:categoryId" element={<SkillsPage />} />
                 <Route path="/about" element={<AboutPage />} />

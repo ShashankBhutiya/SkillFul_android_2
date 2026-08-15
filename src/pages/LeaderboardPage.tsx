@@ -19,36 +19,26 @@ function PodiumCard({
   place: 1 | 2 | 3;
   delay: number;
 }) {
+  // Rank is carried by size, a single accent colour and the numeral —
+  // not by a gradient fill, a blurred glow ring and a shadow at once.
   const config = {
     1: {
-      gradient: "from-yellow-400 via-amber-400 to-orange-500",
-      ring: "ring-yellow-400/40",
-      icon: <Crown className="w-6 h-6 text-yellow-300 fill-yellow-300" />,
-      size: "w-20 h-20",
-      textSize: "text-3xl",
-      label: "1st",
-      shadow: "shadow-yellow-500/20",
-      badge: "🥇",
+      accent: "text-amber-600",
+      avatar: "h-[68px] w-[68px] text-2xl border-amber-500/50",
+      score: "text-xl",
+      order: "order-2",
     },
     2: {
-      gradient: "from-slate-300 via-gray-300 to-slate-400",
-      ring: "ring-slate-300/40",
-      icon: <Medal className="w-5 h-5 text-slate-300" />,
-      size: "w-16 h-16",
-      textSize: "text-2xl",
-      label: "2nd",
-      shadow: "shadow-slate-400/20",
-      badge: "🥈",
+      accent: "text-muted-foreground",
+      avatar: "h-14 w-14 text-xl border-border",
+      score: "text-lg",
+      order: "order-1",
     },
     3: {
-      gradient: "from-amber-600 via-orange-700 to-amber-800",
-      ring: "ring-amber-600/40",
-      icon: <Medal className="w-5 h-5 text-amber-600" />,
-      size: "w-16 h-16",
-      textSize: "text-2xl",
-      label: "3rd",
-      shadow: "shadow-amber-700/20",
-      badge: "🥉",
+      accent: "text-muted-foreground",
+      avatar: "h-14 w-14 text-xl border-border",
+      score: "text-lg",
+      order: "order-3",
     },
   }[place];
 
@@ -56,39 +46,35 @@ function PodiumCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.6, ease }}
-      className={`flex flex-col items-center gap-3 ${place === 1 ? "order-2 -mt-4 sm:-mt-6" : place === 2 ? "order-1" : "order-3"}`}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease }}
+      className={`flex flex-col items-center gap-2.5 ${config.order} ${place === 1 ? "-mt-3" : ""}`}
     >
       <div className="relative">
-        {/* Glow ring */}
         <div
-          className={`absolute -inset-1.5 rounded-full bg-gradient-to-br ${config.gradient} opacity-30 blur-md`}
-        />
-        {/* Avatar */}
-        <div
-          className={`relative ${config.size} rounded-full bg-gradient-to-br ${config.gradient} ring-4 ${config.ring} flex items-center justify-center text-white font-display font-bold ${config.textSize} shadow-2xl ${config.shadow}`}
+          className={`flex items-center justify-center rounded-full border-2 bg-muted font-display font-semibold text-foreground ${config.avatar}`}
         >
           {letter}
         </div>
-        {/* Rank badge */}
-        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-xl">
-          {config.badge}
-        </div>
+        {place === 1 && (
+          <Crown className="absolute -top-2.5 left-1/2 h-4 w-4 -translate-x-1/2 fill-amber-500 text-amber-500" />
+        )}
+        <span
+          className={`absolute -bottom-1 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background font-display text-[11px] font-semibold ${config.accent}`}
+        >
+          {place}
+        </span>
       </div>
 
-      <div className="text-center mt-1">
-        <p className="font-display font-bold text-foreground text-sm truncate max-w-[100px]">
+      <div className="mt-1 text-center">
+        <p className="max-w-[92px] truncate text-[13px] font-medium text-foreground">
           {entry.display_name}
         </p>
-        <p className={`font-display font-extrabold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent ${place === 1 ? "text-2xl" : "text-xl"}`}>
+        <p className={`font-display font-semibold tabular-nums text-foreground ${config.score}`}>
           {entry.total_score.toLocaleString()}
         </p>
-        <div className="flex items-center justify-center gap-1 mt-0.5">
-          <Target className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{entry.avg_accuracy}%</span>
-        </div>
+        <p className="text-xs tabular-nums text-muted-foreground">{entry.avg_accuracy}%</p>
       </div>
     </motion.div>
   );
@@ -131,68 +117,52 @@ const LeaderboardPage = () => {
   return (
     <MainLayout>
       <div className="relative min-h-[80vh]">
-        <FloatingOrbs />
+        {/* Page header */}
+        <section className="mx-auto max-w-2xl px-4 pt-8 pb-6">
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease }}
+            className="font-display text-[26px] font-semibold tracking-tight text-foreground sm:text-3xl"
+          >
+            Leaderboard
+          </motion.h1>
 
-        {/* Hero Section */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-dot-grid [mask-image:radial-gradient(ellipse_at_top,black,transparent_60%)]" aria-hidden />
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.35, ease }}
+            className="mt-1.5 text-sm text-muted-foreground"
+          >
+            Ranked by cumulative score across all skills.
+          </motion.p>
 
-          <div className="relative mx-auto max-w-4xl px-4 pt-10 pb-6 sm:pt-14 sm:pb-8 text-center">
+          {/* Your standing — a plain bordered strip rather than a
+              floating tinted pill. */}
+          {currentUserEntry && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease }}
-              className="inline-flex items-center gap-2.5 rounded-full border border-yellow-500/20 bg-yellow-500/5 px-4 py-1.5 mb-5"
+              transition={{ delay: 0.12, duration: 0.35, ease }}
+              className="surface mt-5 flex items-center justify-between px-4 py-3"
             >
-              <Trophy className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs font-semibold tracking-wide text-foreground/80">
-                Global Rankings
+              <span className="section-label">Your rank</span>
+              <span className="flex items-baseline gap-2">
+                <span className="font-display text-lg font-semibold tabular-nums text-foreground">
+                  #{currentUserEntry.rank}
+                </span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {currentUserEntry.total_score.toLocaleString()} pts
+                </span>
               </span>
             </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.06, duration: 0.5, ease }}
-              className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
-            >
-              Leaderboard
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12, duration: 0.5, ease }}
-              className="mx-auto mt-3 max-w-md text-sm text-muted-foreground sm:text-base"
-            >
-              Top players ranked by cumulative score across all skills. Play more, score higher, climb the ranks.
-            </motion.p>
-
-            {/* Current user rank pill */}
-            {currentUserEntry && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-                className="inline-flex items-center gap-2 mt-5 rounded-full bg-primary/10 border border-primary/20 px-5 py-2"
-              >
-                <Zap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-foreground">
-                  Your Rank: <span className="text-primary">#{currentUserEntry.rank}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  ({currentUserEntry.total_score.toLocaleString()} pts)
-                </span>
-              </motion.div>
-            )}
-          </div>
+          )}
         </section>
 
         {/* Podium: Top 3 */}
         {!isLoading && top3.length >= 3 && (
-          <section className="mx-auto max-w-lg px-4 pb-8">
-            <div className="flex items-end justify-center gap-6 sm:gap-10">
+          <section className="mx-auto max-w-lg px-4 pb-9">
+            <div className="flex items-end justify-center gap-7 sm:gap-10">
               <PodiumCard entry={top3[1]} place={2} delay={0.25} />
               <PodiumCard entry={top3[0]} place={1} delay={0.15} />
               <PodiumCard entry={top3[2]} place={3} delay={0.35} />

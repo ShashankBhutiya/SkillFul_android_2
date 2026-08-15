@@ -12,7 +12,6 @@ import {
   Battery, 
   Smartphone, 
   Info,
-  BookOpen,
   Laptop
 } from "lucide-react";
 import ProfileBadge from "@/components/ProfileBadge";
@@ -23,15 +22,13 @@ import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
 import { NotificationPrompt } from "@/components/layout/NotificationPrompt";
 import { getUnreadCount, getNotificationSettings, pullNotificationsFromDB } from "@/services/notificationService";
 import { useState, useEffect, useRef } from "react";
-import FloatingOrbs from "@/components/FloatingOrbs";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 const TAB_ITEMS = [
-  { to: "/pyq", label: "PYQ", icon: BookOpen, pattern: /^\/pyq/ },
   { to: "/skills", label: "Explore", icon: Compass, pattern: /^\/skills/ },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy, pattern: /^\/leaderboard/ },
   { to: "/refer", label: "Refer", icon: Gift, pattern: /^\/refer/ },
@@ -126,31 +123,42 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   // Bottom Tab Bar Component (shared between layouts)
   const BottomTabBar = ({ className = "sticky" }: { className?: string }) => {
     return (
-      <div className={`${className} bottom-0 left-0 right-0 h-[72px] bg-background/80 backdrop-blur-lg border-t border-border/50 flex items-center justify-around px-2 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
+      <div className={`${className} bottom-0 left-0 right-0 h-[64px] bg-background border-t border-border flex items-stretch justify-around px-1 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
         {TAB_ITEMS.map((tab) => {
-          const isActive = tab.pattern.test(location.pathname) || (tab.to === "/pyq" && location.pathname === "/");
+          const isActive = tab.pattern.test(location.pathname) || (tab.to === "/skills" && location.pathname === "/");
           const Icon = tab.icon;
 
           return (
             <Link
               key={tab.to}
               to={tab.to}
-              className="relative flex flex-col items-center justify-center flex-1 h-full py-1 text-center group"
+              aria-current={isActive ? "page" : undefined}
+              className="relative flex flex-col items-center justify-center flex-1 gap-1 text-center group"
             >
-              <div className="relative flex flex-col items-center justify-center z-10 transition-transform duration-200 active:scale-90">
-                <Icon className={`w-5.5 h-5.5 transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
-                <span className={`text-[10px] font-medium tracking-tight mt-1 transition-colors duration-200 ${isActive ? "text-primary font-bold" : "text-muted-foreground group-hover:text-foreground"}`}>
-                  {tab.label}
-                </span>
-              </div>
-              
+              {/* A 2px rule along the top edge marks the active tab.
+                  Replaces the filled pill — same information, far less
+                  weight at the bottom of every screen. */}
               {isActive && (
                 <motion.div
-                  layoutId="activeTabPill"
-                  className="absolute inset-x-2.5 inset-y-1.5 rounded-2xl bg-primary/10 -z-0"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  layoutId="activeTabIndicator"
+                  className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
                 />
               )}
+
+              <Icon
+                strokeWidth={isActive ? 2.25 : 1.75}
+                className={`h-5 w-5 transition-colors duration-150 ${
+                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                }`}
+              />
+              <span
+                className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+                  isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </span>
             </Link>
           );
         })}
@@ -161,16 +169,16 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   // Header Component (shared between layouts)
   const AppHeader = ({ extraClass = "" }: { extraClass?: string }) => {
     return (
-      <header className={`sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl shrink-0 ${extraClass}`}>
+      <header className={`sticky top-0 z-40 border-b border-border bg-background shrink-0 ${extraClass}`}>
         <div className="flex h-14 items-center justify-between px-4">
           {/* Logo / Brand */}
-          <Link to="/skills" className="flex items-center gap-2 group shrink-0">
-            <img 
-              src="/favicon.png" 
-              alt="Logo" 
-              className="h-7 w-7 rounded-lg shadow-sm shadow-primary/20 transition-transform group-hover:scale-105 object-cover" 
+          <Link to="/skills" className="flex items-center gap-2.5 group shrink-0">
+            <img
+              src="/favicon.png"
+              alt=""
+              className="h-7 w-7 rounded-md object-cover"
             />
-            <span className="font-display text-base font-bold tracking-tight text-foreground">
+            <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">
               Skillful
             </span>
           </Link>
@@ -189,8 +197,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   if (isMobile) {
     return (
       <div className="relative h-screen h-[100dvh] bg-background flex flex-col overflow-hidden">
-        <FloatingOrbs />
-
         {mascotMessage && (
           <CompanionMascot message={mascotMessage} triggerKey={mascotTrigger} />
         )}
@@ -325,8 +331,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
             {/* Inner Phone Screen Content */}
             <div className="flex-1 flex flex-col overflow-hidden relative rounded-[42px]">
-              <FloatingOrbs />
-
               {/* Mascot, Prompts inside the device view */}
               {mascotMessage && (
                 <CompanionMascot message={mascotMessage} triggerKey={mascotTrigger} />

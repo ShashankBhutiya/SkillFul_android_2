@@ -6,38 +6,47 @@
 
 @layer base {
   :root {
-    --background: 0 0% 99%;
-    --foreground: 240 15% 15%;
+    /* Near-white ground with a trace of warmth, so large surfaces
+       don't read as clinical grey. */
+    --background: 40 20% 99%;
+    --foreground: 240 10% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 15% 15%;
+    --card-foreground: 240 10% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 15% 15%;
+    --popover-foreground: 240 10% 12%;
 
-    --primary: 255 65% 58%;
+    /* Desaturated from 65% — the old violet fought every surface it
+       sat on. Still clearly the brand colour, no longer shouting. */
+    --primary: 255 52% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 45 100% 60%;
-    --secondary-foreground: 45 100% 15%;
+    --secondary: 45 90% 55%;
+    --secondary-foreground: 45 90% 14%;
 
-    --muted: 240 10% 96%;
-    --muted-foreground: 240 5% 46%;
+    --muted: 240 8% 96%;
+    --muted-foreground: 240 4% 44%;
 
-    --accent: 280 60% 55%;
+    --accent: 280 45% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 68% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 60% 42%;
+    --success: 152 52% 38%;
     --success-foreground: 0 0% 100%;
 
-    --border: 240 10% 92%;
-    --input: 240 10% 92%;
-    --ring: 255 65% 58%;
+    /* Slightly darker than before: at 92% the old borders were
+       invisible on white cards, which is why everything leaned on
+       shadows for separation. */
+    --border: 240 8% 89%;
+    --input: 240 8% 89%;
+    --ring: 255 52% 54%;
 
-    --radius: 1rem;
+    /* 1rem was pill-round on every small element. 0.625rem keeps
+       cards soft without the toy look. */
+    --radius: 0.625rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -173,12 +182,38 @@
     100% { transform: translateX(-50%); }
   }
 
-  /* Gradient text helper */
+  /* Gradient text helper — kept for the marketing pages, but the
+     primary→accent sweep is now a narrow shift rather than a
+     violet-to-purple rainbow. */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent) / 0.9));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /* ─── Restrained surface system ───
+     One border, one very soft shadow. Depth comes from the border
+     first and the shadow second, so stacked surfaces stay legible
+     instead of turning into a pile of glows. */
+  .surface {
+    @apply rounded-xl border border-border bg-card;
+    box-shadow: 0 1px 2px hsl(240 10% 12% / 0.04);
+  }
+
+  /* Interactive surface: the hover state shifts the border, not the
+     shadow, which avoids the "card lifts off the page" effect. */
+  .surface-interactive {
+    @apply surface transition-colors duration-200;
+  }
+  .surface-interactive:hover {
+    @apply border-foreground/15;
+  }
+
+  /* Section label — small, spaced, muted. Replaces the coloured
+     pill badges used for section headers. */
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground;
   }
 
   /* Notification Bell Swing Animation */
