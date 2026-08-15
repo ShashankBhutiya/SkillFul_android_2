@@ -10,6 +10,9 @@ import { Analytics } from "@vercel/analytics/react";
 import { initGA } from "@/utils/analytics";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import CookieConsent from "@/components/layout/CookieConsent";
+import { useForceUpdate } from "@/hooks/useForceUpdate";
+import ForceUpdateModal from "@/components/ForceUpdateModal";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -26,6 +29,7 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const ReferPage = lazy(() => import("./pages/ReferPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const InfoPage = lazy(() => import("./pages/InfoPage"));
+const PYQPage = lazy(() => import("./pages/PYQPage"));
 
 const queryClient = new QueryClient();
 
@@ -44,10 +48,28 @@ const NavigationTracker = () => {
   return null;
 };
 
+const PushNotificationInitializer = () => {
+  usePushNotifications();
+  return null;
+};
+
 const App = () => {
+  const { needsUpdate, loading, currentVersion, minimumVersion, updateMessage } =
+    useForceUpdate();
+
   useEffect(() => {
     initGA();
   }, []);
+
+  if (needsUpdate && !loading) {
+    return (
+      <ForceUpdateModal
+        currentVersion={currentVersion}
+        minimumVersion={minimumVersion}
+        updateMessage={updateMessage}
+      />
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -58,9 +80,13 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <NavigationTracker />
+            <PushNotificationInitializer />
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
-                <Route path="/" element={<Navigate to="/skills" replace />} />
+                <Route path="/" element={<Navigate to="/pyq" replace />} />
+                <Route path="/pyq" element={<PYQPage />} />
+                <Route path="/pyq/:exam" element={<PYQPage />} />
+                <Route path="/pyq/:exam/:subjectId" element={<PYQPage />} />
                 <Route path="/skills" element={<SkillsPage />} />
                 <Route path="/skills/:categoryId" element={<SkillsPage />} />
                 <Route path="/about" element={<AboutPage />} />

@@ -31,6 +31,7 @@ interface MainLayoutProps {
 }
 
 const TAB_ITEMS = [
+  { to: "/pyq", label: "PYQ", icon: BookOpen, pattern: /^\/pyq/ },
   { to: "/skills", label: "Explore", icon: Compass, pattern: /^\/skills/ },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy, pattern: /^\/leaderboard/ },
   { to: "/refer", label: "Refer", icon: Gift, pattern: /^\/refer/ },
@@ -127,7 +128,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return (
       <div className={`${className} bottom-0 left-0 right-0 h-[72px] bg-background/80 backdrop-blur-lg border-t border-border/50 flex items-center justify-around px-2 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
         {TAB_ITEMS.map((tab) => {
-          const isActive = tab.pattern.test(location.pathname) || (tab.to === "/skills" && location.pathname === "/");
+          const isActive = tab.pattern.test(location.pathname) || (tab.to === "/pyq" && location.pathname === "/");
           const Icon = tab.icon;
 
           return (

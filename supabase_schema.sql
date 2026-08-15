@@ -480,3 +480,234 @@ CREATE POLICY "Anyone can delete own notifications"
   ON user_notifications FOR DELETE
   USING (true);
 
+
+-- ================================================
+-- PUSH NOTIFICATION TOKENS
+-- ================================================
+
+CREATE TABLE IF NOT EXISTS push_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  token TEXT NOT NULL,
+  platform TEXT NOT NULL CHECK (platform IN ('android', 'web')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, platform)
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_tokens_user ON push_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_push_tokens_platform ON push_tokens (platform);
+
+ALTER TABLE push_tokens ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read own tokens" ON push_tokens;
+CREATE POLICY "Anyone can read own tokens"
+  ON push_tokens FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert tokens" ON push_tokens;
+CREATE POLICY "Anyone can insert tokens"
+  ON push_tokens FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update own tokens" ON push_tokens;
+CREATE POLICY "Anyone can update own tokens"
+  ON push_tokens FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can delete own tokens" ON push_tokens;
+CREATE POLICY "Anyone can delete own tokens"
+  ON push_tokens FOR DELETE
+  USING (true);
+
+-- Auto-update updated_at on push_tokens
+DROP TRIGGER IF EXISTS trigger_update_push_tokens_updated_at ON push_tokens;
+CREATE TRIGGER trigger_update_push_tokens_updated_at
+  BEFORE UPDATE ON push_tokens
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- ================================================
+-- NOTIFICATION SCHEDULE PREFERENCES
+-- ================================================
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  reminders_enabled BOOLEAN NOT NULL DEFAULT true,
+  reminder_frequency TEXT NOT NULL DEFAULT 'daily' CHECK (reminder_frequency IN ('daily', 'weekly')),
+  reminder_time TEXT NOT NULL DEFAULT '09:00',
+  push_enabled BOOLEAN NOT NULL DEFAULT false,
+  mascot_tips_enabled BOOLEAN NOT NULL DEFAULT true,
+  streak_alerts_enabled BOOLEAN NOT NULL DEFAULT true,
+  achievement_alerts_enabled BOOLEAN NOT NULL DEFAULT true,
+  leaderboard_alerts_enabled BOOLEAN NOT NULL DEFAULT true,
+  inactivity_nudge_enabled BOOLEAN NOT NULL DEFAULT true,
+  content_alerts_enabled BOOLEAN NOT NULL DEFAULT true,
+  quiet_hours_start TEXT DEFAULT '22:00',
+  quiet_hours_end TEXT DEFAULT '08:00',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_preferences_user ON notification_preferences (user_id);
+
+ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read own preferences" ON notification_preferences;
+CREATE POLICY "Anyone can read own preferences"
+  ON notification_preferences FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert preferences" ON notification_preferences;
+CREATE POLICY "Anyone can insert preferences"
+  ON notification_preferences FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update own preferences" ON notification_preferences;
+CREATE POLICY "Anyone can update own preferences"
+  ON notification_preferences FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+-- Auto-update updated_at
+DROP TRIGGER IF EXISTS trigger_update_notification_preferences_updated_at ON notification_preferences;
+CREATE TRIGGER trigger_update_notification_preferences_updated_at
+  BEFORE UPDATE ON notification_preferences
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+
+-- ================================================
+-- PYQ QUESTIONS SYSTEM
+-- ================================================
+
+CREATE TABLE IF NOT EXISTS pyq_questions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  exam TEXT NOT NULL CHECK (exam IN ('jee_main', 'jee_advanced', 'neet')),
+  subject TEXT NOT NULL,
+  chapters TEXT[] NOT NULL DEFAULT '{}',
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  repeatability_score INTEGER DEFAULT 1,
+  importance_score INTEGER DEFAULT 1,
+  year INTEGER NOT NULL,
+  session TEXT,
+  question_type TEXT NOT NULL CHECK (question_type IN ('single_correct', 'multiple_correct', 'numerical', 'assertion_reasoning')),
+  question_text TEXT NOT NULL,
+  question_image_url TEXT,
+  options JSONB,
+  correct_answer JSONB NOT NULL,
+  explanation TEXT,
+  explanation_image_url TEXT,
+  difficulty TEXT DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
+  marks_correct INTEGER DEFAULT 4,
+  marks_wrong INTEGER DEFAULT -1,
+  marks_partial INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  is_active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS idx_pyq_exam_subject ON pyq_questions (exam, subject);
+CREATE INDEX IF NOT EXISTS idx_pyq_year ON pyq_questions (year DESC);
+
+ALTER TABLE pyq_questions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can select pyq_questions" ON pyq_questions;
+CREATE POLICY "Anyone can select pyq_questions"
+  ON pyq_questions FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert pyq_questions" ON pyq_questions;
+CREATE POLICY "Anyone can insert pyq_questions"
+  ON pyq_questions FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update pyq_questions" ON pyq_questions;
+CREATE POLICY "Anyone can update pyq_questions"
+  ON pyq_questions FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can delete pyq_questions" ON pyq_questions;
+CREATE POLICY "Anyone can delete pyq_questions"
+  ON pyq_questions FOR DELETE
+  USING (true);
+
+-- PYQ Progress table
+CREATE TABLE IF NOT EXISTS pyq_progress (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  question_id UUID REFERENCES pyq_questions(id) ON DELETE CASCADE,
+  exam TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  is_correct BOOLEAN NOT NULL,
+  user_answer JSONB,
+  marks_obtained INTEGER DEFAULT 0,
+  time_taken_ms INTEGER,
+  attempted_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, question_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pyq_progress_user ON pyq_progress (user_id, exam, subject);
+
+ALTER TABLE pyq_progress ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can select pyq_progress" ON pyq_progress;
+CREATE POLICY "Anyone can select pyq_progress"
+  ON pyq_progress FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert pyq_progress" ON pyq_progress;
+CREATE POLICY "Anyone can insert pyq_progress"
+  ON pyq_progress FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update pyq_progress" ON pyq_progress;
+CREATE POLICY "Anyone can update pyq_progress"
+  ON pyq_progress FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can delete pyq_progress" ON pyq_progress;
+CREATE POLICY "Anyone can delete pyq_progress"
+  ON pyq_progress FOR DELETE
+  USING (true);
+
+
+-- ================================================
+-- APP VERSION / FORCE UPDATE
+-- ================================================
+
+CREATE TABLE IF NOT EXISTS app_versions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  platform TEXT NOT NULL CHECK (platform IN ('android', 'ios')),
+  minimum_version TEXT NOT NULL,
+  latest_version TEXT NOT NULL,
+  update_message TEXT DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_versions_platform ON app_versions (platform, is_active);
+
+ALTER TABLE app_versions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read app_versions" ON app_versions;
+CREATE POLICY "Anyone can read app_versions"
+  ON app_versions FOR SELECT
+  USING (true);
+
+DROP TRIGGER IF EXISTS trigger_update_app_versions_updated_at ON app_versions;
+CREATE TRIGGER trigger_update_app_versions_updated_at
+  BEFORE UPDATE ON app_versions
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+
+-- Seed initial version row (update minimum_version when you publish a new required version)
+INSERT INTO app_versions (platform, minimum_version, latest_version, update_message)
+VALUES ('android', '1.0.5', '1.0.5', 'A new version of Skillful is available with important improvements. Please update to continue.')
+ON CONFLICT DO NOTHING;
+
+

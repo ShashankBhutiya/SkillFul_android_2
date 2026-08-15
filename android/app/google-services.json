@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "712348140799",
+    "project_id": "goldnest-f693g",
+    "storage_bucket": "goldnest-f693g.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712348140799:android:cdbe029f401b7fc78038ca",
+        "android_client_info": {
+          "package_name": "com.truthswipe.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAI9ikmX2SaP0Pi8rTo-o5fCtEBPxFZR-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

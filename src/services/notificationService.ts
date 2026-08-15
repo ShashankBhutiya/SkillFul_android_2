@@ -7,7 +7,7 @@ export interface NotificationItem {
   id: string;
   title: string;
   description: string;
-  type: "streak" | "challenge" | "unlock" | "tip" | "leaderboard";
+  type: "streak" | "challenge" | "unlock" | "tip" | "leaderboard" | "achievement" | "content" | "inactivity" | "reminder";
   read: boolean;
   createdAt: string;
   actionUrl?: string;
@@ -19,7 +19,15 @@ export interface NotificationSettings {
   reminderFrequency: "daily" | "weekly";
   reminderTime: string; // e.g. "09:00"
   browserNotificationsEnabled: boolean;
+  nativePushEnabled: boolean;
   mascotTipsEnabled: boolean;
+  streakAlertsEnabled: boolean;
+  achievementAlertsEnabled: boolean;
+  leaderboardAlertsEnabled: boolean;
+  inactivityNudgeEnabled: boolean;
+  contentAlertsEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
 }
 
 const SETTINGS_KEY = "skillful_notification_settings";
@@ -30,7 +38,15 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   reminderFrequency: "daily",
   reminderTime: "09:00",
   browserNotificationsEnabled: false,
+  nativePushEnabled: false,
   mascotTipsEnabled: true,
+  streakAlertsEnabled: true,
+  achievementAlertsEnabled: true,
+  leaderboardAlertsEnabled: true,
+  inactivityNudgeEnabled: true,
+  contentAlertsEnabled: true,
+  quietHoursStart: "22:00",
+  quietHoursEnd: "08:00",
 };
 
 const SEEDED_NOTIFICATIONS: NotificationItem[] = [
@@ -277,7 +293,23 @@ export async function requestBrowserNotificationPermission(): Promise<boolean> {
   }
 }
 
+export function isInQuietHours(): boolean {
+  const settings = getNotificationSettings();
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [startH, startM] = settings.quietHoursStart.split(":").map(Number);
+  const [endH, endM] = settings.quietHoursEnd.split(":").map(Number);
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  if (startMinutes <= endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+  return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+}
+
 export function sendDesktopNotification(title: string, body: string, actionUrl?: string): boolean {
+  if (isInQuietHours()) return false;
   if (!isBrowserNotificationSupported() || Notification.permission !== "granted") {
     return false;
   }
@@ -436,6 +468,18 @@ export function registerPracticeSession(): { currentStreak: number; streakIncrea
       sendDesktopNotification(
         `Streak Extended! 🔥`,
         `Amazing work! You are now on a ${newStreak}-day learning streak on Skillful.`
+      );
+    }
+
+    // Milestone notifications for significant streaks
+    const MILESTONES = [3, 7, 14, 30, 50, 100];
+    if (MILESTONES.includes(newStreak)) {
+      addNotification(
+        `${newStreak}-Day Streak Milestone! 🏆`,
+        `Incredible! You've maintained a ${newStreak}-day learning streak. You're building real mastery!`,
+        "achievement",
+        "/skills",
+        "Keep Going"
       );
     }
     

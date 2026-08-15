@@ -19,6 +19,10 @@ import {
   PlusSquare,
   ArrowUpRight,
   Smartphone,
+  Award,
+  BookOpen,
+  Moon,
+  BellRing,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePwaInstallState } from "@/hooks/usePwaInstallState";
@@ -39,6 +43,14 @@ import {
   getDailyStreak,
   pullNotificationsFromDB,
 } from "@/services/notificationService";
+import {
+  isNativePlatform,
+  requestPushPermission,
+  initPushNotifications,
+  initLocalNotifications,
+  scheduleLocalNotification,
+  NotificationTemplates,
+} from "@/services/pushNotificationService";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const NotificationCenter = () => {
@@ -123,13 +135,28 @@ export const NotificationCenter = () => {
     saveNotificationSettings({ mascotTipsEnabled: newVal });
   };
 
-  const handleToggleBrowserPush = async () => {
-    if (settings.browserNotificationsEnabled) {
-      saveNotificationSettings({ browserNotificationsEnabled: false });
+  const handleTogglePush = async () => {
+    if (isNativePlatform()) {
+      if (settings.nativePushEnabled) {
+        saveNotificationSettings({ nativePushEnabled: false });
+      } else {
+        const granted = await requestPushPermission();
+        if (granted) {
+          saveNotificationSettings({ nativePushEnabled: true });
+          await initLocalNotifications();
+          await initPushNotifications(user.id);
+        } else {
+          alert("Please enable notification permissions in your device settings!");
+        }
+      }
     } else {
-      const success = await requestBrowserNotificationPermission();
-      if (!success) {
-        alert("Please enable notification permissions in your browser address bar first!");
+      if (settings.browserNotificationsEnabled) {
+        saveNotificationSettings({ browserNotificationsEnabled: false });
+      } else {
+        const success = await requestBrowserNotificationPermission();
+        if (!success) {
+          alert("Please enable notification permissions in your browser address bar first!");
+        }
       }
     }
   };
@@ -139,15 +166,34 @@ export const NotificationCenter = () => {
   };
 
   const handleTestReminderTrigger = () => {
-    if (!settings.browserNotificationsEnabled) {
-      alert("Please enable Browser Notifications first to receive the desktop push!");
+    const pushEnabled = isNativePlatform()
+      ? settings.nativePushEnabled
+      : settings.browserNotificationsEnabled;
+
+    if (!pushEnabled) {
+      alert(
+        isNativePlatform()
+          ? "Please enable Push Notifications first!"
+          : "Please enable Browser Notifications first to receive the desktop push!"
+      );
       return;
     }
+
     setTestModeActive(true);
-    schedule5SecondTestReminder();
+
+    if (isNativePlatform()) {
+      scheduleLocalNotification(
+        NotificationTemplates.streakReminder(getDailyStreak().currentStreak || 1),
+        5000,
+        7777
+      );
+    } else {
+      schedule5SecondTestReminder();
+    }
+
     setTimeout(() => {
       setTestModeActive(false);
-      setIsOpen(false); // Close menu to let them switch tabs
+      setIsOpen(false);
     }, 2000);
   };
 
@@ -191,6 +237,30 @@ export const NotificationCenter = () => {
         return (
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0">
             <Unlock className="h-4 w-4" />
+          </div>
+        );
+      case "achievement":
+        return (
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400 shrink-0">
+            <Award className="h-4 w-4" />
+          </div>
+        );
+      case "content":
+        return (
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 shrink-0">
+            <BookOpen className="h-4 w-4" />
+          </div>
+        );
+      case "inactivity":
+        return (
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 shrink-0">
+            <BellRing className="h-4 w-4" />
+          </div>
+        );
+      case "reminder":
+        return (
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 shrink-0">
+            <Clock className="h-4 w-4" />
           </div>
         );
       case "tip":
@@ -418,22 +488,24 @@ export const NotificationCenter = () => {
                         </button>
                       </div>
 
-                      {/* Toggle 2: Browser Alerts */}
+                      {/* Toggle 2: Push Alerts (native or browser) */}
                       <div className="flex items-center justify-between">
                         <div>
                           <label className="font-display font-extrabold text-xs text-foreground block">
-                            Desktop Push Alerts
+                            {isNativePlatform() ? "Push Notifications" : "Desktop Push Alerts"}
                           </label>
                           <span className="text-[10px] text-muted-foreground font-body block mt-0.5">
-                            Remind me even when the tab is closed
+                            {isNativePlatform()
+                              ? "Receive alerts even when the app is closed"
+                              : "Remind me even when the tab is closed"}
                           </span>
                         </div>
                         <button
-                          onClick={handleToggleBrowserPush}
+                          onClick={handleTogglePush}
                           className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
-                          disabled={!isBrowserNotificationSupported()}
+                          disabled={!isNativePlatform() && !isBrowserNotificationSupported()}
                         >
-                          {settings.browserNotificationsEnabled ? (
+                          {(isNativePlatform() ? settings.nativePushEnabled : settings.browserNotificationsEnabled) ? (
                             <ToggleRight className="h-9 w-9" />
                           ) : (
                             <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
@@ -456,6 +528,72 @@ export const NotificationCenter = () => {
                           className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
                         >
                           {settings.mascotTipsEnabled ? (
+                            <ToggleRight className="h-9 w-9" />
+                          ) : (
+                            <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Toggle 4: Streak Alerts */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="font-display font-extrabold text-xs text-foreground block">
+                            Streak Alerts
+                          </label>
+                          <span className="text-[10px] text-muted-foreground font-body block mt-0.5">
+                            Reminders to keep your streak alive
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => saveNotificationSettings({ streakAlertsEnabled: !settings.streakAlertsEnabled })}
+                          className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
+                        >
+                          {settings.streakAlertsEnabled ? (
+                            <ToggleRight className="h-9 w-9" />
+                          ) : (
+                            <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Toggle 5: Achievement Alerts */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="font-display font-extrabold text-xs text-foreground block">
+                            Achievement Alerts
+                          </label>
+                          <span className="text-[10px] text-muted-foreground font-body block mt-0.5">
+                            Milestone and unlock celebrations
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => saveNotificationSettings({ achievementAlertsEnabled: !settings.achievementAlertsEnabled })}
+                          className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
+                        >
+                          {settings.achievementAlertsEnabled ? (
+                            <ToggleRight className="h-9 w-9" />
+                          ) : (
+                            <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Toggle 6: Leaderboard Updates */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="font-display font-extrabold text-xs text-foreground block">
+                            Leaderboard Updates
+                          </label>
+                          <span className="text-[10px] text-muted-foreground font-body block mt-0.5">
+                            Rank changes and position alerts
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => saveNotificationSettings({ leaderboardAlertsEnabled: !settings.leaderboardAlertsEnabled })}
+                          className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
+                        >
+                          {settings.leaderboardAlertsEnabled ? (
                             <ToggleRight className="h-9 w-9" />
                           ) : (
                             <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
@@ -503,6 +641,42 @@ export const NotificationCenter = () => {
                           <option value="13:00">Afternoon (1:00 PM)</option>
                           <option value="18:00">Evening (6:00 PM)</option>
                           <option value="21:00">Night (9:00 PM)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Quiet Hours */}
+                    <div className="border-t border-border/30 pt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Moon className="h-3.5 w-3.5 text-muted-foreground" />
+                        <label className="font-display font-extrabold text-xs text-foreground">
+                          Quiet Hours
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-body mb-2.5">
+                        No notifications during these hours.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={settings.quietHoursStart || "22:00"}
+                          onChange={(e) => saveNotificationSettings({ quietHoursStart: e.target.value })}
+                          className="flex-1 bg-muted/40 hover:bg-muted/75 border border-border/40 text-xs font-bold rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const h = String(i).padStart(2, "0");
+                            return <option key={h} value={`${h}:00`}>{h}:00</option>;
+                          })}
+                        </select>
+                        <span className="text-xs text-muted-foreground font-bold">to</span>
+                        <select
+                          value={settings.quietHoursEnd || "08:00"}
+                          onChange={(e) => saveNotificationSettings({ quietHoursEnd: e.target.value })}
+                          className="flex-1 bg-muted/40 hover:bg-muted/75 border border-border/40 text-xs font-bold rounded-xl px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const h = String(i).padStart(2, "0");
+                            return <option key={h} value={`${h}:00`}>{h}:00</option>;
+                          })}
                         </select>
                       </div>
                     </div>
