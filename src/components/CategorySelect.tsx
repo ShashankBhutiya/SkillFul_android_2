@@ -12,6 +12,8 @@ import { hapticLight, hapticError, hapticSuccess } from "@/hooks/useHaptics";
 import { Lock, MessageSquarePlus, Briefcase, Heart, ChevronLeft, ChevronRight, Search, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import ReferralModal from "./ReferralModal";
+import StreakCard from "@/components/streak/StreakCard";
+import { useStreak } from "@/hooks/useStreak";
 import { supabase } from "@/lib/supabase";
 import { SeoHead } from "@/components/SeoHead";
 
@@ -42,6 +44,7 @@ interface CategoryCardProps {
 
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const { user } = useAuth();
+  const { streak, checkedInToday } = useStreak();
   const skillOfTheDay = categorySummaries.length > 0
     ? categorySummaries[(new Date().getDate() + new Date().getMonth() * 31) % categorySummaries.length]
     : null;
@@ -158,6 +161,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             Short scenarios, one swipe at a time.
           </p>
         </div>
+
+        {/* Daily streak */}
+        <StreakCard streak={streak} checkedInToday={checkedInToday} className="mb-6" />
 
         {/* Skill of the Day — a plain surface with a labelled row.
             The emphasis now comes from the label and the single filled

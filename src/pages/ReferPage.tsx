@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Users, Copy, Check, Lock, Unlock, ArrowLeft, Mail, 
-  Gift, Sparkles, Star, Share2, HelpCircle, ChevronDown, Award
+import {
+  Copy, Check, Lock, Unlock, Mail,
+  Share2, HelpCircle, ChevronDown, Award
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
