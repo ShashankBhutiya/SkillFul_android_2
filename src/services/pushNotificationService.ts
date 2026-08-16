@@ -1,6 +1,5 @@
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase";
-import { addNotification } from "./notificationService";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -63,7 +62,7 @@ export async function initLocalNotifications(): Promise<boolean> {
       return false;
     }
 
-    // Listen for notification taps — this is what makes "tap to open" work
+    // Listen for notification taps — navigates to the relevant screen
     await LocalNotifications.addListener(
       "localNotificationActionPerformed",
       (action) => {
@@ -71,19 +70,7 @@ export async function initLocalNotifications(): Promise<boolean> {
         const url = extra.actionUrl || "/";
         console.log("Local notification tapped, navigating to:", url);
 
-        // Also add to in-app inbox
-        addNotification(
-          action.notification.title || "Skillful",
-          action.notification.body || "",
-          (extra.type as PushNotificationType) || "tip",
-          extra.actionUrl,
-          extra.actionLabel
-        );
-        window.dispatchEvent(new Event("skillful_notifications_updated"));
-
-        // Navigate — use hash-based routing since Capacitor serves from file://
         if (typeof window !== "undefined") {
-          // Small delay to let the app come to foreground first
           setTimeout(() => {
             window.location.href = url;
           }, 300);
@@ -96,15 +83,6 @@ export async function initLocalNotifications(): Promise<boolean> {
       "localNotificationReceived",
       (notification) => {
         console.log("Local notification received in foreground:", notification.title);
-        const extra = notification.extra || {};
-        addNotification(
-          notification.title || "Skillful",
-          notification.body || "",
-          (extra.type as PushNotificationType) || "tip",
-          extra.actionUrl,
-          extra.actionLabel
-        );
-        window.dispatchEvent(new Event("skillful_notifications_updated"));
       }
     );
 
@@ -287,15 +265,6 @@ async function initFcmPush(userId: string): Promise<void> {
     // Remote push received while app is in foreground
     PushNotifications.addListener("pushNotificationReceived", (notification) => {
       console.log("FCM push received in foreground:", notification.title);
-      const data = notification.data || {};
-      addNotification(
-        notification.title || "Skillful",
-        notification.body || "",
-        (data.type as PushNotificationType) || "tip",
-        data.actionUrl,
-        data.actionLabel
-      );
-      window.dispatchEvent(new Event("skillful_notifications_updated"));
     });
 
     // Remote push tapped
@@ -489,15 +458,6 @@ export async function requestPushPermission(): Promise<boolean> {
 // ─── Unified Send ───────────────────────────────────────────────────
 
 export function sendCrossPlatformNotification(payload: PushPayload): boolean {
-  // Always add to in-app inbox
-  addNotification(
-    payload.title,
-    payload.body,
-    payload.type as any,
-    payload.actionUrl,
-    payload.actionLabel
-  );
-
   if (isNativePlatform()) {
     // On native, fire an immediate local notification
     scheduleLocalNotification(payload, 0);
@@ -672,6 +632,24 @@ export const NotificationTemplates = {
     type: "tip",
     actionUrl: "/skills",
     actionLabel: "Resume Practice",
+  }),
+
+  freezeUsed: (remaining: number): PushPayload => ({
+    title: "Streak Freeze activated! 🧊",
+    body: remaining > 0
+      ? `A freeze saved your streak yesterday. You have ${remaining} freeze${remaining > 1 ? "s" : ""} left — practice today to earn more.`
+      : "Your last freeze saved your streak yesterday. Practice today — you have no freezes left!",
+    type: "streak",
+    actionUrl: "/skills",
+    actionLabel: "Practice Now",
+  }),
+
+  freezeEarned: (): PushPayload => ({
+    title: "Streak Freeze earned! 🧊",
+    body: "Nice consistency! You earned a streak freeze — it'll protect you if you miss a day.",
+    type: "achievement",
+    actionUrl: "/skills",
+    actionLabel: "Keep Going",
   }),
 } as const;
 

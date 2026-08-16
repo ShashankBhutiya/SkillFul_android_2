@@ -711,3 +711,62 @@ VALUES ('android', '1.0.5', '1.0.5', 'A new version of Skillful is available wit
 ON CONFLICT DO NOTHING;
 
 
+
+
+-- ================================================
+-- DAILY USAGE STREAKS
+-- ================================================
+-- Backs src/services/streakService.ts. One row per user.
+-- Dates are stored as local "YYYY-MM-DD" strings written by the client,
+-- NOT as timestamps: the streak rolls over at the user's local midnight,
+-- so the server must not reinterpret them in UTC.
+
+CREATE TABLE IF NOT EXISTS user_streaks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  current_streak INTEGER NOT NULL DEFAULT 0,
+  longest_streak INTEGER NOT NULL DEFAULT 0,
+  last_active_date TEXT,
+  freezes INTEGER NOT NULL DEFAULT 0,
+  freezes_used TEXT[] NOT NULL DEFAULT '{}',
+  history TEXT[] NOT NULL DEFAULT '{}',
+  total_days INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_streaks_user_id ON user_streaks (user_id);
+
+-- Leaderboard-style lookups by streak length.
+CREATE INDEX IF NOT EXISTS idx_user_streaks_current ON user_streaks (current_streak DESC);
+
+ALTER TABLE user_streaks ENABLE ROW LEVEL SECURITY;
+
+-- Permissive policies matching user_progress: guests have no auth.uid(),
+-- so access is keyed on the client-supplied user_id.
+DROP POLICY IF EXISTS "Anyone can insert streaks" ON user_streaks;
+CREATE POLICY "Anyone can insert streaks"
+  ON user_streaks FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can read own streaks" ON user_streaks;
+CREATE POLICY "Users can read own streaks"
+  ON user_streaks FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Users can update own streaks" ON user_streaks;
+CREATE POLICY "Users can update own streaks"
+  ON user_streaks FOR UPDATE
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can delete own streaks" ON user_streaks;
+CREATE POLICY "Users can delete own streaks"
+  ON user_streaks FOR DELETE
+  USING (true);
+
+DROP TRIGGER IF EXISTS trigger_update_user_streaks_updated_at ON user_streaks;
+CREATE TRIGGER trigger_update_user_streaks_updated_at
+  BEFORE UPDATE ON user_streaks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();

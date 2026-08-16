@@ -15,12 +15,9 @@ import {
   Laptop
 } from "lucide-react";
 import ProfileBadge from "@/components/ProfileBadge";
-import { NotificationCenter } from "@/components/layout/NotificationCenter";
-import { useNotificationScheduler } from "@/hooks/useNotificationScheduler";
 import { CompanionMascot } from "@/components/mascot/CompanionMascot";
 import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
-import { NotificationPrompt } from "@/components/layout/NotificationPrompt";
-import { getUnreadCount, getNotificationSettings, pullNotificationsFromDB } from "@/services/notificationService";
+import { getNotificationSettings } from "@/services/notificationService";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useStreak } from "@/hooks/useStreak";
@@ -83,45 +80,20 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize the background notification scheduler & Mascot tip dispatcher
-  useNotificationScheduler();
-
-  // Pull database notifications on load or when user ID changes
-  useEffect(() => {
-    if (user?.id) {
-      pullNotificationsFromDB(user.id).catch(() => {});
-    }
-  }, [user?.id]);
-
-  // Companion Mascot greetings and notification interaction states
+  // Companion Mascot greetings
   const [mascotMessage, setMascotMessage] = useState("");
   const [mascotTrigger, setMascotTrigger] = useState(0);
 
   useEffect(() => {
-    // Show mascot reminder about notifications after a 2.5-second load delay
     const timer = setTimeout(() => {
-      const unread = getUnreadCount();
       const settings = getNotificationSettings();
-      if (unread > 0 && settings.mascotTipsEnabled) {
-        setMascotMessage(`Hey! 🦉 You've got ${unread} unread updates. Tap the 🔔 icon above to check them out!`);
+      if (settings.mascotTipsEnabled) {
+        setMascotMessage("Hey! 🦉 Ready to sharpen your skills today? Let's go!");
         setMascotTrigger((t) => t + 1);
       }
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleNotifUpdate = () => {
-      const settings = getNotificationSettings();
-      if (settings.mascotTipsEnabled) {
-        setMascotMessage("Ooh! 🦉 You have a new notification! Click the 🔔 bell to read it.");
-        setMascotTrigger((t) => t + 1);
-      }
-    };
-
-    window.addEventListener("skillful_notifications_updated", handleNotifUpdate);
-    return () => window.removeEventListener("skillful_notifications_updated", handleNotifUpdate);
   }, []);
 
   // Scroll to top when path changes
@@ -202,7 +174,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               checkedInToday={checkedInToday}
               onClick={() => navigate("/skills")}
             />
-            <NotificationCenter />
             <ProfileBadge />
           </div>
         </div>
@@ -219,7 +190,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         )}
 
         <PwaInstallPrompt />
-        <NotificationPrompt />
+
         <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />
 
         {/* Minimal top app header */}
@@ -354,7 +325,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
                 <CompanionMascot message={mascotMessage} triggerKey={mascotTrigger} />
               )}
               <PwaInstallPrompt />
-              <NotificationPrompt />
+      
               <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />
 
               {/* Header with status bar padding */}

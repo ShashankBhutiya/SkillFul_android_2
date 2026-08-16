@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-m
 import { Question, Category } from "@/data/questions";
 import { hapticLight } from "@/hooks/useHaptics";
 import { X, Check } from "lucide-react";
+import { CategoryIcon } from "@/lib/categoryIcons";
 
 interface SwipeCardProps {
   question: Question;
@@ -148,7 +149,7 @@ const SwipeCard = ({ question, category, onSwipe, isTop }: SwipeCardProps) => {
             {category.icon ? (
               <img src={category.icon} alt="" className="w-3.5 h-3.5 rounded-[3px] object-cover" />
             ) : (
-              <span>{category.emoji}</span>
+              <CategoryIcon categoryId={category.id} className="w-3.5 h-3.5 shrink-0" />
             )}
             {category.name}
           </span>

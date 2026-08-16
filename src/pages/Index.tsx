@@ -4,6 +4,7 @@ import { ArrowRight, Briefcase, Heart, TrendingUp, Zap, Layers, BookOpen, Sparkl
 import HeroShowcase from "@/components/home/HeroShowcase";
 import HomeSeoSections from "@/components/HomeSeoSections";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { CategoryIcon } from "@/lib/categoryIcons";
 import categorySummaries from "@/data/categorySummaries.json";
 import { categories as questionCategories } from "@/data/questions";
 
@@ -86,8 +87,8 @@ const Index = () => {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${skillOfTheDay.gradient} text-xl shadow-inner group-hover:scale-105 transition-transform duration-300`}>
-                      {skillOfTheDay.emoji}
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${skillOfTheDay.gradient} text-white shadow-inner group-hover:scale-105 transition-transform duration-300`}>
+                      <CategoryIcon categoryId={skillOfTheDay.id} className="h-5 w-5 text-white" />
                     </div>
                     <div className="text-left">
                       <div className="flex items-center gap-1.5">

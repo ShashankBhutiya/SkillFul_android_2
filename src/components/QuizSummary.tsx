@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Category, Question } from "@/data/questions";
 import { RotateCcw, ArrowLeft, Home, Zap, BookOpen, Clock, Brain, Trophy, Smartphone, Share, PlusSquare, ArrowUpRight, X } from "lucide-react";
+import { CategoryIcon } from "@/lib/categoryIcons";
 import FloatingOrbs from "./FloatingOrbs";
 import type { AnsweredQuestion } from "./QuizGame";
 import { usePwaInstallState } from "@/hooks/usePwaInstallState";
@@ -24,12 +25,12 @@ interface QuizSummaryProps {
 }
 
 function getTitle(pct: number): string {
-  if (pct >= 95) return "🏆 Trivia God";
-  if (pct >= 80) return "🌟 Quiz Master";
-  if (pct >= 60) return "💪 Sharp Mind";
-  if (pct >= 40) return "🧠 Getting There";
-  if (pct >= 20) return "📚 Apprentice";
-  return "🌱 Quiz Rookie";
+  if (pct >= 95) return "Trivia Master";
+  if (pct >= 80) return "Quiz Expert";
+  if (pct >= 60) return "Sharp Mind";
+  if (pct >= 40) return "Practitioner";
+  if (pct >= 20) return "Apprentice";
+  return "Novice";
 }
 
 function formatTime(totalSeconds: number): string {
@@ -109,7 +110,10 @@ const QuizSummary = ({
         >
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <p className="text-lg opacity-80 font-body">{category.emoji} {category.name}</p>
+              <p className="text-lg opacity-90 font-body flex items-center justify-center gap-1.5">
+                <CategoryIcon categoryId={category.id} className="w-4 h-4 shrink-0" />
+                <span>{category.name}</span>
+              </p>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${difficulty === "easy" ? "bg-emerald-400/30" : "bg-orange-400/30"
                 }`}>
                 {diffLabel}

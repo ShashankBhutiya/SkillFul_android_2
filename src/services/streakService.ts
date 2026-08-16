@@ -146,17 +146,40 @@ function readCache(userId: string): StreakState {
 function writeCache(userId: string, state: StreakState) {
   if (isGuest(userId)) {
     guestMemoryCache = state;
-    return;
+  } else {
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("[streakService] Could not persist streak locally:", e);
+    }
   }
-  try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn("[streakService] Could not persist streak locally:", e);
-  }
+  notifySubscribers();
 }
 
 export function clearGuestStreakCache() {
   guestMemoryCache = null;
+  notifySubscribers();
+}
+
+// ───────── Change notification ─────────
+//
+// The streak is rendered in more than one place at once (header badge and
+// the home-screen card). Without a shared channel each useStreak() call
+// would keep its own copy, and a check-in triggered by one would leave the
+// others showing a stale number until they happened to re-mount.
+
+type Subscriber = () => void;
+
+const subscribers = new Set<Subscriber>();
+
+/** Subscribe to streak changes. Returns an unsubscribe function. */
+export function subscribeToStreak(fn: Subscriber): () => void {
+  subscribers.add(fn);
+  return () => subscribers.delete(fn);
+}
+
+function notifySubscribers() {
+  subscribers.forEach((fn) => fn());
 }
 
 // ───────── Core logic ─────────
@@ -376,8 +399,7 @@ async function syncToSupabase(userId: string, state: StreakState): Promise<void>
  * up with the better of the two records, not whichever synced last.
  */
 export async function pullStreakFromDB(userId: string): Promise<StreakState> {
-  const local = readCache(userId);
-  if (!supabase) return projectStreak(local).state;
+  if (!supabase) return projectStreak(readCache(userId)).state;
 
   try {
     const { data } = await supabase
@@ -385,6 +407,11 @@ export async function pullStreakFromDB(userId: string): Promise<StreakState> {
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
+
+    // Read the local cache AFTER the round-trip, never before: a check-in
+    // can land while this request is in flight, and merging against the
+    // pre-request snapshot would silently roll it back.
+    const local = readCache(userId);
 
     if (!data) return projectStreak(local).state;
 
@@ -421,6 +448,6 @@ export async function pullStreakFromDB(userId: string): Promise<StreakState> {
     return projected;
   } catch (err) {
     console.warn("[streakService] Failed to pull streak from Supabase:", err);
-    return projectStreak(local).state;
+    return projectStreak(readCache(userId)).state;
   }
 }

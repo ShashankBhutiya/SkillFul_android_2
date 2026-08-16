@@ -1,8 +1,9 @@
 import categorySummaries from "@/data/categorySummaries.json";
+import { CategoryIcon } from "@/lib/categoryIcons";
 
 const topics = categorySummaries.map((c) => ({
+  id: c.id,
   name: c.name.split("(")[0].trim(),
-  emoji: c.emoji,
 }));
 
 const TopicMarquee = () => {
@@ -16,10 +17,10 @@ const TopicMarquee = () => {
         {row.map((topic, i) => (
           <span
             key={`${topic.name}-${i}`}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 text-sm font-medium text-foreground/90 shadow-sm"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground/90 shadow-sm"
           >
-            <span className="text-base">{topic.emoji}</span>
-            {topic.name}
+            <CategoryIcon categoryId={topic.id} className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span>{topic.name}</span>
           </span>
         ))}
       </div>

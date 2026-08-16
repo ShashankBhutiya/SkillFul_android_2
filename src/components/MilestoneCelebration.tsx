@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Trophy, Sparkles } from "lucide-react";
 import { Category } from "@/data/questions";
+import { CategoryIcon } from "@/lib/categoryIcons";
 
 interface MilestoneCelebrationProps {
   category: Category;
@@ -99,13 +100,14 @@ export const MilestoneCelebration = ({
         </motion.div>
 
         {/* Category name & badge */}
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary mb-1">
-          {category.emoji} {category.name}
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary mb-1 inline-flex items-center gap-1.5">
+          <CategoryIcon categoryId={category.id} className="w-3.5 h-3.5 shrink-0" />
+          {category.name}
         </span>
 
         {/* Milestone Titles */}
         <h2 className="font-display font-extrabold text-2xl text-foreground mt-2">
-          Milestone Cleared! 🎉
+          Milestone Cleared!
         </h2>
         <p className="text-sm text-muted-foreground font-body mt-1">
           You've successfully answered <span className="font-bold text-foreground">{milestoneNumber}</span> scenarios!

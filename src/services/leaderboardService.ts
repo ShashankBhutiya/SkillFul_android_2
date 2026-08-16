@@ -6,8 +6,8 @@
  *   user + category + difficulty combination.
  */
 import { supabase } from "@/lib/supabase";
-import { addNotification } from "@/services/notificationService";
 import { toast } from "@/hooks/use-toast";
+import { sendCrossPlatformNotification } from "@/services/pushNotificationService";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -114,15 +114,15 @@ async function runSurpassDetection(
     }
   }
 
-  // 2. Notify current user locally in their inbox
+  // 2. Notify current user via native/browser notification
   const message = formatSurpassedMessage(surpassed);
-  addNotification(
-    "Rank Up! 🚀",
-    message,
-    "leaderboard",
-    "/leaderboard",
-    "View Leaderboard"
-  );
+  sendCrossPlatformNotification({
+    title: "Rank Up!",
+    body: message,
+    type: "leaderboard",
+    actionUrl: "/leaderboard",
+    actionLabel: "View Leaderboard",
+  });
 
   // 3. Show a real-time toast alert
   toast({

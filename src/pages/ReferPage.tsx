@@ -12,6 +12,7 @@ import AuthModal from "@/components/AuthModal";
 import categorySummaries from "@/data/categorySummaries.json";
 import { LOCKED_CATEGORY_IDS, REFERRALS_PER_UNLOCK } from "@/config/lockedCategories";
 import { siteConfig } from "@/seo/siteConfig";
+import { CategoryIcon } from "@/lib/categoryIcons";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -101,7 +102,6 @@ export default function ReferPage() {
     return {
       id,
       name: matchingCat?.name || (id.charAt(0).toUpperCase() + id.slice(1) + " Masterclass"),
-      emoji: matchingCat?.emoji || "🔒",
       gradient: matchingCat?.gradient || "from-slate-600 to-indigo-700",
       requiredRefs,
       isUnlocked
@@ -347,8 +347,8 @@ export default function ReferPage() {
                   {lockedCategoriesInfo.map((cat) => (
                     <li key={cat.id} className="flex items-center justify-between gap-3 py-3.5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-base">
-                          {cat.emoji}
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+                          <CategoryIcon categoryId={cat.id} className="h-4 w-4 text-foreground" />
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-foreground">{cat.name}</p>

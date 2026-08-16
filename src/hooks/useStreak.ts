@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   checkIn as checkInService,
@@ -6,11 +6,25 @@ import {
   grantFreezes as grantFreezesService,
   pullStreakFromDB,
   spendFreeze as spendFreezeService,
+  subscribeToStreak,
   todayKey,
   type CheckInResult,
   type StreakState,
   EMPTY_STREAK,
 } from "@/services/streakService";
+import {
+  isNativePlatform,
+  scheduleLocalNotification,
+  sendCrossPlatformNotification,
+  NotificationTemplates,
+} from "@/services/pushNotificationService";
+
+/**
+ * Module-level rather than a ref: the guard has to hold across every
+ * useStreak() instance, since more than one component mounts the hook and
+ * any of them may call recordVisit().
+ */
+let checkInFlight = false;
 
 /**
  * Streak state for the current user, plus a `recordVisit` trigger.
@@ -27,8 +41,12 @@ export function useStreak() {
   );
   const [lastResult, setLastResult] = useState<CheckInResult | null>(null);
 
-  // Guards a duplicate check-in while the first await is still in flight.
-  const inFlight = useRef(false);
+  // Keep every mounted useStreak() in step: a check-in from one component
+  // must update the header badge and the home card together.
+  useEffect(() => {
+    if (!userId) return;
+    return subscribeToStreak(() => setStreak(getStreak(userId)));
+  }, [userId]);
 
   // Hydrate from the server when the user changes.
   useEffect(() => {
@@ -46,21 +64,22 @@ export function useStreak() {
   }, [userId]);
 
   const recordVisit = useCallback(async () => {
-    if (!userId || inFlight.current) return null;
+    if (!userId || checkInFlight) return null;
 
     // Cheap guard: skip the async path entirely on repeat visits.
     if (getStreak(userId).lastActiveDate === todayKey()) return null;
 
-    inFlight.current = true;
+    checkInFlight = true;
     try {
       const result = await checkInService(userId);
       setStreak(result.state);
       if (result.isNewDay || result.freezesSpent > 0 || result.streakBroken) {
         setLastResult(result);
       }
+      fireCheckInNotifications(result);
       return result;
     } finally {
-      inFlight.current = false;
+      checkInFlight = false;
     }
   }, [userId]);
 
@@ -102,4 +121,55 @@ export function useStreak() {
     acknowledgeResult,
     checkedInToday: streak.lastActiveDate === todayKey(),
   };
+}
+
+function fireCheckInNotifications(result: CheckInResult) {
+  if (!result.isNewDay) return;
+
+  // Milestone celebration — schedule for 3 seconds later so the in-app
+  // celebration animation plays first, then the OS notification arrives
+  // (visible if the user switches away).
+  if (result.milestone) {
+    scheduleLocalNotification(
+      NotificationTemplates.streakMilestone(result.milestone),
+      3000
+    );
+  }
+
+  // Freeze earned — brief congratulation
+  if (result.freezesEarned > 0) {
+    sendCrossPlatformNotification(NotificationTemplates.freezeEarned());
+  }
+
+  // Freeze was spent to cover missed days — alert next morning
+  if (result.freezesSpent > 0) {
+    const tomorrowMorning = new Date();
+    tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
+    tomorrowMorning.setHours(9, 0, 0, 0);
+    const delay = tomorrowMorning.getTime() - Date.now();
+
+    if (delay > 0) {
+      scheduleLocalNotification(
+        NotificationTemplates.freezeUsed(result.state.freezes),
+        delay,
+        8008
+      );
+    }
+  }
+
+  // Streak broke — schedule a comeback nudge for next morning
+  if (result.streakBroken) {
+    const nextMorning = new Date();
+    nextMorning.setDate(nextMorning.getDate() + 1);
+    nextMorning.setHours(10, 0, 0, 0);
+    const delay = nextMorning.getTime() - Date.now();
+
+    if (delay > 0) {
+      scheduleLocalNotification(
+        NotificationTemplates.streakBroken(),
+        delay,
+        8005
+      );
+    }
+  }
 }

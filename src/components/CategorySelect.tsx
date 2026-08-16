@@ -16,6 +16,7 @@ import StreakCard from "@/components/streak/StreakCard";
 import { useStreak } from "@/hooks/useStreak";
 import { supabase } from "@/lib/supabase";
 import { SeoHead } from "@/components/SeoHead";
+import { CategoryIcon } from "@/lib/categoryIcons";
 
 const TOTAL_CATEGORIES = categorySummaries.length;
 
@@ -174,8 +175,8 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
 
             <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3.5 text-left">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-2xl">
-                  {skillOfTheDay.emoji}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
+                  <CategoryIcon categoryId={skillOfTheDay.id} className="h-6 w-6 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-display text-base font-semibold text-foreground">
