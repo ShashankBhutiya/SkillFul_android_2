@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Check, Star, Sparkles, ShieldCheck, Loader2, ArrowLeft, Shield } from "lucide-react";
+import { Check, Star, Sparkles, ShieldCheck, Loader2, ArrowLeft, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
@@ -160,14 +160,11 @@ const PremiumPage = () => {
       />
 
       <section className="relative mx-auto max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-        {/* Dot grid background */}
-        <div className="absolute inset-0 -z-10 bg-dot-grid [mask-image:radial-gradient(ellipse_at_top,black,transparent_65%)]" aria-hidden />
-
         {/* Back Button */}
         <div className="mb-6 flex justify-start">
           <button
             onClick={() => navigate(-1)}
-            className="group flex items-center gap-2 rounded-full border border-border bg-card/65 px-4 py-2 text-xs font-bold text-foreground/80 hover:text-foreground hover:bg-muted transition-all active:scale-[0.98]"
+            className="group flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back
@@ -176,48 +173,46 @@ const PremiumPage = () => {
 
         {paymentStatus === "success" ? (
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-card/70 backdrop-blur-xl p-8 sm:p-10 shadow-2xl text-center flex flex-col items-center py-16"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="surface mx-auto flex max-w-lg flex-col items-center px-8 py-14 text-center"
           >
-            <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/10 animate-bounce">
-              <ShieldCheck className="w-10 h-10" />
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
+              <ShieldCheck className="h-7 w-7" />
             </div>
-            <h2 className="text-3xl font-display font-bold text-foreground mb-4">
-              Upgrade Successful! 🎉
+            <h2 className="font-display text-2xl font-semibold text-foreground">
+              Upgrade successful
             </h2>
-            <p className="text-muted-foreground text-sm max-w-sm mb-8 leading-relaxed">
-              Welcome to <strong className="text-foreground">Skillful Premium</strong>. All premium skill topics and rapid-fire scenarios are now unlocked for you. Happy learning!
+            <p className="mb-7 mt-2.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
+              premium skill topics and rapid-fire scenarios are now unlocked.
             </p>
             <button
               onClick={handleStartPracticing}
-              className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full rounded-lg bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Start Practicing Now
+              Start practicing
             </button>
           </motion.div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-12 lg:gap-12 xl:gap-16 items-start mt-4">
-            
+          <div className="mt-2 grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
             {/* Features (Left side) */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="space-y-7 lg:col-span-7">
               <div>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider mb-4">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Premium Access
-                </span>
-                <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-                  Unchain your instincts.<br />
-                  <span className="text-gradient">Upgrade to Premium.</span>
+                <span className="section-label">Premium access</span>
+                <h1 className="mt-2.5 font-display text-3xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl">
+                  Unchain your instincts.
                 </h1>
-                <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  Practice high-value real-world dilemmas in salary framing, leadership tactics, office politics, and relationships. Instantly build instincts that last a lifetime.
+                <p className="mt-3.5 text-[15px] leading-relaxed text-muted-foreground">
+                  Practice high-value real-world dilemmas in salary framing, leadership tactics,
+                  office politics, and relationships. Build instincts that last a lifetime.
                 </p>
               </div>
 
-
-              {/* Features List */}
-              <div className="grid gap-4 sm:grid-cols-2 pt-2">
+              {/* Features List — a plain checklist. Four bordered cards
+                  each with its own tinted icon tile competed with the
+                  pricing card, which is the actual call to action. */}
+              <ul className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
                 {[
                   {
                     title: "Full Category Access",
@@ -240,15 +235,20 @@ const PremiumPage = () => {
                     icon: Check
                   }
                 ].map((feat, idx) => (
-                  <div key={idx} className="p-5 rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm flex flex-col justify-start">
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 mb-3">
-                      <feat.icon className="w-4 h-4" />
+                  <li key={idx} className="flex gap-3">
+                    <feat.icon
+                      className="mt-0.5 h-[18px] w-[18px] shrink-0 text-primary"
+                      strokeWidth={1.75}
+                    />
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{feat.title}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {feat.desc}
+                      </p>
                     </div>
-                    <h3 className="font-display text-sm font-bold text-foreground">{feat.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{feat.desc}</p>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
 
             {/* Billing Card (Right side) */}
@@ -256,29 +256,26 @@ const PremiumPage = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-3xl border border-white/10 bg-card/75 backdrop-blur-xl p-6 sm:p-8 shadow-2xl text-center relative overflow-hidden"
+                className="surface relative p-6 sm:p-7"
               >
-                {/* Glowing glow effect */}
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
-
-                <h2 className="text-2xl font-display font-extrabold text-foreground mb-1">
-                  Choose a Plan
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  Choose a plan
                 </h2>
-                <p className="text-xs text-muted-foreground mb-6">
+                <p className="mb-5 mt-1 text-xs text-muted-foreground">
                   Simple pricing for professional growth
                 </p>
 
                 {/* Plan Toggle */}
-                <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1.5 rounded-2xl border border-border/40 mb-6">
+                <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/50 p-1">
                   <button
                     type="button"
                     onClick={() => {
                       hapticLight();
                       setSelectedPlan("monthly");
                     }}
-                    className={`relative py-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`rounded-md py-2.5 text-xs font-semibold transition-colors ${
                       selectedPlan === "monthly"
-                        ? "bg-card text-foreground shadow-sm border border-border/40"
+                        ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -290,32 +287,34 @@ const PremiumPage = () => {
                       hapticLight();
                       setSelectedPlan("yearly");
                     }}
-                    className={`relative py-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex items-center justify-center gap-1.5 rounded-md py-2.5 text-xs font-semibold transition-colors ${
                       selectedPlan === "yearly"
-                        ? "bg-card text-foreground shadow-sm border border-border/40"
+                        ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     Yearly
-                    <span className="absolute -top-2 -right-1 bg-primary text-primary-foreground text-[8px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider scale-95 shadow-sm">
-                      -{savings}%
+                    {/* Inline, not a floating badge clipped by the
+                        container's rounded corner. */}
+                    <span className="text-[10px] font-semibold tabular-nums text-primary">
+                      −{savings}%
                     </span>
                   </button>
                 </div>
 
                 {/* Dynamic Price Display */}
-                <div className="mb-6 bg-muted/20 border border-border/30 rounded-2xl py-5 px-4 flex flex-col items-center">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-4xl font-display font-extrabold text-foreground">
+                <div className="mb-5 border-y border-border py-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-display text-[34px] font-semibold leading-none tabular-nums text-foreground">
                       ₹{plan.price}
                     </span>
-                    <span className="text-muted-foreground text-sm font-semibold">
+                    <span className="text-sm text-muted-foreground">
                       / {plan.interval === "monthly" ? "month" : "year"}
                     </span>
                   </div>
                   {selectedPlan === "yearly" && (
-                    <p className="text-xs text-primary font-bold mt-2">
-                      Just ₹150 / month (billed yearly at ₹1,799)
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Works out to ₹150 / month, billed yearly at ₹1,799.
                     </p>
                   )}
                 </div>
@@ -324,22 +323,21 @@ const PremiumPage = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={isProcessing}
-                  className="w-full relative flex items-center justify-center gap-2.5 rounded-full bg-primary hover:bg-primary/95 text-primary-foreground py-4 text-sm font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-65"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing Secure Payment...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing payment…
                     </>
                   ) : (
-                    <>
-                      Upgrade to Premium
-                    </>
+                    "Upgrade to Premium"
                   )}
                 </button>
 
-                <p className="text-[10px] text-muted-foreground/60 mt-5 max-w-[280px] mx-auto leading-relaxed">
-                  Securely encrypted via Razorpay. Access is immediately bound to your email account: <strong>{user?.email || "Guest"}</strong>
+                <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+                  Securely encrypted via Razorpay. Access is bound to{" "}
+                  <strong className="font-medium text-foreground">{user?.email || "Guest"}</strong>.
                 </p>
               </motion.div>
             </div>
