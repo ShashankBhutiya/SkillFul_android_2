@@ -21,6 +21,12 @@ import {
   DollarSign,
   Flame,
   BookOpen,
+  GraduationCap,
+  Wallet,
+  Mic,
+  Sprout,
+  Laptop,
+  Siren,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -53,6 +59,17 @@ export const categoryIconMap: Record<string, LucideIcon> = {
   strong_team_bonding: Users,
   finance: DollarSign,
   rizz: Flame,
+
+  // Student catalog
+  placements: Crosshair,
+  internships: GraduationCap,
+  study_strategy: BookOpen,
+  student_money: Wallet,
+  peer_pressure: Users,
+  public_speaking: Mic,
+  student_burnout: Sprout,
+  online_reputation: Laptop,
+  student_scams: Siren,
 };
 
 export function getCategoryIcon(categoryId?: string): LucideIcon {

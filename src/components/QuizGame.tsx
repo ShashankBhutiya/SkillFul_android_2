@@ -16,7 +16,9 @@ import { hapticSuccess, hapticError, hapticCelebration, hapticMedium, hapticLigh
 import { trackSwipe, trackQuizComplete, trackLoginGate } from "@/utils/analytics";
 import ReactGA from "react-ga4";
 
-const LOGIN_GATE_INTERVAL = 25; // Mandatory login after N cumulative questions
+// Guests may browse the catalog, but an account is required before the first
+// question — progress, streaks and the leaderboard all key off a real user id.
+const LOGIN_GATE_INTERVAL = 0;
 
 // ─── Global cumulative question counter (persisted in localStorage) ───
 const GLOBAL_COUNT_KEY = "quiz_global_answered_count";
@@ -119,9 +121,14 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   const [soundOn, setSoundOn] = useState(getSoundsEnabled);
 
   // --- Login gate for guests ---
-  const [showLoginGate, setShowLoginGate] = useState(false);
+  const [showLoginGate, setShowLoginGate] = useState(user.isGuest);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const loginGateShownAtRef = useRef(0); // tracks the last milestone count where we showed the gate
+
+  // Guests are stopped at the door and released the moment they sign in.
+  useEffect(() => {
+    setShowLoginGate(user.isGuest);
+    if (user.isGuest) trackLoginGate(LOGIN_GATE_INTERVAL);
+  }, [user.isGuest]);
 
   // --- Milestone popup ---
   const [showMilestone, setShowMilestone] = useState(false);
@@ -267,26 +274,13 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         const newTotal = totalAnswered + 1;
 
         // Increment global cumulative counter
-        const globalCount = incrementGlobalAnsweredCount();
-
-        // Check if we should show login gate for guests (mandatory at 50 cumulative)
-        const shouldShowLoginGate =
-          user.isGuest &&
-          globalCount >= LOGIN_GATE_INTERVAL;
-
-        if (shouldShowLoginGate) {
-          trackLoginGate(globalCount);
-        }
+        incrementGlobalAnsweredCount();
 
         setTimeout(() => {
           setShowFeedback(null);
 
           if (currentIndex + 1 >= questions.length) {
             setIsFinished(true);
-          } else if (shouldShowLoginGate) {
-            // Show login gate for guest users
-            loginGateShownAtRef.current = newTotal;
-            setShowLoginGate(true);
           } else if (isMilestone) {
             // Show milestone popup
             setMilestoneNumber(newCorrectCount);
@@ -331,11 +325,11 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
   const handleButtonAnswer = useCallback(
     (answer: boolean) => {
-      if (showExplanation || showMilestone) return;
+      if (showExplanation || showMilestone || showLoginGate) return;
       hapticMedium();
       handleSwipe(answer ? "right" : "left");
     },
-    [handleSwipe, showExplanation, showMilestone]
+    [handleSwipe, showExplanation, showMilestone, showLoginGate]
   );
 
   // Skip: advance without affecting score/streak
@@ -363,19 +357,10 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   // When auth modal closes, check if still guest — if so, re-show gate
   const handleAuthModalClose = useCallback(() => {
     setShowAuthModal(false);
-    // If still guest, re-show the login gate (mandatory)
-    if (user.isGuest) {
-      setShowLoginGate(true);
-    } else {
-      // User logged in successfully, continue quiz
-      setShowLoginGate(false);
-      if (currentIndex + 1 >= questions.length) {
-        setIsFinished(true);
-      } else {
-        setCurrentIndex((i) => i + 1);
-      }
-    }
-  }, [user.isGuest, currentIndex, questions.length]);
+    // Still a guest means the gate stands. On success we simply drop it — the
+    // gate now appears before the first question, so there is nothing to skip.
+    setShowLoginGate(user.isGuest);
+  }, [user.isGuest]);
 
   // Session elapsed time
   const sessionElapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
@@ -484,7 +469,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
       {/* Card Stack */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-3 min-h-0">
         <div className="relative w-full max-w-lg h-full max-h-[70vh]">
-          {currentIndex + 1 < questions.length && (
+          {!showLoginGate && currentIndex + 1 < questions.length && (
             <SwipeCard
               question={questions[currentIndex + 1]}
               category={category}
@@ -642,27 +627,15 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
                   <div className="text-center flex flex-col items-center">
                     <Lock className="w-12 h-12 text-primary mb-3" />
                     <h3 className="font-display font-bold text-2xl text-foreground mb-1">
-                      Create an Account to Continue
+                      Create a Free Account
                     </h3>
                     <p className="text-sm text-muted-foreground font-body mb-2">
-                      You've completed your <span className="font-bold text-foreground">free preview</span> of {LOGIN_GATE_INTERVAL} questions!
+                      You need an account to start practising.
                     </p>
                     <p className="text-xs text-muted-foreground font-body mb-5">
-                      Sign in or create a free account to continue playing, save your progress, and unlock all categories.
+                      It saves your progress and streak, puts you on the leaderboard,
+                      and lets you pick the skills built for you.
                     </p>
-
-                    <div className="grid grid-cols-2 gap-3 mb-5 w-full">
-                      <div className="bg-muted rounded-xl p-3 text-center">
-                        <div className="text-xl font-display font-bold text-foreground">{score} pts</div>
-                        <div className="text-xs text-muted-foreground">Score</div>
-                      </div>
-                      <div className="bg-muted rounded-xl p-3 text-center">
-                        <div className="text-xl font-display font-bold text-foreground flex justify-center items-center gap-1">
-                          <Zap className="w-4 h-4 text-orange-500 fill-orange-500" /> {bestStreak}
-                        </div>
-                        <div className="text-xs text-muted-foreground">Best Streak</div>
-                      </div>
-                    </div>
 
                     <motion.button
                       whileTap={{ scale: 0.95 }}
@@ -671,6 +644,13 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
                     >
                       Sign In / Sign Up
                     </motion.button>
+                    <button
+                      type="button"
+                      onClick={onBack}
+                      className="w-full py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Back to skills
+                    </button>
                     <p className="text-[10px] text-muted-foreground/60 mt-2">
                       It's free and takes 30 seconds
                     </p>

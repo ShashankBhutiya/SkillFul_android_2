@@ -1,3 +1,6 @@
+import type { CategoryAudience } from "@/config/userMode";
+import { studentCategories } from "./studentQuestions";
+
 export interface Question {
   id: number;
   statement: string;
@@ -12,6 +15,12 @@ export interface Category {
   coverImage?: string; // URL to themed cover image
   gradient: string;
   type?: "Personal" | "Professional";
+  /**
+   * Which user mode this category is offered in. Omitted means "professional",
+   * since the original catalog was written entirely for working professionals.
+   * See src/config/userMode.ts.
+   */
+  audience?: CategoryAudience;
   questions: Question[];
 }
 // Themed cover images for each category (Unsplash source, 400x300)
@@ -100,7 +109,7 @@ export function getUnpracticedQuestions(category: Category): Question[] {
 export function getTotalPracticed(categoryId: string): number {
   return getPracticedIds(categoryId).length;
 }
-export const categories: Category[] = [
+const professionalCategories: Category[] = [
   
   {
     id: "female_selfworth",
@@ -4650,3 +4659,21 @@ export const categories: Category[] = [
     ],
   },
 ];
+
+/**
+ * Every category in the app, both modes.
+ *
+ * Consumers that render the catalog must filter by the active user mode
+ * (see isCategoryInMode in src/config/userMode.ts). Lookups by id should keep
+ * using this full list so a category stays resolvable if the mode changes
+ * mid-session or a user opens a deep link for the other mode.
+ */
+export const categories: Category[] = [
+  ...professionalCategories.map((c) => ({
+    audience: "professional" as const,
+    ...c,
+  })),
+  ...studentCategories,
+];
+
+export { professionalCategories, studentCategories };

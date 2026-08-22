@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Lock, LogIn, UserPlus, AlertCircle, Loader2, Users, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import UserModeSelect from "@/components/UserModeSelect";
+import { getStoredUserMode, type UserMode } from "@/config/userMode";
+import { broadcastUserMode } from "@/hooks/useUserMode";
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -33,6 +36,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     const [referralCode, setReferralCode] = useState(() => {
         return localStorage.getItem("pending_referral_code") || "";
     });
+    const [userMode, setUserMode] = useState<UserMode | null>(() => getStoredUserMode());
     const [emailConsent, setEmailConsent] = useState(false);
     const [whatsappConsent, setWhatsappConsent] = useState(false);
     const [phone, setPhone] = useState("");
@@ -45,6 +49,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         setEmail("");
         setPassword("");
         setReferralCode("");
+        setUserMode(getStoredUserMode());
         setEmailConsent(false);
         setWhatsappConsent(false);
         setPhone("");
@@ -61,6 +66,11 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         setError("");
         setSuccess("");
         setGoogleLoading(true);
+
+        // OAuth navigates away, so stash the choice locally first. localStorage
+        // survives the redirect and AuthContext only overrides it if the loaded
+        // profile already has a mode of its own.
+        if (tab === "signup" && userMode) broadcastUserMode(userMode);
 
         try {
             const result = await signInWithGoogle(referralCode.trim() || undefined);
@@ -91,6 +101,10 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         }
 
         if (tab === "signup") {
+            if (!userMode) {
+                setError("Please tell us whether you're a student or a working professional");
+                return;
+            }
             if (whatsappConsent && !phone.trim()) {
                 setError("Please enter a phone number to receive WhatsApp updates");
                 return;
@@ -126,7 +140,8 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     emailConsent,
                     phone.trim() || undefined,
                     false, // phoneConsent (SMS updates) is false initially
-                    whatsappConsent
+                    whatsappConsent,
+                    userMode ?? undefined
                 );
                 if (result.error) {
                     setError(formatAuthError(result.error));
@@ -236,10 +251,30 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                             </div>
                         </div>
 
-                        {/* Referral Code (Signup only) */}
+                        {/* Mode + Referral (Signup only) */}
                         <AnimatePresence>
                             {tab === "signup" && (
                                 <div className="space-y-4 pt-1">
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden space-y-2"
+                                    >
+                                        <label className="text-xs font-bold text-muted-foreground ml-1">
+                                            Where are you right now?
+                                        </label>
+                                        <p className="ml-1 text-[11px] text-muted-foreground/70">
+                                            This picks your skill catalog. You can change it any time in Settings.
+                                        </p>
+                                        <UserModeSelect
+                                            value={userMode}
+                                            onChange={setUserMode}
+                                            variant="rows"
+                                            disabled={loading || googleLoading}
+                                        />
+                                    </motion.div>
+
                                     <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
@@ -452,7 +487,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
                     <div className="pb-6 text-center">
                         <p className="text-xs text-muted-foreground/60 font-body">
-                            Guests can play instantly, but progress isn't saved to your account until you sign up.
+                            An account is required to practise — it saves your progress, streak and leaderboard rank.
                         </p>
                     </div>
                 </motion.div>

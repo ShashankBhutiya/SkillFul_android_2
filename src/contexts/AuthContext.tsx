@@ -6,6 +6,8 @@ import { siteConfig } from "@/seo/siteConfig";
 import { Capacitor } from "@capacitor/core";
 import { clearGuestMemoryCache } from "@/services/progressService";
 import { toast } from "@/hooks/use-toast";
+import { isUserMode, type UserMode } from "@/config/userMode";
+import { broadcastUserMode } from "@/hooks/useUserMode";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
 function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
@@ -35,6 +37,7 @@ export interface AppUser {
     subscriptionStatus?: string;
     subscriptionId?: string;
     subscriptionPeriodEnd?: string;
+    userMode?: UserMode;
 }
 
 interface AuthContextType {
@@ -47,13 +50,15 @@ interface AuthContextType {
         emailConsent?: boolean,
         phone?: string,
         phoneConsent?: boolean,
-        whatsappConsent?: boolean
+        whatsappConsent?: boolean,
+        userMode?: UserMode
     ) => Promise<{ error?: string }>;
     signIn: (email: string, password: string) => Promise<{ error?: string }>;
     signInWithGoogle: (referralCode?: string) => Promise<{ error?: string }>;
     signOut: () => Promise<void>;
     applyReferralCode: (code: string) => Promise<{ success: boolean; message: string }>;
     refreshProfile: () => Promise<void>;
+    updateUserMode: (mode: UserMode) => Promise<void>;
     updateProfileSettings: (
         phone: string,
         phoneConsent: boolean,
@@ -118,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 Promise.allSettled([
                     supabase
                         .from("profiles")
-                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, subscription_status, subscription_id, subscription_period_end")
+                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, subscription_status, subscription_id, subscription_period_end, user_mode")
                         .eq("id", uid)
                         .maybeSingle(),
                     supabase.rpc("get_valid_referrals", { referrer_id: uid }),
@@ -150,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 subscriptionStatus: profile?.subscription_status || "inactive",
                 subscriptionId: profile?.subscription_id || "",
                 subscriptionPeriodEnd: profile?.subscription_period_end || "",
+                userMode: isUserMode(profile?.user_mode) ? profile.user_mode : undefined,
             };
         } catch (err) {
             console.warn("Failed to load profile (timeout or error):", err);
@@ -317,7 +323,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailConsent?: boolean,
         phone?: string,
         phoneConsent?: boolean,
-        whatsappConsent?: boolean
+        whatsappConsent?: boolean,
+        userMode?: UserMode
     ): Promise<{ error?: string }> => {
         if (!supabase) return { error: "Supabase is not configured" };
 
@@ -340,6 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             email_consent: emailConsent,
                             whatsapp_consent: whatsappConsent,
                             referred_by_code: referralCode,
+                            user_mode: userMode,
                         }
                     }
                 }),
@@ -361,13 +369,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!supabase || !data.user) return;
             for (let i = 0; i < retries; i++) {
                 try {
-                    if (emailConsent !== undefined || phoneConsent !== undefined || phone !== undefined || whatsappConsent !== undefined) {
+                    if (emailConsent !== undefined || phoneConsent !== undefined || phone !== undefined || whatsappConsent !== undefined || userMode !== undefined) {
                         const { error: updateError } = await supabase.from("profiles")
                             .update({
                                 email_consent: emailConsent,
                                 phone: phone,
                                 phone_consent: phoneConsent,
-                                whatsapp_consent: whatsappConsent
+                                whatsapp_consent: whatsappConsent,
+                                ...(userMode ? { user_mode: userMode } : {})
                             })
                             .eq("id", data.user.id);
                         
@@ -397,6 +406,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clear local storage and guest memory cache so that the new user starts fresh
         localStorage.removeItem("quiz_practiced_questions");
         clearGuestMemoryCache();
+
+        // Apply the chosen mode locally straight away — the profile write above
+        // is fire-and-forget, and the catalog should not wait on it.
+        if (userMode) broadcastUserMode(userMode);
 
         return {};
     }, [user]);
@@ -634,6 +647,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user, refreshProfile]);
 
+    // --- User mode (Student / Professional) ---
+    const updateUserMode = useCallback(async (mode: UserMode): Promise<void> => {
+        // Local first: switching modes should feel instant and must keep working
+        // for guests and offline users, who have no profile row to write to.
+        broadcastUserMode(mode);
+        setUser((prev) => ({ ...prev, userMode: mode }));
+
+        if (!supabase || user.isGuest) return;
+        try {
+            const { error } = await supabase
+                .from("profiles")
+                .update({ user_mode: mode })
+                .eq("id", user.id);
+            if (error) throw error;
+        } catch (err) {
+            // The local switch stands; it will re-sync on the next profile write.
+            console.warn("Could not persist user_mode to profile:", err);
+        }
+    }, [user.id, user.isGuest]);
+
+    // The account is the source of truth once a profile has loaded, so a user
+    // signing in on a new device gets the mode they chose, not this device's.
+    useEffect(() => {
+        if (!user.isGuest && user.userMode) {
+            broadcastUserMode(user.userMode);
+        }
+    }, [user.isGuest, user.userMode]);
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -644,6 +685,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             signOut,
             applyReferralCode,
             refreshProfile,
+            updateUserMode,
             updateProfileSettings,
             sendPhoneVerificationOTP,
             confirmPhoneVerificationOTP

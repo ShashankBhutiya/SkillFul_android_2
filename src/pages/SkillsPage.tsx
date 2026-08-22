@@ -5,6 +5,8 @@ import { categories as questionCategories } from "@/data/questions";
 import { useAuth } from "@/contexts/AuthContext";
 import { pullProgressFromDB } from "@/services/progressService";
 import CategorySelect from "@/components/CategorySelect";
+import UserModeOnboarding from "@/components/UserModeOnboarding";
+import { useUserMode } from "@/hooks/useUserMode";
 
 const DifficultySelect = lazy(() => import("@/components/DifficultySelect"));
 const QuizGame = lazy(() => import("@/components/QuizGame"));
@@ -28,6 +30,7 @@ const LoadingSkeleton = () => (
 const SkillsPage = () => {
   const { user } = useAuth();
   const { categoryId } = useParams<{ categoryId?: string }>();
+  const { ready: modeReady, hasChosen: modeChosen } = useUserMode();
   const navigate = useNavigate();
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
 
@@ -57,6 +60,12 @@ const SkillsPage = () => {
     navigate("/skills");
   };
 
+
+  // Nothing renders until localStorage has been read, otherwise the catalog
+  // would flash the default mode before the stored one is applied.
+  if (!modeReady) return <LoadingSkeleton />;
+
+  if (!modeChosen) return <UserModeOnboarding />;
 
   // If categoryId is present but invalid, redirect to /skills
   if (categoryId && !questionCategories.some((c) => c.id === categoryId)) {

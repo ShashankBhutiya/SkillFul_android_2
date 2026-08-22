@@ -5,11 +5,13 @@ import { categories as questionCategories } from "@/data/questions";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPracticedIds } from "@/services/progressService";
 import { LOCKED_CATEGORY_IDS, REFERRALS_PER_UNLOCK } from "@/config/lockedCategories";
+import { MODE_SECTIONS, isCategoryInMode, type CategoryAudience } from "@/config/userMode";
+import { useUserMode } from "@/hooks/useUserMode";
 
 type ExperienceLevel = "justStarted" | "workingLong" | null;
 import { MainLayout } from "@/components/layout/MainLayout";
 import { hapticLight, hapticError, hapticSuccess } from "@/hooks/useHaptics";
-import { Lock, MessageSquarePlus, Briefcase, Heart, ChevronLeft, ChevronRight, Search, ArrowRight } from "lucide-react";
+import { Lock, MessageSquarePlus, Briefcase, Heart, GraduationCap, Sparkles, ChevronLeft, ChevronRight, Search, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import ReferralModal from "./ReferralModal";
 import StreakCard from "@/components/streak/StreakCard";
@@ -18,7 +20,6 @@ import { supabase } from "@/lib/supabase";
 import { SeoHead } from "@/components/SeoHead";
 import { CategoryIcon } from "@/lib/categoryIcons";
 
-const TOTAL_CATEGORIES = categorySummaries.length;
 
 // Build a lookup map from actual question arrays for real-time counts
 const questionCountMap = new Map(
@@ -46,8 +47,18 @@ interface CategoryCardProps {
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const { user } = useAuth();
   const { streak, checkedInToday } = useStreak();
-  const skillOfTheDay = categorySummaries.length > 0
-    ? categorySummaries[(new Date().getDate() + new Date().getMonth() * 31) % categorySummaries.length]
+  const { mode, ready: modeReady } = useUserMode();
+
+  // The catalog is filtered by mode, not merely reordered: a student should
+  // never be shown salary-negotiation or office-politics topics, and a working
+  // professional should not be shown campus ones.
+  const modeCategories = categorySummaries.filter((c) =>
+    isCategoryInMode((c as { audience?: CategoryAudience }).audience, mode)
+  );
+  const sections = MODE_SECTIONS[mode];
+
+  const skillOfTheDay = modeCategories.length > 0
+    ? modeCategories[(new Date().getDate() + new Date().getMonth() * 31) % modeCategories.length]
     : null;
 
   const getRequiredReferrals = (catId: string) => {
@@ -96,7 +107,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
       : cats;
 
   // Sort categories based on selected experience level
-  const sortedCategories = [...categorySummaries].sort((a, b) => {
+  const sortedCategories = [...modeCategories].sort((a, b) => {
     if (!experience) return 0;
     const scoreA = (a as any).priorityScore?.[experience] || 0;
     const scoreB = (b as any).priorityScore?.[experience] || 0;
@@ -135,7 +146,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
       );
     });
 
-  if (!experienceLoaded) return null;
+  if (!experienceLoaded || !modeReady) return null;
 
 
 
@@ -159,7 +170,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             Pick a skill
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Short scenarios, one swipe at a time.
+            {mode === "student"
+              ? "Built for college — short scenarios, one swipe at a time."
+              : "Short scenarios, one swipe at a time."}
           </p>
         </div>
 
@@ -232,9 +245,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
 
         <div className="flex flex-col gap-9">
           <CategoryCarousel
-            title="Professional"
-            subtitle="Career & workplace"
-            icon={Briefcase}
+            title={sections.primary.title}
+            subtitle={sections.primary.subtitle}
+            icon={mode === "student" ? GraduationCap : Briefcase}
             count={professionalCats.length}
           >
             {renderCategoryList(
@@ -245,9 +258,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
           </CategoryCarousel>
 
           <CategoryCarousel
-            title="Personal"
-            subtitle="Life & relationships"
-            icon={Heart}
+            title={sections.secondary.title}
+            subtitle={sections.secondary.subtitle}
+            icon={mode === "student" ? Sparkles : Heart}
             count={personalCats.length}
           >
             {renderCategoryList(

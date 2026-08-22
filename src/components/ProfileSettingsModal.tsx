@@ -3,6 +3,9 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import UserModeSelect from "@/components/UserModeSelect";
+import { useUserMode } from "@/hooks/useUserMode";
+import type { UserMode } from "@/config/userMode";
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -10,7 +13,22 @@ interface ProfileSettingsModalProps {
 }
 
 const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) => {
-    const { user, updateProfileSettings, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
+    const { user, updateProfileSettings, updateUserMode, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
+    const { mode } = useUserMode();
+    const [modeSaving, setModeSaving] = useState(false);
+
+    // Applied immediately rather than on Save — switching modes only changes
+    // which categories are visible, and nothing about it is destructive.
+    const handleModeChange = async (next: UserMode) => {
+        if (next === mode || modeSaving) return;
+        setModeSaving(true);
+        try {
+            await updateUserMode(next);
+        } finally {
+            setModeSaving(false);
+        }
+    };
+
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [phone, setPhone] = useState("");
@@ -186,12 +204,34 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                 Profile Settings
                             </h2>
                             <p className="text-sm text-muted-foreground font-body">
-                                Update your notifications and phone number
+                                Update your mode, notifications, and phone number
                             </p>
                         </div>
 
                         {/* Form */}
                         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+                            {/* Student / Professional mode */}
+                            <div className="space-y-2 rounded-2xl border border-border bg-muted/30 p-3">
+                                <div className="flex items-center justify-between gap-2 px-1">
+                                    <label className="text-xs font-bold text-muted-foreground">
+                                        I am a
+                                    </label>
+                                    {modeSaving && (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                                    )}
+                                </div>
+                                <UserModeSelect
+                                    value={mode}
+                                    onChange={handleModeChange}
+                                    variant="rows"
+                                    disabled={modeSaving}
+                                />
+                                <p className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
+                                    Switching changes which skills you see. Your progress and streak
+                                    are kept for both — nothing is lost.
+                                </p>
+                            </div>
+
                             {/* Name Input Grid */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">

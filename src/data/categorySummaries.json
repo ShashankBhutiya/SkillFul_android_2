@@ -10,7 +10,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 5
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "avoid_creeps_awareness",
@@ -23,7 +24,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 5
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "communication",
@@ -36,7 +38,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 7
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "office_politics",
@@ -49,7 +52,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 10
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "personality",
@@ -62,7 +66,8 @@
     "priorityScore": {
       "justStarted": 8,
       "workingLong": 8
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "corporate_ladder_real_strategy",
@@ -75,7 +80,8 @@
     "priorityScore": {
       "justStarted": 8,
       "workingLong": 10
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "interview",
@@ -88,7 +94,8 @@
     "priorityScore": {
       "justStarted": 10,
       "workingLong": 3
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "investing_awareness_mastery",
@@ -101,7 +108,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 8
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "corporate_dangers_awareness",
@@ -114,7 +122,8 @@
     "priorityScore": {
       "justStarted": 8,
       "workingLong": 10
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "leadership",
@@ -127,7 +136,8 @@
     "priorityScore": {
       "justStarted": 3,
       "workingLong": 10
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "negotiation",
@@ -140,7 +150,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 5
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "solid_relation_with_boss",
@@ -153,7 +164,8 @@
     "priorityScore": {
       "justStarted": 10,
       "workingLong": 6
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "attraction",
@@ -166,7 +178,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 5
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "masculine_character",
@@ -179,7 +192,8 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 5
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "chanakya_corporate",
@@ -192,7 +206,8 @@
     "priorityScore": {
       "justStarted": 5,
       "workingLong": 8
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "machiavelli",
@@ -205,7 +220,8 @@
     "priorityScore": {
       "justStarted": 5,
       "workingLong": 8
-    }
+    },
+    "audience": "professional"
   },
   {
     "id": "stocks",
@@ -218,6 +234,245 @@
     "priorityScore": {
       "justStarted": 9,
       "workingLong": 8
+    },
+    "audience": "professional"
+  },
+  {
+    "id": "placements",
+    "name": "Placements & Campus Interviews",
+    "emoji": "🎯",
+    "gradient": "from-blue-500 to-indigo-600",
+    "coverImage": "https://images.unsplash.com/photo-1565688534245-05d6b5be184a?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 4
+    }
+  },
+  {
+    "id": "internships",
+    "name": "Internships & First Job",
+    "emoji": "🧑‍💻",
+    "gradient": "from-cyan-500 to-blue-600",
+    "coverImage": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "study_strategy",
+    "name": "Study Skills & Exam Strategy",
+    "emoji": "📚",
+    "gradient": "from-amber-500 to-orange-600",
+    "coverImage": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 6
+    }
+  },
+  {
+    "id": "student_money",
+    "name": "Money for Students",
+    "emoji": "💸",
+    "gradient": "from-emerald-500 to-green-600",
+    "coverImage": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+    "type": "Personal",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 7
+    }
+  },
+  {
+    "id": "peer_pressure",
+    "name": "Campus Friendships & Peer Pressure",
+    "emoji": "🤝",
+    "gradient": "from-rose-500 to-pink-600",
+    "coverImage": "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop",
+    "type": "Personal",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "public_speaking",
+    "name": "Public Speaking & Presentations",
+    "emoji": "🎤",
+    "gradient": "from-violet-500 to-purple-600",
+    "coverImage": "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 8
+    }
+  },
+  {
+    "id": "student_burnout",
+    "name": "Mental Health & Burnout",
+    "emoji": "🌱",
+    "gradient": "from-teal-500 to-emerald-600",
+    "coverImage": "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&h=300&fit=crop",
+    "type": "Personal",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 7
+    }
+  },
+  {
+    "id": "online_reputation",
+    "name": "Digital Safety & Online Reputation",
+    "emoji": "🛡️",
+    "gradient": "from-slate-500 to-gray-700",
+    "coverImage": "https://images.unsplash.com/photo-1588702547923-7093a6c3ba33?w=400&h=300&fit=crop",
+    "type": "Personal",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 7,
+      "workingLong": 6
+    }
+  },
+  {
+    "id": "student_scams",
+    "name": "Student Scams & Fake Opportunities",
+    "emoji": "🚨",
+    "gradient": "from-red-500 to-rose-600",
+    "coverImage": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop",
+    "type": "Personal",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 8,
+      "workingLong": 6
+    }
+  },
+  {
+    "id": "aptitude_reasoning",
+    "name": "Aptitude & Logical Reasoning",
+    "emoji": "🧮",
+    "gradient": "from-amber-500 to-orange-600",
+    "coverImage": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 4
+    }
+  },
+  {
+    "id": "group_discussion",
+    "name": "Group Discussions & Case Rounds",
+    "emoji": "💬",
+    "gradient": "from-violet-500 to-purple-700",
+    "coverImage": "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "resume_linkedin",
+    "name": "Resume & LinkedIn That Get Shortlisted",
+    "emoji": "📄",
+    "gradient": "from-slate-500 to-slate-700",
+    "coverImage": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 6
+    }
+  },
+  {
+    "id": "hr_behavioural",
+    "name": "HR & Behavioural Interview Rounds",
+    "emoji": "🧩",
+    "gradient": "from-pink-500 to-rose-600",
+    "coverImage": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "tech_interview_readiness",
+    "name": "Technical Interview Readiness",
+    "emoji": "💻",
+    "gradient": "from-emerald-500 to-teal-700",
+    "coverImage": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "corporate_etiquette",
+    "name": "Corporate Etiquette & Work Readiness",
+    "emoji": "👔",
+    "gradient": "from-indigo-500 to-blue-800",
+    "coverImage": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 7
+    }
+  },
+  {
+    "id": "email_writing",
+    "name": "Professional Email & Business Writing",
+    "emoji": "✉️",
+    "gradient": "from-sky-500 to-cyan-700",
+    "coverImage": "https://images.unsplash.com/photo-1553028826-f4804a6dba3b?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 7
+    }
+  },
+  {
+    "id": "business_awareness",
+    "name": "Business Awareness & Company Research",
+    "emoji": "🌐",
+    "gradient": "from-lime-600 to-green-700",
+    "coverImage": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 25,
+    "priorityScore": {
+      "justStarted": 9,
+      "workingLong": 6
     }
   }
 ]

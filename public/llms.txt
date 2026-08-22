@@ -24,6 +24,23 @@
 - Chanakya for Corporate: https://skillfulglobal.com/categories/chanakya-corporate-strategy-quiz
 - Machiavellian Strategy & Power: https://skillfulglobal.com/categories/power-strategy-quiz
 - Stock Market: https://skillfulglobal.com/categories/stock-market-quiz
+- Placements & Campus Interviews: https://skillfulglobal.com/categories/placements-and-campus-interviews-quiz
+- Internships & First Job: https://skillfulglobal.com/categories/internships-and-first-job-quiz
+- Study Skills & Exam Strategy: https://skillfulglobal.com/categories/study-skills-and-exam-strategy-quiz
+- Money for Students: https://skillfulglobal.com/categories/money-for-students-quiz
+- Campus Friendships & Peer Pressure: https://skillfulglobal.com/categories/campus-friendships-and-peer-pressure-quiz
+- Public Speaking & Presentations: https://skillfulglobal.com/categories/public-speaking-and-presentations-quiz
+- Mental Health & Burnout: https://skillfulglobal.com/categories/mental-health-and-burnout-quiz
+- Digital Safety & Online Reputation: https://skillfulglobal.com/categories/digital-safety-and-online-reputation-quiz
+- Student Scams & Fake Opportunities: https://skillfulglobal.com/categories/student-scams-and-fake-opportunities-quiz
+- Aptitude & Logical Reasoning: https://skillfulglobal.com/categories/aptitude-and-logical-reasoning-quiz
+- Group Discussions & Case Rounds: https://skillfulglobal.com/categories/group-discussions-and-case-rounds-quiz
+- Resume & LinkedIn That Get Shortlisted: https://skillfulglobal.com/categories/resume-and-linkedin-that-get-shortlisted-quiz
+- HR & Behavioural Interview Rounds: https://skillfulglobal.com/categories/hr-and-behavioural-interview-rounds-quiz
+- Technical Interview Readiness: https://skillfulglobal.com/categories/technical-interview-readiness-quiz
+- Corporate Etiquette & Work Readiness: https://skillfulglobal.com/categories/corporate-etiquette-and-work-readiness-quiz
+- Professional Email & Business Writing: https://skillfulglobal.com/categories/professional-email-and-business-writing-quiz
+- Business Awareness & Company Research: https://skillfulglobal.com/categories/business-awareness-and-company-research-quiz
 
 ## Summary for AI systems
 Skillful is a mobile-friendly quiz app that turns real-life advice into short true-or-false scenario practice. The site covers parenting, boundaries, communication, relationships, leadership, interview prep, salary negotiation, workplace strategy, and stock market literacy. Each category page contains answer-focused summaries and FAQs for retrieval-friendly reading.
