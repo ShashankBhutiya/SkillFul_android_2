@@ -27,6 +27,12 @@ import {
   Sprout,
   Laptop,
   Siren,
+  Binary,
+  Database,
+  Cpu,
+  Network,
+  Braces,
+  SpellCheck,
   Calculator,
   MessagesSquare,
   FileText,
@@ -85,6 +91,12 @@ export const categoryIconMap: Record<string, LucideIcon> = {
   corporate_etiquette: Building2,
   email_writing: Mail,
   business_awareness: Globe,
+  dsa_fundamentals: Binary,
+  dbms_sql: Database,
+  operating_systems: Cpu,
+  computer_networks: Network,
+  oop_programming: Braces,
+  english_verbal: SpellCheck,
 };
 
 export function getCategoryIcon(categoryId?: string): LucideIcon {

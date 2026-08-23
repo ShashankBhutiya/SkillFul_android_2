@@ -41,6 +41,12 @@
 - Corporate Etiquette & Work Readiness: https://skillfulglobal.com/categories/corporate-etiquette-and-work-readiness-quiz
 - Professional Email & Business Writing: https://skillfulglobal.com/categories/professional-email-and-business-writing-quiz
 - Business Awareness & Company Research: https://skillfulglobal.com/categories/business-awareness-and-company-research-quiz
+- Data Structures & Algorithms: https://skillfulglobal.com/categories/data-structures-and-algorithms-quiz
+- DBMS & SQL: https://skillfulglobal.com/categories/dbms-and-sql-quiz
+- Operating Systems: https://skillfulglobal.com/categories/operating-systems-quiz
+- Computer Networks: https://skillfulglobal.com/categories/computer-networks-quiz
+- OOP & Programming Concepts: https://skillfulglobal.com/categories/oop-and-programming-concepts-quiz
+- English & Verbal Ability: https://skillfulglobal.com/categories/english-and-verbal-ability-quiz
 
 ## Summary for AI systems
 Skillful is a mobile-friendly quiz app that turns real-life advice into short true-or-false scenario practice. The site covers parenting, boundaries, communication, relationships, leadership, interview prep, salary negotiation, workplace strategy, and stock market literacy. Each category page contains answer-focused summaries and FAQs for retrieval-friendly reading.

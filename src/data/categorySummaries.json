@@ -474,5 +474,89 @@
       "justStarted": 9,
       "workingLong": 6
     }
+  },
+  {
+    "id": "dsa_fundamentals",
+    "name": "Data Structures & Algorithms",
+    "emoji": "🔗",
+    "gradient": "from-sky-600 to-blue-800",
+    "coverImage": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "dbms_sql",
+    "name": "DBMS & SQL",
+    "emoji": "🗄️",
+    "gradient": "from-teal-600 to-emerald-800",
+    "coverImage": "https://images.unsplash.com/photo-1573497019236-17f8177b81e8?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "operating_systems",
+    "name": "Operating Systems",
+    "emoji": "🖥️",
+    "gradient": "from-zinc-600 to-slate-800",
+    "coverImage": "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 4
+    }
+  },
+  {
+    "id": "computer_networks",
+    "name": "Computer Networks",
+    "emoji": "📡",
+    "gradient": "from-cyan-600 to-sky-800",
+    "coverImage": "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 4
+    }
+  },
+  {
+    "id": "oop_programming",
+    "name": "OOP & Programming Concepts",
+    "emoji": "🧱",
+    "gradient": "from-purple-600 to-fuchsia-800",
+    "coverImage": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 5
+    }
+  },
+  {
+    "id": "english_verbal",
+    "name": "English & Verbal Ability",
+    "emoji": "✍️",
+    "gradient": "from-rose-500 to-red-700",
+    "coverImage": "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=400&h=300&fit=crop",
+    "type": "Professional",
+    "audience": "student",
+    "questionCount": 50,
+    "priorityScore": {
+      "justStarted": 10,
+      "workingLong": 6
+    }
   }
 ]
