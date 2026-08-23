@@ -27,6 +27,13 @@ import {
   Sprout,
   Laptop,
   Siren,
+  Calculator,
+  MessagesSquare,
+  FileText,
+  ClipboardList,
+  Code2,
+  Mail,
+  Globe,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
@@ -70,6 +77,14 @@ export const categoryIconMap: Record<string, LucideIcon> = {
   student_burnout: Sprout,
   online_reputation: Laptop,
   student_scams: Siren,
+  aptitude_reasoning: Calculator,
+  group_discussion: MessagesSquare,
+  resume_linkedin: FileText,
+  hr_behavioural: ClipboardList,
+  tech_interview_readiness: Code2,
+  corporate_etiquette: Building2,
+  email_writing: Mail,
+  business_awareness: Globe,
 };
 
 export function getCategoryIcon(categoryId?: string): LucideIcon {
