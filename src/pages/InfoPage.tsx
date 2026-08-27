@@ -16,11 +16,14 @@ import {
 import { SeoHead } from "@/components/SeoHead";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { buildBreadcrumbSchema } from "@/seo/structuredData";
+import InstitutionCard from "@/components/InstitutionCard";
+import { useUserMode } from "@/hooks/useUserMode";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export const InfoPage = () => {
   const currentYear = new Date().getFullYear();
+  const { mode } = useUserMode();
 
   const sections = [
     {
@@ -124,6 +127,10 @@ export const InfoPage = () => {
             Navigate Skillful, get help, or share feedback.
           </p>
         </motion.div>
+
+        {/* Only students belong to a placement cell; a working professional
+            has no college to attach to. */}
+        {mode === "student" && <InstitutionCard />}
 
         {/* Grouped link lists. Each section is one bordered surface with
             hairline dividers, rather than N separate floating cards —

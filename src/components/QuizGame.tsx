@@ -10,11 +10,10 @@ import QuizSummary from "./QuizSummary";
 import FloatingOrbs from "./FloatingOrbs";
 import AuthModal from "./AuthModal";
 import { MilestoneCelebration } from "./MilestoneCelebration";
-import { ArrowLeft, X, Check, Volume2, VolumeX, SkipForward, Zap, Lock, Lightbulb, RefreshCcw, XCircle } from "lucide-react";
+import { ArrowLeft, X, Volume2, VolumeX, Zap, Lock, Lightbulb, RefreshCcw, XCircle } from "lucide-react";
 import { playCorrect, playWrong, playCombo, getSoundsEnabled, setSoundsEnabled } from "@/hooks/useSounds";
-import { hapticSuccess, hapticError, hapticCelebration, hapticMedium, hapticLight } from "@/hooks/useHaptics";
+import { hapticSuccess, hapticError, hapticCelebration } from "@/hooks/useHaptics";
 import { trackSwipe, trackQuizComplete, trackLoginGate } from "@/utils/analytics";
-import ReactGA from "react-ga4";
 
 // Guests may browse the catalog, but an account is required before the first
 // question — progress, streaks and the leaderboard all key off a real user id.
@@ -323,37 +322,6 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     setCurrentIndex((i) => i + 1);
   }, []);
 
-  const handleButtonAnswer = useCallback(
-    (answer: boolean) => {
-      if (showExplanation || showMilestone || showLoginGate) return;
-      hapticMedium();
-      handleSwipe(answer ? "right" : "left");
-    },
-    [handleSwipe, showExplanation, showMilestone, showLoginGate]
-  );
-
-  // Skip: advance without affecting score/streak
-  const handleSkip = useCallback(() => {
-    if (showExplanation || showMilestone || showLoginGate) return;
-    hapticLight();
-
-    // Log skip event to Google Analytics
-    const question = questions[currentIndex];
-    if (question) {
-      ReactGA.event({
-        category: "Quiz Gameplay",
-        action: "skip",
-        label: `Question #${question.id} - ${categoryId}`,
-      });
-    }
-
-    if (currentIndex + 1 >= questions.length) {
-      setIsFinished(true);
-    } else {
-      setCurrentIndex((i) => i + 1);
-    }
-  }, [currentIndex, questions, categoryId, showExplanation, showMilestone, showLoginGate]);
-
   // When auth modal closes, check if still guest — if so, re-show gate
   const handleAuthModalClose = useCallback(() => {
     setShowAuthModal(false);
@@ -467,7 +435,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
       </div>
 
       {/* Card Stack */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-3 min-h-0">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-3 pb-4 min-h-0">
         <div className="relative w-full max-w-lg h-full max-h-[70vh]">
           {!showLoginGate && currentIndex + 1 < questions.length && (
             <SwipeCard
@@ -659,49 +627,6 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Bottom buttons */}
-      <div className="relative z-10 px-4 py-3 pb-4 flex flex-col items-center gap-1.5 shrink-0">
-        <p className="text-xs text-muted-foreground font-body swipe-hint">
-          👆 Swipe the card — or tap below
-        </p>
-        <div className="flex justify-center items-center gap-8">
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.85 }}
-            onClick={() => handleButtonAnswer(false)}
-            disabled={showExplanation || showMilestone || showLoginGate}
-            className="rounded-full bg-destructive/90 backdrop-blur-sm text-destructive-foreground shadow-md flex items-center justify-center disabled:opacity-50 transition-all"
-            style={{ width: 48, height: 48 }}
-          >
-            <X className="w-6 h-6" />
-          </motion.button>
-
-          {/* Skip button — always available */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.85 }}
-            onClick={handleSkip}
-            disabled={showExplanation || showMilestone || showLoginGate}
-            className="rounded-full bg-muted/90 backdrop-blur-sm text-muted-foreground shadow-md flex items-center justify-center disabled:opacity-50 transition-all border border-white/10"
-            style={{ width: 40, height: 40 }}
-            title="Skip this question"
-          >
-            <SkipForward className="w-5 h-5" />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.15 }}
-            whileTap={{ scale: 0.85 }}
-            onClick={() => handleButtonAnswer(true)}
-            disabled={showExplanation || showMilestone || showLoginGate}
-            className="rounded-full bg-success/90 backdrop-blur-sm text-success-foreground shadow-md flex items-center justify-center disabled:opacity-50 transition-all"
-            style={{ width: 48, height: 48 }}
-          >
-            <Check className="w-6 h-6" />
-          </motion.button>
         </div>
       </div>
 

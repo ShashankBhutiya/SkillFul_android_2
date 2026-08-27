@@ -8,6 +8,7 @@ import { clearGuestMemoryCache } from "@/services/progressService";
 import { toast } from "@/hooks/use-toast";
 import { isUserMode, type UserMode } from "@/config/userMode";
 import { broadcastUserMode } from "@/hooks/useUserMode";
+import { applyPendingJoinCode } from "@/services/institutionService";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
 function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
@@ -245,6 +246,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         localStorage.removeItem("pending_referral_code");
                     }
                 }
+
+                // Same idea for a college join code arriving via ?join=.
+                // Enrolment is independent of the profile, so a failure here
+                // must not block sign-in.
+                try {
+                    await applyPendingJoinCode();
+                } catch (e) {
+                    console.warn("Failed to apply pending join code:", e);
+                }
+
                 const appUser = await fetchProfileData(session.user.id, session.user.email);
                 if (!cancelled) setUser(appUser);
             } else {

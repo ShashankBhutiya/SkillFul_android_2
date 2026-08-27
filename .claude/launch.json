@@ -4,8 +4,22 @@
     {
       "name": "skillful-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 8080
+    },
+    {
+      "name": "tpo-portal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "tpo-portal"
+      ],
+      "port": 8081
     }
   ]
 }

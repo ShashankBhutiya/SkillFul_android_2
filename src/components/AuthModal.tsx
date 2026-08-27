@@ -288,10 +288,10 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                             <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                             <input
                                                 type="text"
-                                                placeholder="Enter 6-digit code"
+                                                placeholder="Enter referral code"
                                                 value={referralCode}
-                                                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                                                maxLength={6}
+                                                onChange={(e) => setReferralCode(e.target.value.replace(/\s/g, "").toUpperCase())}
+                                                maxLength={24}
                                                 className="w-full pl-10 pr-4 py-3 bg-muted/30 backdrop-blur-sm rounded-xl border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all uppercase tracking-widest font-mono"
                                             />
                                         </div>

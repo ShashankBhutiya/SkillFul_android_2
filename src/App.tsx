@@ -13,6 +13,7 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import ForceUpdateModal from "@/components/ForceUpdateModal";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { PENDING_JOIN_KEY } from "@/services/institutionService";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -41,6 +42,14 @@ const NavigationTracker = () => {
     if (ref) {
       localStorage.setItem("pending_referral_code", ref);
       console.log("Captured pending referral code:", ref);
+    }
+
+    // College join code, shared by a placement cell as ?join=CODE. Held until
+    // the user is signed in, since enrolment needs an auth uid.
+    const join = params.get("join");
+    if (join) {
+      localStorage.setItem(PENDING_JOIN_KEY, join);
+      console.log("Captured pending join code:", join);
     }
   }, []);
 
