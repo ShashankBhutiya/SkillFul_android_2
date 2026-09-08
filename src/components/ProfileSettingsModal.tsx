@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { useUserMode } from "@/hooks/useUserMode";
 import type { UserMode } from "@/config/userMode";
+import CallConsentCheckbox from "@/components/CallConsentCheckbox";
+import { isValidCallPhone, normalizeCallPhone } from "@/config/callConsent";
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -35,6 +37,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
     const [phoneConsent, setPhoneConsent] = useState(false);
     const [emailConsent, setEmailConsent] = useState(false);
     const [whatsappConsent, setWhatsappConsent] = useState(false);
+    const [callConsent, setCallConsent] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
@@ -62,6 +65,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
             setPhoneConsent(!!user.phoneConsent);
             setEmailConsent(!!user.emailConsent);
             setWhatsappConsent(!!user.whatsappConsent);
+            setCallConsent(!!user.callConsent);
             setError("");
             setSuccess("");
             setIsVerifying(false);
@@ -135,6 +139,12 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
         setSuccess("");
         setLoading(true);
 
+        if (callConsent && !isValidCallPhone(phone)) {
+            setError("For phone calls, include your country code, such as +919876543210.");
+            setLoading(false);
+            return;
+        }
+
         // Optional basic format check: if they entered a phone number, make sure it has some digits
         if (phone.trim() && !/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
             setError("Please enter a valid phone number (e.g. +15550000000)");
@@ -153,7 +163,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                 whatsappConsent,
                 finalVerified,
                 firstName.trim(),
-                lastName.trim()
+                lastName.trim(),
+                user.callConsentAvailable ? callConsent : undefined
             );
             if (result.error) {
                 setError(result.error);
@@ -267,6 +278,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                         value={phone}
                                         onChange={(e) => {
                                             setPhone(e.target.value);
+                                            if (normalizeCallPhone(e.target.value) !== normalizeCallPhone(phone)) setCallConsent(false);
                                             // Reset verifying states when typing
                                             if (isVerifying) {
                                                 setIsVerifying(false);
@@ -360,6 +372,9 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+
+                            <CallConsentCheckbox checked={callConsent} onChange={setCallConsent} disabled={loading || !user.callConsentAvailable} />
+                            {!user.callConsentAvailable && <p role="status" className="text-xs text-muted-foreground">Call preferences could not be loaded. Please try again later, or contact shashank@skillfulglobal.com to withdraw permission.</p>}
 
                             {/* WhatsApp Updates Consent */}
                             <div

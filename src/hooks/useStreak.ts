@@ -13,7 +13,6 @@ import {
   EMPTY_STREAK,
 } from "@/services/streakService";
 import {
-  isNativePlatform,
   scheduleLocalNotification,
   sendCrossPlatformNotification,
   NotificationTemplates,
@@ -22,15 +21,15 @@ import {
 /**
  * Module-level rather than a ref: the guard has to hold across every
  * useStreak() instance, since more than one component mounts the hook and
- * any of them may call recordVisit().
+ * any of them may call recordMilestonePractice().
  */
 let checkInFlight = false;
 
 /**
- * Streak state for the current user, plus a `recordVisit` trigger.
+ * Streak state for the current user, plus a `recordMilestonePractice` trigger.
  *
- * `recordVisit` is idempotent per local day, so callers can fire it freely
- * (on mount, after a quiz, on resume) without double-counting.
+ * `recordMilestonePractice` is idempotent per local day, so callers can fire it freely
+ * (after completing five answered scenarios) without double-counting.
  */
 export function useStreak() {
   const { user } = useAuth();
@@ -41,8 +40,7 @@ export function useStreak() {
   );
   const [lastResult, setLastResult] = useState<CheckInResult | null>(null);
 
-  // Keep every mounted useStreak() in step: a check-in from one component
-  // must update the header badge and the home card together.
+  // Keep every mounted useStreak() instance in step.
   useEffect(() => {
     if (!userId) return;
     return subscribeToStreak(() => setStreak(getStreak(userId)));
@@ -54,8 +52,9 @@ export function useStreak() {
     let cancelled = false;
 
     setStreak(getStreak(userId));
-    pullStreakFromDB(userId).then((next) => {
-      if (!cancelled) setStreak(next);
+    pullStreakFromDB(userId).then(() => {
+      // Practice may finish while hydration is pending; read the latest cache.
+      if (!cancelled) setStreak(getStreak(userId));
     });
 
     return () => {
@@ -63,10 +62,10 @@ export function useStreak() {
     };
   }, [userId]);
 
-  const recordVisit = useCallback(async () => {
-    if (!userId || checkInFlight) return null;
+  const recordMilestonePractice = useCallback(async () => {
+    if (!userId || user?.isGuest || checkInFlight) return null;
 
-    // Cheap guard: skip the async path entirely on repeat visits.
+    // Cheap guard: skip the async path entirely on repeat milestone practice.
     if (getStreak(userId).lastActiveDate === todayKey()) return null;
 
     checkInFlight = true;
@@ -81,7 +80,7 @@ export function useStreak() {
     } finally {
       checkInFlight = false;
     }
-  }, [userId]);
+  }, [userId, user?.isGuest]);
 
   const spendFreeze = useCallback(async () => {
     if (!userId) return;
@@ -115,7 +114,7 @@ export function useStreak() {
   return {
     streak,
     lastResult,
-    recordVisit,
+    recordMilestonePractice,
     spendFreeze,
     grantFreezes,
     acknowledgeResult,

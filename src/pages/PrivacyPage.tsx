@@ -95,10 +95,13 @@ const SECTIONS = [
             <strong>Account Credentials:</strong> When you register an account, we collect your email address and secure password hashes to authenticate your sessions.
           </li>
           <li>
-            <strong>Contact Channels:</strong> We collect your mobile phone number and direct consents to send SMS alerts, streak reminders, and learning tips.
+            <strong>Contact Channels:</strong> If you opt in, we collect your mobile phone number and communication preference to send learning updates and reminders through the selected channel.
           </li>
           <li>
-            <strong>Learning Activity:</strong> We record your correct/incorrect quiz swipes, category completions, average response times, and general progress metrics. This information is saved to display performance stats and target recommendations.
+            <strong>Phone Call Preferences:</strong> If you separately opt in to calls, we record the phone number, your choice, the consent wording and version, where the choice was made, and the time it was recorded. We keep a history of grants and withdrawals to respect your preferences. Existing accounts are not opted in automatically.
+          </li>
+          <li>
+            <strong>Learning Activity:</strong> We record your correct/incorrect quiz responses, category completions, response-time data, and general progress metrics. We also record a practice-streak day only when you complete a milestone of five answered scenarios; simply opening the app does not create a streak record. This information is used to display performance stats, milestones, and recommendations.
           </li>
           <li>
             <strong>Referral Codes:</strong> If you use a friend's referral link or code, we associate that code with your account to calculate bonus milestones and community rewards.
@@ -120,7 +123,7 @@ const SECTIONS = [
         <ul className="list-disc pl-5 space-y-2">
           <li><strong>Operation:</strong> Authenticate users, restore progress across devices, and deliver core learning scenarios.</li>
           <li><strong>Personalization:</strong> Run interactive elements such as our Companion Mascot recommendations and smart coaching tips.</li>
-          <li><strong>Reminders & Practice Habits:</strong> Deliver daily practice alerts via SMS (if opted in) and notification cards to maintain learning streaks.</li>
+          <li><strong>Reminders & Practice Habits:</strong> Deliver optional reminders through the communication channels you select and in-app notification cards. Streak-related reminders are based on completed practice milestones, not app opens.</li>
           <li><strong>Analytics & Improvement:</strong> Analyze trends and usage statistics to debug issues, adjust difficulty settings, and refine content categories.</li>
         </ul>
       </div>
@@ -186,12 +189,18 @@ const SECTIONS = [
   },
   {
     id: "sms",
-    title: "9. SMS Communications",
+    title: "9. Optional Messages & Phone Calls",
     icon: MessageSquare,
     content: (
       <div className="space-y-3">
         <p>
           SMS reminders are optional and are sent only to users who provide consent.
+        </p>
+        <p>
+          Phone calls from Skillful about learning progress, product updates, or support require a separate call opt-in. Providing a number or agreeing to WhatsApp or SMS updates does not grant call permission. You can use Skillful without agreeing to calls.
+        </p>
+        <p>
+          To withdraw call permission, turn off the phone-call option in Profile Settings and save, tell us during a call, or email shashank@skillfulglobal.com. Changing your phone number withdraws permission for the previous number; opt in again if you want calls at the new number.
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li>Message frequency may vary.</li>
@@ -322,7 +331,7 @@ const SECTIONS = [
     content: (
       <div className="space-y-3">
         <p>
-          We use local browser storage and cookie tokens to keep you logged in across sessions, store quiz settings (such as volume levels or mascot preferences), and remember your dark/light theme options. These files do not run programs or download spyware. You can clear cookies or limit local storage in your browser settings, though doing so might require signing in again.
+          We use local browser storage and cookie tokens to keep you logged in across sessions, store quiz settings (such as volume levels or mascot preferences), remember your theme options, and temporarily cache progress and practice-streak data. Account streak data may also be synchronized with our database so it is available across devices. These files do not run programs or download spyware. You can clear cookies or limit local storage in your browser settings, though doing so might require signing in again or temporarily reset locally cached data.
         </p>
       </div>
     )
@@ -413,13 +422,13 @@ const PrivacyPage = () => {
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                Last updated: June 4, 2026
+                Last updated: September 8, 2026
               </span>
               <span className="hidden sm:inline">•</span>
               <span>Effective: Immediate upon user sign-up</span>
             </div>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg">
-              At Skillful, we are committed to protecting your privacy. This Privacy Policy details how we handle user accounts, data collection, analytical tracking, SMS alerts, and your legal rights over your personal profile data.
+              At Skillful, we are committed to protecting your privacy. This Privacy Policy explains how we handle accounts, learning activity, practice milestones, notifications, analytics, and your rights over personal data.
             </p>
           </motion.div>
 

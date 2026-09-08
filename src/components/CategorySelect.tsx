@@ -5,21 +5,57 @@ import { categories as questionCategories } from "@/data/questions";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPracticedIds } from "@/services/progressService";
 import { LOCKED_CATEGORY_IDS, REFERRALS_PER_UNLOCK } from "@/config/lockedCategories";
-import { MODE_SECTIONS, isCategoryInMode, type CategoryAudience } from "@/config/userMode";
+import { getModeSections, isCategoryInMode, type CategoryAudience } from "@/config/userMode";
 import { useUserMode } from "@/hooks/useUserMode";
 
 type ExperienceLevel = "justStarted" | "workingLong" | null;
 import { MainLayout } from "@/components/layout/MainLayout";
 import { hapticLight, hapticError, hapticSuccess } from "@/hooks/useHaptics";
-import { Lock, MessageSquarePlus, Briefcase, Heart, GraduationCap, Sparkles, ChevronLeft, ChevronRight, Search, ArrowRight } from "lucide-react";
+import {
+  Lock,
+  MessageSquarePlus,
+  Briefcase,
+  Heart,
+  GraduationCap,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  ArrowRight,
+  Calculator,
+  Code2,
+  MessagesSquare,
+  Building2,
+  Check,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import ReferralModal from "./ReferralModal";
-import StreakCard from "@/components/streak/StreakCard";
-import { useStreak } from "@/hooks/useStreak";
 import { supabase } from "@/lib/supabase";
 import { SeoHead } from "@/components/SeoHead";
 import { CategoryIcon } from "@/lib/categoryIcons";
 
+const getSectionIcon = (sectionId: string): LucideIcon => {
+  switch (sectionId) {
+    case "aptitude":
+      return Calculator;
+    case "technical":
+      return Code2;
+    case "communication":
+      return MessagesSquare;
+    case "interview":
+      return Briefcase;
+    case "work_readiness":
+      return Building2;
+    case "campus_life":
+      return Heart;
+    case "professional":
+      return Briefcase;
+    case "personal":
+      return Heart;
+    default:
+      return Sparkles;
+  }
+};
 
 // Build a lookup map from actual question arrays for real-time counts
 const questionCountMap = new Map(
@@ -46,7 +82,6 @@ interface CategoryCardProps {
 
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const { user } = useAuth();
-  const { streak, checkedInToday } = useStreak();
   const { mode, ready: modeReady } = useUserMode();
 
   // The catalog is filtered by mode, not merely reordered: a student should
@@ -55,7 +90,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const modeCategories = categorySummaries.filter((c) =>
     isCategoryInMode((c as { audience?: CategoryAudience }).audience, mode)
   );
-  const sections = MODE_SECTIONS[mode];
 
   const skillOfTheDay = modeCategories.length > 0
     ? modeCategories[(new Date().getDate() + new Date().getMonth() * 31) % modeCategories.length]
@@ -99,8 +133,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
     hapticSuccess();
   };
 
-
-
   const filterCats = (cats: CategorySummary[]) =>
     searchQuery.trim()
       ? cats.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -114,8 +146,46 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
     return scoreB - scoreA;
   });
 
-  const personalCats = filterCats(sortedCategories.filter((c) => c.type === "Personal"));
-  const professionalCats = filterCats(sortedCategories.filter((c) => c.type !== "Personal"));
+  const modeSections = getModeSections(mode);
+
+  // Group categories into their respective sections based on active mode
+  const renderedSections = modeSections
+    .map((section) => {
+      let cats: CategorySummary[];
+      if (section.categoryIds && section.categoryIds.length > 0) {
+        const idSet = new Set(section.categoryIds);
+        cats = sortedCategories.filter((c) => idSet.has(c.id));
+      } else if (section.typeFilter) {
+        cats = sortedCategories.filter((c) => c.type === section.typeFilter);
+      } else {
+        cats = [];
+      }
+      const filtered = filterCats(cats);
+      return {
+        ...section,
+        categories: filtered,
+        icon: getSectionIcon(section.id),
+      };
+    })
+    .filter((section) => section.categories.length > 0);
+
+  // Fallback: check if any categories in modeCategories were not included
+  const renderedCatIdSet = new Set(
+    renderedSections.flatMap((s) => s.categories.map((c) => c.id))
+  );
+  const uncategorizedCats = filterCats(
+    sortedCategories.filter((c) => !renderedCatIdSet.has(c.id))
+  );
+
+  if (uncategorizedCats.length > 0) {
+    renderedSections.push({
+      id: "other",
+      title: "More Topics",
+      subtitle: "Additional skills & practice",
+      categories: uncategorizedCats,
+      icon: Sparkles,
+    });
+  }
 
   const renderCategoryList = (cats: CategorySummary[], startIndex: number, cardClassName?: string) =>
     cats.map((cat, i) => {
@@ -148,8 +218,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
 
   if (!experienceLoaded || !modeReady) return null;
 
-
-
   return (
     <MainLayout>
       <SeoHead
@@ -175,9 +243,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
               : "Short scenarios, one swipe at a time."}
           </p>
         </div>
-
-        {/* Daily streak */}
-        <StreakCard streak={streak} checkedInToday={checkedInToday} className="mb-6" />
 
         {/* Skill of the Day — a plain surface with a labelled row.
             The emphasis now comes from the label and the single filled
@@ -244,31 +309,28 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
         </div>
 
         <div className="flex flex-col gap-9">
-          <CategoryCarousel
-            title={sections.primary.title}
-            subtitle={sections.primary.subtitle}
-            icon={mode === "student" ? GraduationCap : Briefcase}
-            count={professionalCats.length}
-          >
-            {renderCategoryList(
-              professionalCats,
-              0,
-              "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
-            )}
-          </CategoryCarousel>
-
-          <CategoryCarousel
-            title={sections.secondary.title}
-            subtitle={sections.secondary.subtitle}
-            icon={mode === "student" ? Sparkles : Heart}
-            count={personalCats.length}
-          >
-            {renderCategoryList(
-              personalCats,
-              professionalCats.length,
-              "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
-            )}
-          </CategoryCarousel>
+          {renderedSections.map((section, sIdx) => {
+            let startIdx = 0;
+            for (let i = 0; i < sIdx; i++) {
+              startIdx += renderedSections[i].categories.length;
+            }
+            return (
+              <CategoryCarousel
+                key={section.id}
+                title={section.title}
+                subtitle={section.subtitle}
+                weightBadge={section.weightBadge}
+                icon={section.icon}
+                count={section.categories.length}
+              >
+                {renderCategoryList(
+                  section.categories,
+                  startIdx,
+                  "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
+                )}
+              </CategoryCarousel>
+            );
+          })}
         </div>
 
         <button
@@ -434,12 +496,10 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   );
 };
 
-// Need Check icon for the request-sent state
-import { Check } from "lucide-react";
-
 interface CategoryCarouselProps {
   title: string;
   subtitle: string;
+  weightBadge?: string;
   icon: LucideIcon;
   count: number;
   children: React.ReactNode;
@@ -447,13 +507,15 @@ interface CategoryCarouselProps {
 
 /**
  * Horizontally scrolling category section.
- *
- * Previously the Professional and Personal sections were two copies of
- * the same ~55 lines, each with its own ref, arrow state, scroll handler
- * and resize effect. They are one component now, so the scroll plumbing
- * exists once.
  */
-const CategoryCarousel = ({ title, subtitle, icon: Icon, count, children }: CategoryCarouselProps) => {
+const CategoryCarousel = ({
+  title,
+  subtitle,
+  weightBadge,
+  icon: Icon,
+  count,
+  children,
+}: CategoryCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -496,16 +558,25 @@ const CategoryCarousel = ({ title, subtitle, icon: Icon, count, children }: Cate
 
   return (
     <section>
-      {/* Section header sits directly on the page background. The old
-          version nested a bordered header inside a bordered card, which
-          gave every row two competing frames. */}
-      <div className="mb-4 flex items-center gap-2.5">
-        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
-        <h3 className="font-display text-[15px] font-semibold tracking-tight text-foreground">
-          {title}
-        </h3>
-        <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
-        <span className="ml-auto hidden text-xs text-muted-foreground sm:block">{subtitle}</span>
+      {/* Section header sits directly on the page background */}
+      <div className="mb-3.5 flex flex-col gap-1">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} />
+          <h3 className="font-display text-[15px] font-semibold tracking-tight text-foreground">
+            {title}
+          </h3>
+          {weightBadge && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-normal tabular-nums text-muted-foreground">
+              {weightBadge}
+            </span>
+          )}
+          <span className="text-xs tabular-nums text-muted-foreground">({count})</span>
+        </div>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       <div className="relative">

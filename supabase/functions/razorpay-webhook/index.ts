@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
+import { enforceRateLimit, getClientIp } from '../shared/rateLimit.ts'
 
 serve(async (req) => {
   // CORS handles are generally not needed for incoming third-party webhooks,
@@ -43,7 +44,23 @@ serve(async (req) => {
     )
 
     if (!isSignatureValid) {
-      console.warn('Webhook received but signature was invalid.')
+      console.warn(`Webhook received but signature was invalid (from ${getClientIp(req)}).`)
+
+      // Throttle only the *rejected* calls, and only after the signature check.
+      // A correctly signed webhook is never rate limited, which matters: this
+      // endpoint is how Razorpay tells us a subscription was cancelled or
+      // charged, and silently dropping those under a burst of retries would
+      // desynchronise our subscription state from theirs. Anything reaching
+      // this branch failed HMAC and cannot be Razorpay, so metering it by IP
+      // costs nothing legitimate.
+      const blocked = await enforceRateLimit({
+        name: 'razorpay-webhook-fail',
+        identifier: getClientIp(req),
+        limit: 20,
+        windowSeconds: 300,
+      })
+      if (blocked) return blocked
+
       return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), { status: 401 })
     }
 

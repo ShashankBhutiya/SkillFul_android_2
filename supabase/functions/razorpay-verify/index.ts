@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
 import { corsHeaders } from '../shared/cors.ts'
+import { enforceRateLimit } from '../shared/rateLimit.ts'
 
 serve(async (req) => {
   // 1. Handle CORS Preflight
@@ -34,6 +35,20 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // 2b. Throttle verification attempts per user.
+    //
+    // A success path here writes an active subscription, so this is the most
+    // attractive endpoint in the project to hammer. Ten attempts per ten
+    // minutes covers retries after a flaky network without leaving room to
+    // grind at the signature check.
+    const limited = await enforceRateLimit({
+      name: 'razorpay-verify',
+      identifier: user.id,
+      limit: 10,
+      windowSeconds: 600,
+    }, corsHeaders)
+    if (limited) return limited
 
     // 3. Extract parameters from POST request
     const { orderId, paymentId, signature, planType } = await req.json()
@@ -78,6 +93,19 @@ serve(async (req) => {
 
     if (!isValid) {
       console.warn(`Payment verification failed: Signature mismatch for user ${user.id}`)
+
+      // A second, tighter bucket counting only *failed* signatures. The limit
+      // above caps overall volume; this one reacts to the shape of an attack
+      // rather than its rate, so someone guessing signatures is cut off long
+      // before someone legitimately retrying a dropped response is.
+      const blocked = await enforceRateLimit({
+        name: 'razorpay-verify-fail',
+        identifier: user.id,
+        limit: 5,
+        windowSeconds: 900,
+      }, corsHeaders)
+      if (blocked) return blocked
+
       return new Response(
         JSON.stringify({ error: 'Payment signature verification failed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

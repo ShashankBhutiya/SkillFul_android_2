@@ -123,7 +123,7 @@ export const MilestoneCelebration = ({
           </div>
           <div className="text-sm font-semibold text-foreground flex items-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/20 text-success text-[10px] font-bold">✓</span>
-            <span>Completed 5 / 5 Correct Answers</span>
+            <span>Completed 5 / 5 Practice Scenarios</span>
           </div>
         </div>
 

@@ -7,6 +7,7 @@ import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
 import { PLANS, razorpayService } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { extractEdgeFunctionError } from "@/lib/edgeFunctionError";
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -21,25 +22,6 @@ const loadRazorpayScript = () => {
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
-};
-
-const extractErrorMessage = async (error: any): Promise<string> => {
-  if (!error) return "An unknown error occurred.";
-  if (error.context instanceof Response) {
-    try {
-      const responseClone = error.context.clone();
-      const errorData = await responseClone.json();
-      return errorData.error || errorData.message || error.message;
-    } catch (_) {
-      try {
-        const text = await error.context.clone().text();
-        return text || error.message;
-      } catch (_) {
-        return error.message;
-      }
-    }
-  }
-  return error.message || "Failed to perform operation.";
 };
 
 const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
@@ -92,7 +74,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
       });
 
       if (error || !data) {
-        const message = await extractErrorMessage(error);
+        const message = await extractEdgeFunctionError(error);
         throw new Error(message);
       }
 
@@ -121,7 +103,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
             });
 
             if (verifyError || !verifyData || !verifyData.success) {
-              const message = await extractErrorMessage(verifyError);
+              const message = await extractEdgeFunctionError(verifyError);
               throw new Error(message);
             }
 

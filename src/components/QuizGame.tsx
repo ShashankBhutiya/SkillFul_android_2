@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { categories, Category, Question } from "@/data/questions";
 import { savePracticedIds, getPracticedIds } from "@/services/progressService";
 import { submitScore } from "@/services/leaderboardService";
-import { registerPracticeSession } from "@/services/notificationService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStreak } from "@/hooks/useStreak";
+import StreakCelebration from "@/components/streak/StreakCelebration";
 import SwipeCard from "./SwipeCard";
 import QuizSummary from "./QuizSummary";
 import FloatingOrbs from "./FloatingOrbs";
@@ -95,6 +96,7 @@ export interface AnsweredQuestion {
 
 const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }: QuizGameProps) => {
   const { user } = useAuth();
+  const { recordMilestonePractice, lastResult, acknowledgeResult } = useStreak();
   const category = categories.find((c) => c.id === categoryId)!;
   const difficultyQuestions = getQuestionsForDifficulty(category, difficulty);
 
@@ -132,6 +134,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   // --- Milestone popup ---
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneNumber, setMilestoneNumber] = useState(0);
+  const [pendingPracticeMilestone, setPendingPracticeMilestone] = useState<number | null>(null);
 
   // --- Timing ---
   const sessionStartRef = useRef(Date.now());
@@ -151,8 +154,6 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   useEffect(() => {
     if (isFinished && correctIdsRef.current.length > 0) {
       savePracticedIds(user.id, categoryId, correctIdsRef.current);
-      // Register this practice session in daily streak & notifications (works for guests too!)
-      registerPracticeSession();
     }
 
     // Submit score to leaderboard (both guests and authenticated users)
@@ -198,7 +199,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     setTimeout(() => setParticles([]), 1200);
   }, []);
 
-  /** Get total answered count (unique, correct answers only don't double-count re-queued) */
+  /** Every answered scenario counts toward a practice milestone, including retries. */
   const totalAnswered = answeredQuestions.length;
 
   const handleSwipe = useCallback(
@@ -207,6 +208,11 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
       const userAnswer = direction === "right";
       const isCorrect = userAnswer === question.answer;
       const responseTimeMs = Date.now() - questionStartRef.current;
+      const newAnsweredCount = totalAnswered + 1;
+      // A practice milestone measures effort, not correctness. A user reaches
+      // it after every five answered scenarios, including answers they learn
+      // from and retry later.
+      const isPracticeMilestone = newAnsweredCount % 5 === 0;
 
       setAnsweredQuestions((prev) => [...prev, { question, correct: isCorrect, responseTimeMs }]);
 
@@ -262,15 +268,12 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
           setTimeout(() => setComboPopup(null), 800);
         }
 
-        // Check milestone (every 5 correct questions answered)
-        const isMilestone = newCorrectCount > 0 && newCorrectCount % 5 === 0;
-
-        if (isMilestone) {
+        if (isPracticeMilestone) {
+          // A streak day requires five answered practice scenarios.
+          void recordMilestonePractice();
           // Save checkpoint to database/localStorage
           savePracticedIds(user.id, categoryId, correctIdsRef.current).catch(() => {});
         }
-
-        const newTotal = totalAnswered + 1;
 
         // Increment global cumulative counter
         incrementGlobalAnsweredCount();
@@ -280,9 +283,9 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
           if (currentIndex + 1 >= questions.length) {
             setIsFinished(true);
-          } else if (isMilestone) {
+          } else if (isPracticeMilestone) {
             // Show milestone popup
-            setMilestoneNumber(newCorrectCount);
+            setMilestoneNumber(newAnsweredCount);
             setShowMilestone(true);
             hapticCelebration();
           } else {
@@ -300,11 +303,15 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         setShowExplanation(true);
         playWrong();
         hapticError();
+        if (isPracticeMilestone) {
+          void recordMilestonePractice();
+          setPendingPracticeMilestone(newAnsweredCount);
+        }
         setQuestions((prev) => [...prev, question]);
         setTimeout(() => setIsShaking(false), 500);
       }
     },
-    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, totalAnswered, user.isGuest]
+    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, totalAnswered, user.isGuest, recordMilestonePractice]
   );
 
   const dismissExplanation = useCallback(() => {
@@ -312,10 +319,15 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     setShowFeedback(null);
     if (currentIndex + 1 >= questions.length) {
       setIsFinished(true);
+    } else if (pendingPracticeMilestone !== null) {
+      setMilestoneNumber(pendingPracticeMilestone);
+      setPendingPracticeMilestone(null);
+      setShowMilestone(true);
+      hapticCelebration();
     } else {
       setCurrentIndex((i) => i + 1);
     }
-  }, [currentIndex, questions.length]);
+  }, [currentIndex, pendingPracticeMilestone, questions.length]);
 
   const dismissMilestone = useCallback(() => {
     setShowMilestone(false);
@@ -337,6 +349,8 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     const hasIntermediate = category.questions.length > 50;
     const totalSessionTime = Math.floor((Date.now() - sessionStartRef.current) / 1000);
     return (
+      <>
+      <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />
       <QuizSummary
         category={category}
         score={score}
@@ -364,6 +378,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         onGoEasy={() => onSwitchDifficulty("easy")}
         onSwitchCategory={onBack}
       />
+      </>
     );
   }
 
@@ -371,6 +386,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
   return (
     <div className={`h-[100dvh] flex flex-col relative overflow-hidden ${isShaking ? "shake-animation" : ""}`}>
+      {!showMilestone && !showFeedback && <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />}
       <FloatingOrbs />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 z-0" />
 

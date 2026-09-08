@@ -7,6 +7,7 @@ import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
 import { PLANS } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { extractEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SeoHead } from "@/components/SeoHead";
 
@@ -69,7 +70,9 @@ const PremiumPage = () => {
       });
 
       if (error || !data) {
-        throw new Error(error?.message || "Failed to create payment order.");
+        throw new Error(
+          await extractEdgeFunctionError(error, "Failed to create payment order.")
+        );
       }
 
       const options = {
@@ -97,7 +100,9 @@ const PremiumPage = () => {
             });
 
             if (verifyError || !verifyData || !verifyData.success) {
-              throw new Error(verifyError?.message || "Signature verification failed.");
+              throw new Error(
+                await extractEdgeFunctionError(verifyError, "Signature verification failed.")
+              );
             }
 
             hapticSuccess();

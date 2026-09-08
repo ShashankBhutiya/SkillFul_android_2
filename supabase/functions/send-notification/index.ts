@@ -10,11 +10,14 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit, getClientIp } from "../shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Expose-Headers":
+    "Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining",
 };
 
 interface PushRequest {
@@ -197,6 +200,28 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Per-caller ceiling, applied before the body is even parsed.
+    //
+    // NOTE: this function does not authenticate its caller — it trusts the
+    // userId in the request body and then acts with the service role key. That
+    // is a separate and more serious problem than throughput, and the limit
+    // below does not fix it; it only bounds the damage. Until an auth check is
+    // added, this is the only thing standing between a leaked function URL and
+    // an unbounded push flood.
+    //
+    // failOpen is false here for the same reason. Everywhere else a limiter
+    // outage degrading to "allow" is the right call; on an endpoint anyone can
+    // invoke, an unmetered flood is worse than a paused notification.
+    const callerIp = getClientIp(req);
+    const ipLimited = await enforceRateLimit({
+      name: "send-notification-ip",
+      identifier: callerIp,
+      limit: 30,
+      windowSeconds: 60,
+      failOpen: false,
+    }, corsHeaders);
+    if (ipLimited) return ipLimited;
+
     const { userId, title, body, data, imageUrl } =
       (await req.json()) as PushRequest;
 
@@ -206,6 +231,20 @@ serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Second bucket, keyed on the recipient rather than the sender. The IP
+    // limit above caps how much one source can send in total; this caps how
+    // much any single user can be sent, so a distributed caller still cannot
+    // bury one person's notification inbox. Ten an hour is well clear of the
+    // streak reminders and tips this actually sends.
+    const recipientLimited = await enforceRateLimit({
+      name: "send-notification-user",
+      identifier: userId,
+      limit: 10,
+      windowSeconds: 3600,
+      failOpen: false,
+    }, corsHeaders);
+    if (recipientLimited) return recipientLimited;
 
     // Get user's push tokens from Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

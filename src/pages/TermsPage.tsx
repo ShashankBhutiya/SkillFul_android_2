@@ -100,23 +100,20 @@ const SECTIONS = [
   },
   {
     id: "communications",
-    title: "5. SMS & Email Communications",
+    title: "5. Optional Communications & Reminders",
     icon: MessageSquare,
     content: (
       <div className="space-y-3">
         <p>
-          We provide optional alerts and notifications, including daily SMS learning reminders, to help users build consistent learning habits.
+          We provide optional alerts and notifications to help users build consistent learning habits. A practice streak day is earned only after completing a milestone of five answered scenarios; opening the app alone does not earn or extend a streak.
         </p>
         <ul className="list-disc pl-5 space-y-2">
           <li>
-            <strong>Consent:</strong> By providing your mobile number and opting in, you authorize us to send text messages regarding your account progress and daily reminders.
+            <strong>Consent:</strong> By providing your mobile number and opting in, you authorize us to send learning reminders and account updates through the communication channel you select.
           </li>
-          <li>
-            <strong>Charges:</strong> Standard message and data rates applied by your carrier may apply to all received SMS.
-          </li>
-          <li>
-            <strong>Opt-Out:</strong> You can revoke your text consent at any time by disabling SMS reminders in your profile configuration or by replying <strong>"STOP"</strong> to any SMS received from our system.
-          </li>
+          <li><strong>Charges:</strong> Carrier message or data rates may apply where relevant.</li>
+          <li><strong>Opt-Out:</strong> You can withdraw consent at any time from your account preferences or by using the opt-out instructions in a message.</li>
+          <li><strong>Phone Calls:</strong> Permission for occasional calls about learning progress, product updates, or support is optional and separate from SMS, WhatsApp, and email. To withdraw it, turn off the call option in Profile Settings and save, tell us during a call, or contact shashank@skillfulglobal.com. Declining calls does not restrict access to Skillful.</li>
         </ul>
       </div>
     )
@@ -338,7 +335,7 @@ const TermsPage = () => {
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                Last updated: June 23, 2026
+                Last updated: September 8, 2026
               </span>
               <span className="hidden sm:inline">•</span>
               <span>Effective: Immediate upon account creation</span>

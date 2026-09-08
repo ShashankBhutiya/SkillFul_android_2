@@ -40,7 +40,6 @@ import {
   schedule5SecondTestReminder,
   NotificationItem,
   NotificationSettings,
-  getDailyStreak,
   pullNotificationsFromDB,
 } from "@/services/notificationService";
 import {
@@ -52,16 +51,17 @@ import {
   NotificationTemplates,
 } from "@/services/pushNotificationService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStreak } from "@/hooks/useStreak";
 
 export const NotificationCenter = () => {
   const { user } = useAuth();
+  const { streak } = useStreak();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"inbox" | "settings">("inbox");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings());
   const [unreadCount, setUnreadCount] = useState(0);
   const [testModeActive, setTestModeActive] = useState(false);
-  const [streak, setStreak] = useState(0);
   const navigate = useNavigate();
   
   const { isInstallable, isIOSInstallable } = usePwaInstallState();
@@ -91,7 +91,6 @@ export const NotificationCenter = () => {
     setNotifications(getNotifications());
     setSettings(getNotificationSettings());
     setUnreadCount(getUnreadCount());
-    setStreak(getDailyStreak().currentStreak);
   };
 
   useEffect(() => {
@@ -100,12 +99,10 @@ export const NotificationCenter = () => {
     // Listen to custom events from our service
     window.addEventListener("skillful_notifications_updated", loadData);
     window.addEventListener("skillful_settings_changed", loadData);
-    window.addEventListener("skillful_streak_changed", loadData);
 
     return () => {
       window.removeEventListener("skillful_notifications_updated", loadData);
       window.removeEventListener("skillful_settings_changed", loadData);
-      window.removeEventListener("skillful_streak_changed", loadData);
     };
   }, []);
 
@@ -183,7 +180,7 @@ export const NotificationCenter = () => {
 
     if (isNativePlatform()) {
       scheduleLocalNotification(
-        NotificationTemplates.streakReminder(getDailyStreak().currentStreak || 1),
+        NotificationTemplates.streakReminder(streak.current || 1),
         5000,
         7777
       );
@@ -323,9 +320,9 @@ export const NotificationCenter = () => {
               <div className="px-5 py-4.5 border-b border-border/40 flex items-center justify-between shrink-0 bg-muted/20">
                 <div className="flex items-center gap-2">
                   <h3 className="font-display font-extrabold text-base tracking-tight">Notifications</h3>
-                  {streak > 0 && (
+                  {streak.current > 0 && (
                     <span className="inline-flex items-center gap-0.5 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-600 dark:bg-orange-500/20 dark:text-orange-400">
-                      🔥 {streak}d Streak
+                      🔥 {streak.current}d Streak
                     </span>
                   )}
                 </div>

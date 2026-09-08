@@ -1,7 +1,7 @@
 /**
- * Daily usage streak service.
+ * Daily milestone practice streak service.
  *
- * Tracks consecutive days of app usage, with a pool of "streak freezes"
+ * Tracks consecutive days of milestone practice, with a pool of "streak freezes"
  * that absorb missed days automatically so a single skipped day doesn't
  * wipe a long streak.
  *
@@ -163,10 +163,8 @@ export function clearGuestStreakCache() {
 
 // ───────── Change notification ─────────
 //
-// The streak is rendered in more than one place at once (header badge and
-// the home-screen card). Without a shared channel each useStreak() call
-// would keep its own copy, and a check-in triggered by one would leave the
-// others showing a stale number until they happened to re-mount.
+// More than one component may need the current streak. Without a shared
+// channel each useStreak() call would keep its own copy and show stale data.
 
 type Subscriber = () => void;
 
@@ -249,7 +247,7 @@ function dateKeyOffsetFrom(key: string, offset: number): string {
 }
 
 /**
- * Record today's visit and advance the streak.
+ * Record today's completed practice milestone and advance the streak.
  *
  * Safe to call repeatedly — only the first call each local day changes
  * the streak count.
@@ -313,7 +311,7 @@ export function getStreak(userId?: string): StreakState {
 }
 
 /**
- * Record a visit for today and persist it.
+ * Record a completed practice milestone for today and persist it.
  *
  * Returns the full result so the UI can celebrate a milestone, warn that
  * freezes were spent, or stay quiet when it's a repeat visit.

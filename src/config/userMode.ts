@@ -81,7 +81,106 @@ export function isCategoryInMode(
     return audience === mode;
 }
 
-/** Section headings differ per mode so the catalog reads right to each audience. */
+export interface ModeSection {
+    id: string;
+    title: string;
+    subtitle: string;
+    weightBadge?: string;
+    categoryIds?: string[];
+    typeFilter?: "Professional" | "Personal";
+}
+
+export const STUDENT_SECTIONS: ModeSection[] = [
+    {
+        id: "aptitude",
+        title: "Aptitude & Reasoning",
+        subtitle: "The first-round filter most students are eliminated by.",
+        weightBadge: "20% weightage",
+        categoryIds: ["aptitude_reasoning"],
+    },
+    {
+        id: "technical",
+        title: "Technical Fundamentals",
+        subtitle: "CS core — DSA, DBMS, OS, networks, OOP — plus interview handling.",
+        weightBadge: "30% weightage",
+        categoryIds: [
+            "dsa_fundamentals",
+            "dbms_sql",
+            "operating_systems",
+            "computer_networks",
+            "oop_programming",
+            "tech_interview_readiness",
+        ],
+    },
+    {
+        id: "communication",
+        title: "Communication",
+        subtitle: "Verbal ability, group discussions, presenting and written English.",
+        weightBadge: "20% weightage",
+        categoryIds: [
+            "english_verbal",
+            "group_discussion",
+            "public_speaking",
+            "email_writing",
+        ],
+    },
+    {
+        id: "interview",
+        title: "Interview Craft",
+        subtitle: "HR rounds, resume quality and knowing the company they applied to.",
+        weightBadge: "20% weightage",
+        categoryIds: [
+            "hr_behavioural",
+            "resume_linkedin",
+            "placements",
+            "business_awareness",
+        ],
+    },
+    {
+        id: "work_readiness",
+        title: "Work Readiness",
+        subtitle: "Etiquette and habits that decide whether the offer survives probation.",
+        weightBadge: "10% weightage",
+        categoryIds: [
+            "corporate_etiquette",
+            "internships",
+            "study_strategy",
+        ],
+    },
+    {
+        id: "campus_life",
+        title: "Campus & Life",
+        subtitle: "Money, friendships, mental health & digital safety.",
+        categoryIds: [
+            "student_money",
+            "peer_pressure",
+            "student_burnout",
+            "online_reputation",
+            "student_scams",
+        ],
+    },
+];
+
+export const PROFESSIONAL_SECTIONS: ModeSection[] = [
+    {
+        id: "professional",
+        title: "Professional",
+        subtitle: "Career & workplace",
+        typeFilter: "Professional",
+    },
+    {
+        id: "personal",
+        title: "Personal",
+        subtitle: "Life & relationships",
+        typeFilter: "Personal",
+    },
+];
+
+export function getModeSections(mode: UserMode): ModeSection[] {
+    return mode === "student" ? STUDENT_SECTIONS : PROFESSIONAL_SECTIONS;
+}
+
+/** Section headings differ per mode so the catalog reads right to each audience (retained for backward compatibility). */
 export const MODE_SECTIONS: Record<
     UserMode,
     { primary: { title: string; subtitle: string }; secondary: { title: string; subtitle: string } }

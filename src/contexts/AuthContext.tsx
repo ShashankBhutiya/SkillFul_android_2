@@ -9,6 +9,8 @@ import { toast } from "@/hooks/use-toast";
 import { isUserMode, type UserMode } from "@/config/userMode";
 import { broadcastUserMode } from "@/hooks/useUserMode";
 import { applyPendingJoinCode } from "@/services/institutionService";
+import { CALL_CONSENT_VERSION, isValidCallPhone, normalizeCallPhone } from "@/config/callConsent";
+import { getCallConsent, saveCallConsent } from "@/services/callConsentService";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
 function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
@@ -32,6 +34,9 @@ export interface AppUser {
     emailConsent?: boolean;
     phoneVerified?: boolean;
     whatsappConsent?: boolean;
+    callConsent?: boolean;
+    callConsentAvailable?: boolean;
+    callConsentUpdatedAt?: string;
     firstName?: string;
     lastName?: string;
     isPremium: boolean;
@@ -52,7 +57,8 @@ interface AuthContextType {
         phone?: string,
         phoneConsent?: boolean,
         whatsappConsent?: boolean,
-        userMode?: UserMode
+        userMode?: UserMode,
+        callConsent?: boolean
     ) => Promise<{ error?: string }>;
     signIn: (email: string, password: string) => Promise<{ error?: string }>;
     signInWithGoogle: (referralCode?: string) => Promise<{ error?: string }>;
@@ -67,7 +73,8 @@ interface AuthContextType {
         whatsappConsent: boolean,
         phoneVerified?: boolean,
         firstName?: string,
-        lastName?: string
+        lastName?: string,
+        callConsent?: boolean
     ) => Promise<{ error?: string }>;
     sendPhoneVerificationOTP: (phone: string) => Promise<{ success: boolean; error?: string }>;
     confirmPhoneVerificationOTP: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
@@ -128,12 +135,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         .eq("id", uid)
                         .maybeSingle(),
                     supabase.rpc("get_valid_referrals", { referrer_id: uid }),
+                    getCallConsent(uid),
                 ]),
                 6000,
                 "Profile fetch"
             );
 
-            const [profileResult, countResult] = result;
+            const [profileResult, countResult, callResult] = result;
             const profile = profileResult.status === "fulfilled" ? (profileResult.value.data as any) : null;
             const count = countResult.status === "fulfilled" ? countResult.value.data : 0;
 
@@ -150,6 +158,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 emailConsent: profile?.email_consent ?? false,
                 phoneVerified: profile?.phone_verified ?? false,
                 whatsappConsent: profile?.whatsapp_consent ?? false,
+                callConsent: callResult.status === "fulfilled" && callResult.value?.enabled === true,
+                callConsentAvailable: callResult.status === "fulfilled",
+                callConsentUpdatedAt: callResult.status === "fulfilled" ? callResult.value?.updated_at : undefined,
                 firstName: profile?.first_name || "",
                 lastName: profile?.last_name || "",
                 isPremium,
@@ -335,9 +346,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone?: string,
         phoneConsent?: boolean,
         whatsappConsent?: boolean,
-        userMode?: UserMode
+        userMode?: UserMode,
+        callConsent = false
     ): Promise<{ error?: string }> => {
         if (!supabase) return { error: "Supabase is not configured" };
+
+        if (callConsent && !isValidCallPhone(phone || "")) {
+            return { error: "For phone calls, enter a valid number with its country code, such as +919876543210." };
+        }
 
         let data: any, error: any;
         try {
@@ -357,6 +373,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             phone_consent: phoneConsent,
                             email_consent: emailConsent,
                             whatsapp_consent: whatsappConsent,
+                            call_consent: callConsent,
+                            call_consent_phone: callConsent ? normalizeCallPhone(phone || "") : null,
+                            call_consent_version: CALL_CONSENT_VERSION,
                             referred_by_code: referralCode,
                             user_mode: userMode,
                         }
@@ -521,11 +540,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         whatsappConsent: boolean,
         phoneVerified?: boolean,
         firstName?: string,
-        lastName?: string
+        lastName?: string,
+        callConsent?: boolean
     ): Promise<{ error?: string }> => {
         if (!supabase || user.isGuest) return { error: "Must be logged in" };
 
         try {
+            // Save call preferences first: withdrawal must not depend on a
+            // separate profile write succeeding. The server records the time.
+            if (callConsent === false) await saveCallConsent(false, phone);
             const updatePayload: any = {
                 phone,
                 phone_consent: phoneConsent,
@@ -548,7 +571,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .eq("id", user.id);
 
             if (error) throw error;
-            
+            if (callConsent === true) await saveCallConsent(true, phone);
+
             await refreshProfile();
             return {};
         } catch (err: any) {

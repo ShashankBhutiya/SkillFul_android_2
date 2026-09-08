@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { corsHeaders } from '../shared/cors.ts'
+import { enforceRateLimit } from '../shared/rateLimit.ts'
 
 serve(async (req) => {
   // 1. Handle CORS Preflight
@@ -33,6 +34,20 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // 2b. Throttle order creation per user.
+    //
+    // Each call hits Razorpay's live Orders API, so an unmetered loop here
+    // burns our API quota and litters the dashboard with dead orders. A real
+    // subscriber creates one order, occasionally a couple more after a failed
+    // card, so five in ten minutes is far above honest use.
+    const limited = await enforceRateLimit({
+      name: 'razorpay-checkout',
+      identifier: user.id,
+      limit: 5,
+      windowSeconds: 600,
+    }, corsHeaders)
+    if (limited) return limited
 
     // 3. Extract planType details from POST request
     const { planType } = await req.json()
