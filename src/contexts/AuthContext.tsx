@@ -104,10 +104,9 @@ function makeGuestUser(): AppUser {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AppUser>(makeGuestUser());
+    const [user, setUser] = useState<AppUser>(makeGuestUser);
     const [isLoading, setIsLoading] = useState(true);
     const isLoadingRef = useRef(true); // mirror for use in timeout closures
-    const initialSessionHandled = useRef(false);
 
     // Helper: stop loading and update the ref mirror
     const stopLoading = useCallback(() => {
@@ -190,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         let cancelled = false;
+        let sessionRevision = 0;
+        let profileTimer: ReturnType<typeof setTimeout> | undefined;
 
         const handleDeepLink = async (urlStr: string) => {
             try {
@@ -242,7 +243,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         };
 
-        const handleSession = async (session: Session | null) => {
+        const hydrateSession = async (session: Session, revision: number) => {
+            const appUser = await fetchProfileData(session.user.id, session.user.email);
+            if (cancelled || revision !== sessionRevision) return;
+            setUser(appUser);
+
             if (session?.user) {
                 const pendingCode = localStorage.getItem("pending_referral_code");
                 if (pendingCode) {
@@ -267,11 +272,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     console.warn("Failed to apply pending join code:", e);
                 }
 
-                const appUser = await fetchProfileData(session.user.id, session.user.email);
-                if (!cancelled) setUser(appUser);
-            } else {
-                if (!cancelled) setUser(makeGuestUser());
             }
+        };
+
+        // Publish identity before fetching optional profile data. Keep Supabase
+        // requests outside its auth callback so they cannot wait on its auth lock.
+        const handleSession = (session: Session | null) => {
+            if (cancelled) return;
+            const revision = ++sessionRevision;
+            clearTimeout(profileTimer);
+            if (session?.user) {
+                const { id, email } = session.user;
+                setUser(previous => previous.id === id && !previous.isGuest
+                    ? { ...previous, email }
+                    : { id, email, isGuest: false, unlockCount: 0, isPremium: false });
+                profileTimer = setTimeout(() => {
+                    void hydrateSession(session, revision).catch(error => {
+                        console.warn("Background session setup failed:", error);
+                    });
+                }, 0);
+            } else {
+                setUser(makeGuestUser());
+            }
+            stopLoading();
         };
 
         // Wrap the entire init in a hard timeout so mobile never hangs
@@ -282,13 +305,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     5000,
                     "getSession"
                 );
-                if (cancelled) return;
-                await handleSession(session);
+                // A newer auth event takes precedence over this startup read.
+                if (cancelled || sessionRevision !== 0) return;
+                handleSession(session);
             } catch (err) {
                 console.warn("Auth init failed (timeout or error):", err);
             } finally {
                 if (!cancelled) {
-                    initialSessionHandled.current = true;
                     stopLoading();
                 }
             }
@@ -297,10 +320,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event: string, session: Session | null) => {
-                // Skip the first INITIAL_SESSION event — already handled by initAuth above
-                if (!initialSessionHandled.current) return;
-                await handleSession(session);
+            (_event: string, session: Session | null) => {
+                if (_event === "INITIAL_SESSION" && sessionRevision !== 0) return;
+                handleSession(session);
             }
         );
 
@@ -309,7 +331,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const safetyTimeout = setTimeout(() => {
             if (isLoadingRef.current) {
                 console.warn("Auth safety timeout fired — forcing loading=false");
-                initialSessionHandled.current = true;
                 stopLoading();
             }
         }, 3000);
@@ -329,6 +350,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return () => {
             cancelled = true;
+            clearTimeout(profileTimer);
             subscription.unsubscribe();
             clearTimeout(safetyTimeout);
             if (appListener) {
