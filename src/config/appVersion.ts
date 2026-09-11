@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 
-export const FALLBACK_VERSION = "1.0.5";
+export const FALLBACK_VERSION = "1.1.0";
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.truthswipe.app";
 

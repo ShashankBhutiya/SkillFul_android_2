@@ -7,6 +7,7 @@ import { pullProgressFromDB } from "@/services/progressService";
 import CategorySelect from "@/components/CategorySelect";
 import UserModeOnboarding from "@/components/UserModeOnboarding";
 import { useUserMode } from "@/hooks/useUserMode";
+import StudentAIPractice from "@/components/student/StudentAIPractice";
 
 const DifficultySelect = lazy(() => import("@/components/DifficultySelect"));
 const QuizGame = lazy(() => import("@/components/QuizGame"));
@@ -27,10 +28,14 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-const SkillsPage = () => {
+interface SkillsPageProps {
+  ai?: boolean;
+}
+
+const SkillsPage = ({ ai = false }: SkillsPageProps) => {
   const { user } = useAuth();
   const { categoryId } = useParams<{ categoryId?: string }>();
-  const { ready: modeReady, hasChosen: modeChosen } = useUserMode();
+  const { mode, ready: modeReady, hasChosen: modeChosen } = useUserMode();
   const navigate = useNavigate();
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
 
@@ -66,6 +71,10 @@ const SkillsPage = () => {
   if (!modeReady) return <LoadingSkeleton />;
 
   if (!modeChosen) return <UserModeOnboarding />;
+
+  // Keep the proven catalog as the default while the AI workspace is introduced.
+  // Professionals continue using their existing catalog without any change.
+  if (mode === "student" && ai) return <StudentAIPractice />;
 
   // If categoryId is present but invalid, redirect to /skills
   if (categoryId && !questionCategories.some((c) => c.id === categoryId)) {

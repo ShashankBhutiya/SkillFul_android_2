@@ -8,6 +8,11 @@ import { clearGuestMemoryCache } from "@/services/progressService";
 import { toast } from "@/hooks/use-toast";
 import { isUserMode, type UserMode } from "@/config/userMode";
 import { broadcastUserMode } from "@/hooks/useUserMode";
+import {
+    claimStudentCode,
+    clearPendingStudentCodeClaim,
+    readPendingStudentCodeClaim,
+} from "@/services/institutionService";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
 function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
@@ -243,6 +248,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         console.warn("Failed to apply pending referral code:", e);
                     } finally {
                         localStorage.removeItem("pending_referral_code");
+                    }
+                }
+                const pendingStudentCode = readPendingStudentCodeClaim();
+                if (pendingStudentCode) {
+                    try {
+                        const institutionName = await claimStudentCode(pendingStudentCode);
+                        clearPendingStudentCodeClaim();
+                        toast({
+                            title: "College linked",
+                            description: `You are now linked to ${institutionName}.`,
+                        });
+                    } catch (error: any) {
+                        // Keep the code in local storage so the student can correct their
+                        // college selection or code from Profile Settings after signing in.
+                        toast({
+                            title: "College code was not accepted",
+                            description: error?.message || "Check the selected college and code, then try again in Profile Settings.",
+                            variant: "destructive",
+                        });
                     }
                 }
                 const appUser = await fetchProfileData(session.user.id, session.user.email);

@@ -6,6 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { useUserMode } from "@/hooks/useUserMode";
 import type { UserMode } from "@/config/userMode";
+import {
+    emptyInstitutionEnrollment,
+    InstitutionEnrollmentFields,
+    toStudentCodeClaim,
+    type InstitutionEnrollmentValue,
+} from "@/components/InstitutionEnrollmentFields";
+import { claimStudentCode } from "@/services/institutionService";
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -38,6 +45,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
+    const [institutionEnrollment, setInstitutionEnrollment] = useState<InstitutionEnrollmentValue>(emptyInstitutionEnrollment);
+    const [institutionLoading, setInstitutionLoading] = useState(false);
 
     // Verification States
     const [isVerifying, setIsVerifying] = useState(false);
@@ -67,6 +76,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
             setIsVerifying(false);
             setVerificationCode("");
             setResendCooldown(0);
+            setInstitutionEnrollment(emptyInstitutionEnrollment);
         }
     }, [isOpen, user]);
 
@@ -170,6 +180,27 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
         }
     };
 
+    const handleClaimCollege = async () => {
+        setError("");
+        setSuccess("");
+        const claim = toStudentCodeClaim(institutionEnrollment);
+        if (!claim) {
+            setError("Select your college and enter the student code from your TPO.");
+            return;
+        }
+
+        setInstitutionLoading(true);
+        try {
+            const institutionName = await claimStudentCode(claim);
+            setInstitutionEnrollment(emptyInstitutionEnrollment);
+            setSuccess(`You are now linked to ${institutionName}.`);
+        } catch (err: any) {
+            setError(err?.message || "The student code could not be accepted.");
+        } finally {
+            setInstitutionLoading(false);
+        }
+    };
+
     if (user.isGuest) return null;
 
     return createPortal(
@@ -230,6 +261,22 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                     Switching changes which skills you see. Your progress and streak
                                     are kept for both — nothing is lost.
                                 </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <InstitutionEnrollmentFields
+                                    value={institutionEnrollment}
+                                    onChange={setInstitutionEnrollment}
+                                    disabled={loading || institutionLoading}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleClaimCollege}
+                                    disabled={loading || institutionLoading}
+                                    className="flex h-10 w-full items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60"
+                                >
+                                    {institutionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link my college"}
+                                </button>
                             </div>
 
                             {/* Name Input Grid */}

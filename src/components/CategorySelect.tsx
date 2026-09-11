@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import categorySummaries from "@/data/categorySummaries.json";
 import { categories as questionCategories } from "@/data/questions";
@@ -30,7 +31,9 @@ interface CategorySelectProps {
   onSelect: (categoryId: string) => void;
 }
 
-type CategorySummary = (typeof categorySummaries)[number];
+type CategorySummary = (typeof categorySummaries)[number] & {
+  priorityScore?: Partial<Record<Exclude<ExperienceLevel, null>, number>>;
+};
 
 interface CategoryCardProps {
   cat: CategorySummary;
@@ -109,8 +112,8 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   // Sort categories based on selected experience level
   const sortedCategories = [...modeCategories].sort((a, b) => {
     if (!experience) return 0;
-    const scoreA = (a as any).priorityScore?.[experience] || 0;
-    const scoreB = (b as any).priorityScore?.[experience] || 0;
+    const scoreA = a.priorityScore?.[experience] || 0;
+    const scoreB = b.priorityScore?.[experience] || 0;
     return scoreB - scoreA;
   });
 
@@ -166,14 +169,27 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
         {/* Page header — left-aligned. Centred display type at the top
             of a scrolling list reads as a landing page, not an app. */}
         <div className="mb-6">
-          <h2 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
-            Pick a skill
-          </h2>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {mode === "student"
-              ? "Built for college — short scenarios, one swipe at a time."
-              : "Short scenarios, one swipe at a time."}
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">
+                Pick a skill
+              </h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                {mode === "student"
+                  ? "Built for college — short scenarios, one swipe at a time."
+                  : "Short scenarios, one swipe at a time."}
+              </p>
+            </div>
+            {mode === "student" && (
+              <Link
+                to="/skills/ai"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Try AI
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Daily streak */}

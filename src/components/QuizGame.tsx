@@ -16,9 +16,8 @@ import { hapticSuccess, hapticError, hapticCelebration, hapticMedium, hapticLigh
 import { trackSwipe, trackQuizComplete, trackLoginGate } from "@/utils/analytics";
 import ReactGA from "react-ga4";
 
-// Guests may browse the catalog, but an account is required before the first
-// question — progress, streaks and the leaderboard all key off a real user id.
-const LOGIN_GATE_INTERVAL = 0;
+// Guests can complete one milestone (five correct answers) before signing in.
+const LOGIN_GATE_INTERVAL = 5;
 
 // ─── Global cumulative question counter (persisted in localStorage) ───
 const GLOBAL_COUNT_KEY = "quiz_global_answered_count";
@@ -121,14 +120,17 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   const [soundOn, setSoundOn] = useState(getSoundsEnabled);
 
   // --- Login gate for guests ---
-  const [showLoginGate, setShowLoginGate] = useState(user.isGuest);
+  const [showLoginGate, setShowLoginGate] = useState(() => user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Guests are stopped at the door and released the moment they sign in.
+  // Preserve the guest allowance across sessions and release the gate on sign-in.
   useEffect(() => {
-    setShowLoginGate(user.isGuest);
-    if (user.isGuest) trackLoginGate(LOGIN_GATE_INTERVAL);
+    setShowLoginGate(user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL);
   }, [user.isGuest]);
+
+  useEffect(() => {
+    if (showLoginGate) trackLoginGate(LOGIN_GATE_INTERVAL);
+  }, [showLoginGate]);
 
   // --- Milestone popup ---
   const [showMilestone, setShowMilestone] = useState(false);
@@ -141,7 +143,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   const correctIdsRef = useRef<number[]>([]);
 
   const sessionCorrectCount = answeredQuestions.filter((a) => a.correct).length;
-  const progressCount = showMilestone ? 5 : (sessionCorrectCount % 5);
+  const progressCount = showMilestone ? 5 : ((user.isGuest ? getGlobalAnsweredCount() : sessionCorrectCount) % 5);
 
   // Reset question timer whenever currentIndex changes
   useEffect(() => {
@@ -199,12 +201,12 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     setTimeout(() => setParticles([]), 1200);
   }, []);
 
-  /** Get total answered count (unique, correct answers only don't double-count re-queued) */
-  const totalAnswered = answeredQuestions.length;
-
   const handleSwipe = useCallback(
     (direction: "left" | "right") => {
+      if (showFeedback || showExplanation || showMilestone || showLoginGate || showAuthModal ||
+          (user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL)) return;
       const question = questions[currentIndex];
+      if (!question) return;
       const userAnswer = direction === "right";
       const isCorrect = userAnswer === question.answer;
       const responseTimeMs = Date.now() - questionStartRef.current;
@@ -264,28 +266,25 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         }
 
         // Check milestone (every 5 correct questions answered)
-        const isMilestone = newCorrectCount > 0 && newCorrectCount % 5 === 0;
+        const globalCorrectCount = incrementGlobalAnsweredCount();
+        const milestoneCount = user.isGuest ? globalCorrectCount : newCorrectCount;
+        const isMilestone = milestoneCount > 0 && milestoneCount % 5 === 0;
 
         if (isMilestone) {
           // Save checkpoint to database/localStorage
           savePracticedIds(user.id, categoryId, correctIdsRef.current).catch(() => {});
         }
 
-        const newTotal = totalAnswered + 1;
-
-        // Increment global cumulative counter
-        incrementGlobalAnsweredCount();
-
         setTimeout(() => {
           setShowFeedback(null);
 
-          if (currentIndex + 1 >= questions.length) {
-            setIsFinished(true);
-          } else if (isMilestone) {
+          if (isMilestone) {
             // Show milestone popup
-            setMilestoneNumber(newCorrectCount);
+            setMilestoneNumber(milestoneCount);
             setShowMilestone(true);
             hapticCelebration();
+          } else if (currentIndex + 1 >= questions.length) {
+            setIsFinished(true);
           } else {
             setCurrentIndex((i) => i + 1);
           }
@@ -305,7 +304,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         setTimeout(() => setIsShaking(false), 500);
       }
     },
-    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, totalAnswered, user.isGuest]
+    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, user.isGuest, answeredQuestions, score, bestStreak, difficulty, user.firstName, user.lastName, user.email, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal]
   );
 
   const dismissExplanation = useCallback(() => {
@@ -320,21 +319,28 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
   const dismissMilestone = useCallback(() => {
     setShowMilestone(false);
-    setCurrentIndex((i) => i + 1);
-  }, []);
+    if (user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL) {
+      setShowLoginGate(true);
+    }
+    if (currentIndex + 1 >= questions.length) {
+      setIsFinished(true);
+    } else {
+      setCurrentIndex((i) => i + 1);
+    }
+  }, [user.isGuest, currentIndex, questions.length]);
 
   const handleButtonAnswer = useCallback(
     (answer: boolean) => {
-      if (showExplanation || showMilestone || showLoginGate) return;
+      if (showFeedback || showExplanation || showMilestone || showLoginGate || showAuthModal) return;
       hapticMedium();
       handleSwipe(answer ? "right" : "left");
     },
-    [handleSwipe, showExplanation, showMilestone, showLoginGate]
+    [handleSwipe, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal]
   );
 
   // Skip: advance without affecting score/streak
   const handleSkip = useCallback(() => {
-    if (showExplanation || showMilestone || showLoginGate) return;
+    if (showFeedback || showExplanation || showMilestone || showLoginGate || showAuthModal) return;
     hapticLight();
 
     // Log skip event to Google Analytics
@@ -352,20 +358,18 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     } else {
       setCurrentIndex((i) => i + 1);
     }
-  }, [currentIndex, questions, categoryId, showExplanation, showMilestone, showLoginGate]);
+  }, [currentIndex, questions, categoryId, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal]);
 
   // When auth modal closes, check if still guest — if so, re-show gate
   const handleAuthModalClose = useCallback(() => {
     setShowAuthModal(false);
-    // Still a guest means the gate stands. On success we simply drop it — the
-    // gate now appears before the first question, so there is nothing to skip.
-    setShowLoginGate(user.isGuest);
+    setShowLoginGate(user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL);
   }, [user.isGuest]);
 
   // Session elapsed time
   const sessionElapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
 
-  if (isFinished) {
+  if (isFinished && !showLoginGate && !showAuthModal) {
     const hasIntermediate = category.questions.length > 50;
     const totalSessionTime = Math.floor((Date.now() - sessionStartRef.current) / 1000);
     return (
@@ -630,7 +634,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
                       Create a Free Account
                     </h3>
                     <p className="text-sm text-muted-foreground font-body mb-2">
-                      You need an account to start practising.
+                      You've completed your first milestone! Sign in to keep practising.
                     </p>
                     <p className="text-xs text-muted-foreground font-body mb-5">
                       It saves your progress and streak, puts you on the leaderboard,
@@ -639,7 +643,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => { setShowLoginGate(false); setShowAuthModal(true); }}
+                      onClick={() => setShowAuthModal(true)}
                       className={`w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-display font-bold text-lg shadow-lg mb-3`}
                     >
                       Sign In / Sign Up

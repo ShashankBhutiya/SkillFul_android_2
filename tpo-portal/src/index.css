@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Theme tokens mirror the SkillFul app so the portal reads as the same product.
+ * Only the tokens the dashboard actually uses are carried over — none of the
+ * quiz/swipe animation layers come along.
+ */
+@layer base {
+  :root {
+    --background: 40 20% 99%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 255 52% 54%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 90% 55%;
+    --secondary-foreground: 45 90% 14%;
+
+    --muted: 240 8% 96%;
+    --muted-foreground: 240 4% 44%;
+
+    --accent: 280 45% 52%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 68% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 52% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 240 8% 89%;
+    --input: 240 8% 89%;
+    --ring: 255 52% 54%;
+
+    --radius: 0.625rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Inter', sans-serif;
+  }
+}

@@ -7,6 +7,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { getStoredUserMode, type UserMode } from "@/config/userMode";
 import { broadcastUserMode } from "@/hooks/useUserMode";
+import {
+    emptyInstitutionEnrollment,
+    InstitutionEnrollmentFields,
+    toStudentCodeClaim,
+    type InstitutionEnrollmentValue,
+} from "@/components/InstitutionEnrollmentFields";
+import { storePendingStudentCodeClaim } from "@/services/institutionService";
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -40,6 +47,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     const [emailConsent, setEmailConsent] = useState(false);
     const [whatsappConsent, setWhatsappConsent] = useState(false);
     const [phone, setPhone] = useState("");
+    const [institutionEnrollment, setInstitutionEnrollment] = useState<InstitutionEnrollmentValue>(emptyInstitutionEnrollment);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -53,6 +61,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         setEmailConsent(false);
         setWhatsappConsent(false);
         setPhone("");
+        setInstitutionEnrollment(emptyInstitutionEnrollment);
         setError("");
         setSuccess("");
     };
@@ -71,6 +80,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         // survives the redirect and AuthContext only overrides it if the loaded
         // profile already has a mode of its own.
         if (tab === "signup" && userMode) broadcastUserMode(userMode);
+        const studentCodeClaim = toStudentCodeClaim(institutionEnrollment);
+        if (institutionEnrollment.institutionId || institutionEnrollment.code) {
+            if (!studentCodeClaim) {
+                setError("Select your college and enter the student code from your TPO.");
+                setGoogleLoading(false);
+                return;
+            }
+            storePendingStudentCodeClaim(studentCodeClaim);
+        }
 
         try {
             const result = await signInWithGoogle(referralCode.trim() || undefined);
@@ -113,6 +131,15 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 setError("Please enter a valid phone number (e.g. +15550000000)");
                 return;
             }
+        }
+
+        const studentCodeClaim = toStudentCodeClaim(institutionEnrollment);
+        if (institutionEnrollment.institutionId || institutionEnrollment.code) {
+            if (!studentCodeClaim) {
+                setError("Select your college and enter the student code from your TPO.");
+                return;
+            }
+            storePendingStudentCodeClaim(studentCodeClaim);
         }
 
         setLoading(true);
@@ -250,6 +277,12 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                 />
                             </div>
                         </div>
+
+                        <InstitutionEnrollmentFields
+                            value={institutionEnrollment}
+                            onChange={setInstitutionEnrollment}
+                            disabled={loading || googleLoading}
+                        />
 
                         {/* Mode + Referral (Signup only) */}
                         <AnimatePresence>
