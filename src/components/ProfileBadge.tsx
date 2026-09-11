@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import ProfileSettingsModal from "./ProfileSettingsModal";
+import UserModeToggle from "./UserModeToggle";
 import { hapticLight, hapticSuccess } from "@/hooks/useHaptics";
 import { razorpayService } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
@@ -42,7 +43,9 @@ const ProfileBadge = () => {
 
     if (user.isGuest) {
         return (
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
+                {/* Guests pick a mode before signup, so they must be able to change it here too */}
+                <UserModeToggle showLabel={false} compact className="w-auto min-[400px]:w-[188px]" />
                 <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -168,6 +171,14 @@ const ProfileBadge = () => {
                                         )}
                                     </AnimatePresence>
                                 </button>
+                            </div>
+
+                            {/* Student / Professional mode */}
+                            <div className="px-5 py-4 border-b border-border/40">
+                                <UserModeToggle />
+                                <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
+                                    Changes which skills you see. Progress is kept for both.
+                                </p>
                             </div>
 
                             {/* Profile Settings */}

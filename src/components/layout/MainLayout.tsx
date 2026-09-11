@@ -1,5 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { Link, useLocation } from "react-router-dom";
 import { 
   ArrowRight, 
   Compass, 
@@ -20,9 +19,6 @@ import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
 import { getNotificationSettings } from "@/services/notificationService";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useStreak } from "@/hooks/useStreak";
-import StreakBadge from "@/components/streak/StreakBadge";
-import StreakCelebration from "@/components/streak/StreakCelebration";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -37,18 +33,8 @@ const TAB_ITEMS = [
 ];
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
-  const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Streak lives in the shared shell so any screen counts as a visit and
-  // the celebration can appear over whatever the user is looking at.
-  const { streak, lastResult, recordVisit, acknowledgeResult, checkedInToday } = useStreak();
-
-  useEffect(() => {
-    recordVisit();
-  }, [recordVisit]);
 
   const [isMobile, setIsMobile] = useState(true);
   const [currentTime, setCurrentTime] = useState("9:41 AM");
@@ -169,11 +155,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
           {/* Quick actions */}
           <div className="flex items-center gap-1.5">
-            <StreakBadge
-              streak={streak}
-              checkedInToday={checkedInToday}
-              onClick={() => navigate("/skills")}
-            />
             <ProfileBadge />
           </div>
         </div>
@@ -191,7 +172,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
         <PwaInstallPrompt />
 
-        <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />
 
         {/* Minimal top app header */}
         <AppHeader />
@@ -326,7 +306,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               )}
               <PwaInstallPrompt />
       
-              <StreakCelebration result={lastResult} onDismiss={acknowledgeResult} />
 
               {/* Header with status bar padding */}
               <AppHeader extraClass="pt-7" />
