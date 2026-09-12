@@ -16,12 +16,29 @@ import {
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
 function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
+    let timer: ReturnType<typeof setTimeout>;
     return Promise.race([
         promise,
-        new Promise<T>((_, reject) =>
-            setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
-        ),
-    ]);
+        new Promise<T>((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+        }),
+    ]).finally(() => clearTimeout(timer));
+}
+
+function getProfileSaveErrorMessage(error: any): string {
+    const message = typeof error?.message === "string" ? error.message : "";
+
+    if (error?.code === "PGRST116" || /no rows|profile record/i.test(message)) {
+        return "Your profile record could not be found. Please sign out, sign back in, and try again.";
+    }
+    if (error?.code === "42501" || /row-level security|permission denied/i.test(message)) {
+        return "You do not have permission to update this profile. Please sign in again and try once more.";
+    }
+    if (/timed out|network|fetch/i.test(message)) {
+        return "We could not reach the server. Check your connection and try again.";
+    }
+
+    return message || "Your changes could not be saved. Please try again.";
 }
 
 // ---------- types ----------
@@ -38,6 +55,9 @@ export interface AppUser {
     whatsappConsent?: boolean;
     firstName?: string;
     lastName?: string;
+    degree?: string;
+    academicYear?: string;
+    hasLinkedCollege?: boolean;
     isPremium: boolean;
     subscriptionStatus?: string;
     subscriptionId?: string;
@@ -71,7 +91,9 @@ interface AuthContextType {
         whatsappConsent: boolean,
         phoneVerified?: boolean,
         firstName?: string,
-        lastName?: string
+        lastName?: string,
+        degree?: string,
+        academicYear?: string
     ) => Promise<{ error?: string }>;
     sendPhoneVerificationOTP: (phone: string) => Promise<{ success: boolean; error?: string }>;
     confirmPhoneVerificationOTP: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
@@ -104,8 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AppUser>(makeGuestUser());
     const [isLoading, setIsLoading] = useState(true);
     const isLoadingRef = useRef(true); // mirror for use in timeout closures
-    const initialSessionHandled = useRef(false);
-
     // Helper: stop loading and update the ref mirror
     const stopLoading = useCallback(() => {
         isLoadingRef.current = false;
@@ -128,18 +148,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 Promise.allSettled([
                     supabase
                         .from("profiles")
-                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, subscription_status, subscription_id, subscription_period_end, user_mode")
+                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, degree, academic_year, subscription_status, subscription_id, subscription_period_end, user_mode")
                         .eq("id", uid)
                         .maybeSingle(),
                     supabase.rpc("get_valid_referrals", { referrer_id: uid }),
+                    supabase
+                        .from("institution_members")
+                        .select("institution_id")
+                        .eq("user_id", uid)
+                        .eq("role", "student")
+                        .maybeSingle(),
                 ]),
                 6000,
                 "Profile fetch"
             );
 
-            const [profileResult, countResult] = result;
+            const [profileResult, countResult, membershipResult] = result;
             const profile = profileResult.status === "fulfilled" ? (profileResult.value.data as any) : null;
             const count = countResult.status === "fulfilled" ? countResult.value.data : 0;
+            const membership = membershipResult.status === "fulfilled" ? membershipResult.value.data : null;
 
             const isPremium = profile?.subscription_status === "active";
 
@@ -156,6 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 whatsappConsent: profile?.whatsapp_consent ?? false,
                 firstName: profile?.first_name || "",
                 lastName: profile?.last_name || "",
+                degree: profile?.degree || "",
+                academicYear: profile?.academic_year || "",
+                hasLinkedCollege: !!membership,
                 isPremium,
                 subscriptionStatus: profile?.subscription_status || "inactive",
                 subscriptionId: profile?.subscription_id || "",
@@ -235,8 +265,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         };
 
-        const handleSession = async (session: Session | null) => {
-            if (session?.user) {
+        let sessionVersion = 0;
+
+        const handleSession = async (session: Session, version: number) => {
+            if (session.user) {
                 const pendingCode = localStorage.getItem("pending_referral_code");
                 if (pendingCode) {
                     try {
@@ -253,7 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const pendingStudentCode = readPendingStudentCodeClaim();
                 if (pendingStudentCode) {
                     try {
-                        const institutionName = await claimStudentCode(pendingStudentCode);
+                        const institutionName = await claimStudentCode(pendingStudentCode, session.user.id);
                         clearPendingStudentCodeClaim();
                         toast({
                             title: "College linked",
@@ -270,39 +302,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     }
                 }
                 const appUser = await fetchProfileData(session.user.id, session.user.email);
-                if (!cancelled) setUser(appUser);
-            } else {
-                if (!cancelled) setUser(makeGuestUser());
+                if (!cancelled && version === sessionVersion) setUser(appUser);
             }
         };
 
-        // Wrap the entire init in a hard timeout so mobile never hangs
-        const initAuth = async () => {
-            try {
-                const { data: { session } } = await withTimeout(
-                    supabase.auth.getSession(),
-                    5000,
-                    "getSession"
-                );
-                if (cancelled) return;
-                await handleSession(session);
-            } catch (err) {
-                console.warn("Auth init failed (timeout or error):", err);
-            } finally {
-                if (!cancelled) {
-                    initialSessionHandled.current = true;
-                    stopLoading();
-                }
-            }
-        };
-
-        initAuth();
-
+        // Supabase awaits auth callbacks while holding its auth lock. Keep this
+        // callback synchronous: database/RPC calls here can deadlock sign-in.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event: string, session: Session | null) => {
-                // Skip the first INITIAL_SESSION event — already handled by initAuth above
-                if (!initialSessionHandled.current) return;
-                await handleSession(session);
+            (event: string, session: Session | null) => {
+                if (event === "TOKEN_REFRESHED") return;
+                const version = ++sessionVersion;
+                if (!session?.user) {
+                    setUser(makeGuestUser());
+                    stopLoading();
+                    return;
+                }
+
+                // The authenticated user is available immediately. Enrichment
+                // runs after the callback returns and Supabase releases its lock.
+                setUser((current) => current.id === session.user.id && !current.isGuest
+                    ? current
+                    : {
+                        id: session.user.id,
+                        email: session.user.email,
+                        isGuest: false,
+                        unlockCount: 0,
+                        isPremium: false,
+                    });
+                stopLoading();
+                setTimeout(() => {
+                    if (!cancelled && version === sessionVersion) {
+                        void handleSession(session, version);
+                    }
+                }, 0);
             }
         );
 
@@ -311,7 +343,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const safetyTimeout = setTimeout(() => {
             if (isLoadingRef.current) {
                 console.warn("Auth safety timeout fired — forcing loading=false");
-                initialSessionHandled.current = true;
                 stopLoading();
             }
         }, 3000);
@@ -534,7 +565,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         whatsappConsent: boolean,
         phoneVerified?: boolean,
         firstName?: string,
-        lastName?: string
+        lastName?: string,
+        degree?: string,
+        academicYear?: string
     ): Promise<{ error?: string }> => {
         if (!supabase || user.isGuest) return { error: "Must be logged in" };
 
@@ -554,19 +587,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (lastName !== undefined) {
                 updatePayload.last_name = lastName;
             }
+            if (degree !== undefined) updatePayload.degree = degree.trim();
+            if (academicYear !== undefined) updatePayload.academic_year = academicYear.trim();
 
-            const { error } = await supabase
+            // Request the updated row back. Without `.select()`, PostgREST reports
+            // a successful update even if RLS (or a missing profile) matches zero rows.
+            const { data, error } = await supabase
                 .from("profiles")
                 .update(updatePayload)
-                .eq("id", user.id);
+                .eq("id", user.id)
+                .select("id")
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) {
+                throw { code: "PGRST116", message: "No profile record was updated." };
+            }
             
             await refreshProfile();
             return {};
         } catch (err: any) {
             console.error("Failed to update profile settings:", err);
-            return { error: err.message || "Failed to update profile settings." };
+            return { error: getProfileSaveErrorMessage(err) };
         }
     }, [user, refreshProfile]);
 

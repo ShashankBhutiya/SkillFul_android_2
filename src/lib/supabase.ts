@@ -6,7 +6,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 // Custom fetch with timeout to prevent "loading for too long"
 const fetchWithTimeout = async (url: RequestInfo | URL, options?: RequestInit) => {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 6000); // 6 seconds timeout
+    const requestUrl = typeof url === "string" ? url : url.toString();
+    // AI generation commonly takes longer than an ordinary database request.
+    // Aborting it after six seconds made the SDK report the misleading generic
+    // "Failed to send a request to the Edge Function" message.
+    const timeoutMs = requestUrl.includes("/functions/v1/generate-practice")
+        ? 90_000
+        : 15_000;
+    const id = setTimeout(() => controller.abort(), timeoutMs);
 
     // If the caller already provides a signal, abort ours when theirs aborts too
     if (options?.signal) {
@@ -20,7 +27,7 @@ const fetchWithTimeout = async (url: RequestInfo | URL, options?: RequestInit) =
     } catch (err: any) {
         clearTimeout(id);
         if (err.name === 'AbortError') {
-            throw new Error('Connection timed out. The server might be unreachable or paused.');
+            throw new Error('The request timed out. Please check your connection and try again.');
         }
         throw err;
     }

@@ -30,9 +30,10 @@ const LoadingSkeleton = () => (
 
 interface SkillsPageProps {
   ai?: boolean;
+  classic?: boolean;
 }
 
-const SkillsPage = ({ ai = false }: SkillsPageProps) => {
+const SkillsPage = ({ ai = false, classic = false }: SkillsPageProps) => {
   const { user } = useAuth();
   const { categoryId } = useParams<{ categoryId?: string }>();
   const { mode, ready: modeReady, hasChosen: modeChosen } = useUserMode();
@@ -62,7 +63,7 @@ const SkillsPage = ({ ai = false }: SkillsPageProps) => {
   };
 
   const handleBackToSkills = () => {
-    navigate("/skills");
+    navigate(mode === "student" ? "/skills/classic" : "/skills");
   };
 
 
@@ -72,9 +73,11 @@ const SkillsPage = ({ ai = false }: SkillsPageProps) => {
 
   if (!modeChosen) return <UserModeOnboarding />;
 
-  // Keep the proven catalog as the default while the AI workspace is introduced.
-  // Professionals continue using their existing catalog without any change.
-  if (mode === "student" && ai) return <StudentAIPractice />;
+  // AI practice is the student's primary workspace. The classic catalog stays
+  // available at /skills/classic, while /skills/ai remains a stable direct URL.
+  if (mode === "student" && (ai || (!classic && !categoryId))) {
+    return <StudentAIPractice />;
+  }
 
   // If categoryId is present but invalid, redirect to /skills
   if (categoryId && !questionCategories.some((c) => c.id === categoryId)) {

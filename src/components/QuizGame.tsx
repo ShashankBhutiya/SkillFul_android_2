@@ -15,11 +15,13 @@ import { playCorrect, playWrong, playCombo, getSoundsEnabled, setSoundsEnabled }
 import { hapticSuccess, hapticError, hapticCelebration, hapticMedium, hapticLight } from "@/hooks/useHaptics";
 import { trackSwipe, trackQuizComplete, trackLoginGate } from "@/utils/analytics";
 import ReactGA from "react-ga4";
+import type { AIPracticeSet, AIPracticeQuestion } from "@/types/aiPractice";
+import { PracticeSaveStatus } from "./student/PracticeSaveStatus";
 
 // Guests can complete one milestone (five correct answers) before signing in.
 const LOGIN_GATE_INTERVAL = 5;
 
-// ─── Global cumulative question counter (persisted in localStorage) ───
+// â”€â”€â”€ Global cumulative question counter (persisted in localStorage) â”€â”€â”€
 const GLOBAL_COUNT_KEY = "quiz_global_answered_count";
 
 function getGlobalAnsweredCount(): number {
@@ -42,6 +44,7 @@ interface QuizGameProps {
   onBack: () => void;
   onHome: () => void;
   onSwitchDifficulty: (diff: "easy" | "intermediate") => void;
+  generatedSet?: AIPracticeSet;
 }
 
 const encouragements = [
@@ -64,7 +67,7 @@ const milestoneMessages = [
 /** Slice questions by difficulty: easy = first 50, intermediate = rest */
 function getQuestionsForDifficulty(category: Category, difficulty: "easy" | "intermediate"): Question[] {
   if (category.questions.length <= 50) {
-    // Not enough for two levels — easy gets all, intermediate gets nothing
+    // Not enough for two levels â€” easy gets all, intermediate gets nothing
     return difficulty === "easy" ? [...category.questions] : [];
   }
   if (difficulty === "easy") {
@@ -79,7 +82,7 @@ function getUnpracticedSubset(allQuestions: Question[], categoryId: string, user
   return allQuestions.filter((q) => !practiced.has(q.id));
 }
 
-/** Format seconds → "Xm Ys" */
+/** Format seconds â†’ "Xm Ys" */
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -93,12 +96,25 @@ export interface AnsweredQuestion {
   responseTimeMs: number; // milliseconds taken to answer
 }
 
-const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }: QuizGameProps) => {
+const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, generatedSet }: QuizGameProps) => {
   const { user } = useAuth();
-  const category = categories.find((c) => c.id === categoryId)!;
-  const difficultyQuestions = getQuestionsForDifficulty(category, difficulty);
+  const category: Category = generatedSet ? {
+    id: categoryId,
+    name: generatedSet.title || generatedSet.topic,
+    emoji: "ðŸ“š",
+    gradient: "from-primary to-accent",
+    audience: "student",
+    questions: (generatedSet.questions as AIPracticeQuestion[]).map((item, index) => ({
+      id: index + 1,
+      statement: item.statement,
+      answer: item.answer,
+      explanation: item.explanation,
+    })),
+  } : categories.find((c) => c.id === categoryId)!;
+  const difficultyQuestions = generatedSet ? category.questions : getQuestionsForDifficulty(category, difficulty);
 
   const [questions, setQuestions] = useState(() => {
+    if (generatedSet) return [...difficultyQuestions];
     const unpracticed = getUnpracticedSubset(difficultyQuestions, categoryId, user.id);
     return unpracticed.length > 0 ? unpracticed : [...difficultyQuestions];
   });
@@ -141,6 +157,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   const questionStartRef = useRef(Date.now());
 
   const correctIdsRef = useRef<number[]>([]);
+  const completedRef = useRef(false);
 
   const sessionCorrectCount = answeredQuestions.filter((a) => a.correct).length;
   const progressCount = showMilestone ? 5 : ((user.isGuest ? getGlobalAnsweredCount() : sessionCorrectCount) % 5);
@@ -152,6 +169,12 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
   // Save on finish (only for logged-in users)
   useEffect(() => {
+    if (!isFinished || completedRef.current) return;
+    completedRef.current = true;
+    if (isFinished && generatedSet) {
+      if (answeredQuestions.length > 0) registerPracticeSession();
+      return;
+    }
     if (isFinished && correctIdsRef.current.length > 0) {
       savePracticedIds(user.id, categoryId, correctIdsRef.current);
       // Register this practice session in daily streak & notifications (works for guests too!)
@@ -182,7 +205,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         accuracyPct,
       }).catch(() => {}); // fire-and-forget
     }
-  }, [isFinished, categoryId, user.id, user.isGuest]);
+  }, [isFinished, categoryId, user.id, user.isGuest, user.firstName, user.lastName, user.email, generatedSet, answeredQuestions, score, bestStreak, difficulty]);
 
   const toggleSound = useCallback(() => {
     setSoundOn((prev) => {
@@ -214,14 +237,14 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
       setAnsweredQuestions((prev) => [...prev, { question, correct: isCorrect, responseTimeMs }]);
 
       // Log swipe event to Google Analytics
-      trackSwipe(direction, question.id, categoryId, isCorrect);
+      if (!generatedSet) trackSwipe(direction, question.id, categoryId, isCorrect);
 
       if (isCorrect) {
         const newStreak = streak + 1;
         const newCombo = Math.min(Math.floor(newStreak / 3) + 1, 5);
         const points = 10 * newCombo;
 
-        correctIdsRef.current.push(question.id);
+        if (!generatedSet) correctIdsRef.current.push(question.id);
 
         // Submit running score to leaderboard after every correct answer
         // so even 1 question answered gets the user on the leaderboard
@@ -236,7 +259,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
             ? `Guest_${user.id.slice(-4)}`
             : (user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : (user.email?.split("@")[0] || "Player"));
 
-          submitScore({
+          if (!generatedSet) submitScore({
             userId: user.id,
             displayName,
             categoryId,
@@ -272,7 +295,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
 
         if (isMilestone) {
           // Save checkpoint to database/localStorage
-          savePracticedIds(user.id, categoryId, correctIdsRef.current).catch(() => {});
+          if (!generatedSet) savePracticedIds(user.id, categoryId, correctIdsRef.current).catch(() => {});
         }
 
         setTimeout(() => {
@@ -304,7 +327,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         setTimeout(() => setIsShaking(false), 500);
       }
     },
-    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, user.isGuest, answeredQuestions, score, bestStreak, difficulty, user.firstName, user.lastName, user.email, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal]
+    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, user.isGuest, answeredQuestions, score, bestStreak, difficulty, user.firstName, user.lastName, user.email, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal, generatedSet]
   );
 
   const dismissExplanation = useCallback(() => {
@@ -360,7 +383,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
     }
   }, [currentIndex, questions, categoryId, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal]);
 
-  // When auth modal closes, check if still guest — if so, re-show gate
+  // When auth modal closes, check if still guest â€” if so, re-show gate
   const handleAuthModalClose = useCallback(() => {
     setShowAuthModal(false);
     setShowLoginGate(user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL);
@@ -370,9 +393,11 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
   const sessionElapsed = Math.floor((Date.now() - sessionStartRef.current) / 1000);
 
   if (isFinished && !showLoginGate && !showAuthModal) {
-    const hasIntermediate = category.questions.length > 50;
+    const hasIntermediate = !generatedSet && category.questions.length > 50;
     const totalSessionTime = Math.floor((Date.now() - sessionStartRef.current) / 1000);
     return (
+      <>
+      {generatedSet && <PracticeSaveStatus setId={generatedSet.id} answers={answeredQuestions.map(({ question, correct }) => ({ questionId: generatedSet.questions[question.id - 1].id, selectedOption: (correct ? question.answer : !question.answer) ? 1 : 0, correct }))} />}
       <QuizSummary
         category={category}
         score={score}
@@ -381,10 +406,13 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         totalSessionTimeSec={totalSessionTime}
         difficulty={difficulty}
         hasIntermediate={hasIntermediate}
+        generated={!!generatedSet}
+        levelLabel={generatedSet ? ({ beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }[generatedSet.level]) : undefined}
         onPlayAgain={() => {
           correctIdsRef.current = [];
-          const subset = getQuestionsForDifficulty(category, difficulty);
-          const unpracticed = getUnpracticedSubset(subset, categoryId, user.id);
+          completedRef.current = false;
+          const subset = generatedSet ? category.questions : getQuestionsForDifficulty(category, difficulty);
+          const unpracticed = generatedSet ? subset : getUnpracticedSubset(subset, categoryId, user.id);
           setQuestions(unpracticed.length > 0 ? unpracticed : [...subset]);
           setCurrentIndex(0);
           setScore(0);
@@ -400,10 +428,11 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
         onGoEasy={() => onSwitchDifficulty("easy")}
         onSwitchCategory={onBack}
       />
+      </>
     );
   }
 
-  const diffLabel = difficulty === "easy" ? "Easy" : "Intermediate";
+  const diffLabel = generatedSet ? ({ beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }[generatedSet.level]) : difficulty === "easy" ? "Easy" : "Intermediate";
 
   return (
     <div className={`h-[100dvh] flex flex-col relative overflow-hidden ${isShaking ? "shake-animation" : ""}`}>
@@ -581,7 +610,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
                     <p className="text-sm text-muted-foreground mb-3">
                       The answer is{" "}
                       <span className={`font-bold ${currentCorrectAnswer ? "text-success" : "text-destructive"}`}>
-                        {currentCorrectAnswer ? "TRUE ✓" : "FALSE ✗"}
+                        {currentCorrectAnswer ? "TRUE âœ“" : "FALSE âœ—"}
                       </span>
                     </p>
                     <div className="bg-muted rounded-xl p-4 mb-4 text-left">
@@ -598,7 +627,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
                       onClick={dismissExplanation}
                       className={`w-full py-3 rounded-xl bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg`}
                     >
-                      Got it! →
+                      Got it! â†’
                     </motion.button>
                   </div>
                 </div>
@@ -606,7 +635,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
             )}
           </AnimatePresence>
 
-          {/* Milestone Completed Celebration Popup — every 5 questions */}
+          {/* Milestone Completed Celebration Popup â€” every 5 questions */}
           <AnimatePresence>
             {showMilestone && (
               <MilestoneCelebration
@@ -669,7 +698,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
       {/* Bottom buttons */}
       <div className="relative z-10 px-4 py-3 pb-4 flex flex-col items-center gap-1.5 shrink-0">
         <p className="text-xs text-muted-foreground font-body swipe-hint">
-          👆 Swipe the card — or tap below
+          ðŸ‘† Swipe the card â€” or tap below
         </p>
         <div className="flex justify-center items-center gap-8">
           <motion.button
@@ -683,7 +712,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty }
             <X className="w-6 h-6" />
           </motion.button>
 
-          {/* Skip button — always available */}
+          {/* Skip button â€” always available */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.85 }}

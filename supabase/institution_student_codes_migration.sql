@@ -134,6 +134,53 @@ create policy "TPOs can read their institution roster"
 grant select on public.institutions to authenticated;
 grant select on public.institution_members to authenticated;
 
+-- TPO dashboard access: the roster policy above is not enough on its own.
+-- Each learning table also needs an explicit SELECT policy under RLS.
+drop policy if exists "TPOs can read cohort profiles" on public.profiles;
+create policy "TPOs can read cohort profiles"
+  on public.profiles for select to authenticated
+  using (public.is_tpo_for_student(id));
+
+drop policy if exists "TPOs can read cohort progress" on public.user_progress;
+create policy "TPOs can read cohort progress"
+  on public.user_progress for select to authenticated
+  using (case
+    when user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then public.is_tpo_for_student(user_id::uuid)
+    else false
+  end);
+
+drop policy if exists "TPOs can read cohort scores" on public.leaderboard_scores;
+create policy "TPOs can read cohort scores"
+  on public.leaderboard_scores for select to authenticated
+  using (case
+    when user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then public.is_tpo_for_student(user_id::uuid)
+    else false
+  end);
+
+do $policy$
+begin
+  if to_regclass('public.user_streaks') is not null then
+    execute 'drop policy if exists "TPOs can read cohort streaks" on public.user_streaks';
+    execute $sql$
+      create policy "TPOs can read cohort streaks"
+        on public.user_streaks for select to authenticated
+        using (case
+          when user_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+            then public.is_tpo_for_student(user_id::uuid)
+          else false
+        end)
+    $sql$;
+    execute 'grant select on public.user_streaks to authenticated';
+  end if;
+end
+$policy$;
+
+grant select on public.profiles to authenticated;
+grant select on public.user_progress to authenticated;
+grant select on public.leaderboard_scores to authenticated;
+
 -- Remove legacy direct-write paths. Enrolment and reset now happen only
 -- through the validated SECURITY DEFINER functions below.
 drop policy if exists "Students can enrol themselves" on public.institution_members;

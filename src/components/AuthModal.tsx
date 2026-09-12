@@ -144,20 +144,14 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
         setLoading(true);
 
-        // Safety: force-stop loading after 15s on mobile to prevent infinite spinner
-        const safetyTimer = setTimeout(() => {
-            setLoading(false);
-            setError("Request timed out. Please check your connection and try again.");
-        }, 15000);
-
         try {
             if (tab === "login") {
                 const result = await signIn(email, password);
                 if (result.error) {
                     setError(formatAuthError(result.error));
                 } else {
-                    setSuccess("Welcome back! 🎉");
-                    setTimeout(() => { onClose(); resetForm(); }, 1000);
+                    onClose();
+                    resetForm();
                 }
             } else {
                 const result = await signUp(
@@ -178,7 +172,6 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 }
             }
         } finally {
-            clearTimeout(safetyTimer);
             setLoading(false);
         }
     };

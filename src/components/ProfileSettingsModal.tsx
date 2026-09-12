@@ -13,6 +13,9 @@ import {
     type InstitutionEnrollmentValue,
 } from "@/components/InstitutionEnrollmentFields";
 import { claimStudentCode } from "@/services/institutionService";
+import { toast } from "@/hooks/use-toast";
+
+const ACADEMIC_YEARS = ["1st year", "2nd year", "3rd year", "4th year", "5th year", "Postgraduate"];
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -20,7 +23,7 @@ interface ProfileSettingsModalProps {
 }
 
 const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) => {
-    const { user, updateProfileSettings, updateUserMode, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
+    const { user, refreshProfile, updateProfileSettings, updateUserMode, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
     const { mode } = useUserMode();
     const [modeSaving, setModeSaving] = useState(false);
 
@@ -38,6 +41,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [degree, setDegree] = useState("");
+    const [academicYear, setAcademicYear] = useState("");
     const [phone, setPhone] = useState("");
     const [phoneConsent, setPhoneConsent] = useState(false);
     const [emailConsent, setEmailConsent] = useState(false);
@@ -67,6 +72,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
         if (isOpen && user) {
             setFirstName(user.firstName || "");
             setLastName(user.lastName || "");
+            setDegree(user.degree || "");
+            setAcademicYear(user.academicYear || "");
             setPhone(user.phone || "");
             setPhoneConsent(!!user.phoneConsent);
             setEmailConsent(!!user.emailConsent);
@@ -163,18 +170,35 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                 whatsappConsent,
                 finalVerified,
                 firstName.trim(),
-                lastName.trim()
+                lastName.trim(),
+                degree.trim(),
+                academicYear
             );
             if (result.error) {
                 setError(result.error);
+                toast({
+                    title: "Changes were not saved",
+                    description: result.error,
+                    variant: "destructive",
+                });
             } else {
                 setSuccess("Settings updated successfully! ✨");
+                toast({
+                    title: "Profile updated",
+                    description: "Your changes have been saved.",
+                });
                 setTimeout(() => {
                     onClose();
                 }, 1500);
             }
         } catch (err: any) {
-            setError(err.message || "An unexpected error occurred.");
+            const message = err?.message || "Your changes could not be saved. Please try again.";
+            setError(message);
+            toast({
+                title: "Changes were not saved",
+                description: message,
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
@@ -183,7 +207,10 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
     const handleClaimCollege = async () => {
         setError("");
         setSuccess("");
-        const claim = toStudentCodeClaim(institutionEnrollment);
+        const claim = toStudentCodeClaim(institutionEnrollment, {
+            degree,
+            academicYear,
+        });
         if (!claim) {
             setError("Select your college and enter the student code from your TPO.");
             return;
@@ -191,7 +218,8 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
 
         setInstitutionLoading(true);
         try {
-            const institutionName = await claimStudentCode(claim);
+            const institutionName = await claimStudentCode(claim, user.id);
+            await refreshProfile();
             setInstitutionEnrollment(emptyInstitutionEnrollment);
             setSuccess(`You are now linked to ${institutionName}.`);
         } catch (err: any) {
@@ -235,7 +263,7 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                 Profile Settings
                             </h2>
                             <p className="text-sm text-muted-foreground font-body">
-                                Update your mode, notifications, and phone number
+                                Update your academic details and preferences
                             </p>
                         </div>
 
@@ -263,21 +291,41 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <InstitutionEnrollmentFields
-                                    value={institutionEnrollment}
-                                    onChange={setInstitutionEnrollment}
-                                    disabled={loading || institutionLoading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleClaimCollege}
-                                    disabled={loading || institutionLoading}
-                                    className="flex h-10 w-full items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60"
-                                >
-                                    {institutionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link my college"}
-                                </button>
-                            </div>
+                            {mode === "student" && (
+                                <div className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+                                    <p className="text-xs font-bold text-foreground">Academic details</p>
+                                    <label className="block text-xs font-semibold text-muted-foreground">
+                                        Degree / programme
+                                        <input value={degree} onChange={(event) => setDegree(event.target.value)} maxLength={80} placeholder="e.g. B.Tech Computer Science" className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50" />
+                                    </label>
+                                    <label className="block text-xs font-semibold text-muted-foreground">
+                                        Current year
+                                        <select value={academicYear} onChange={(event) => setAcademicYear(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50">
+                                            <option value="">Select your year</option>
+                                            {ACADEMIC_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+                                        </select>
+                                    </label>
+                                    <p className="text-[11px] leading-relaxed text-muted-foreground">Used to tailor practice questions. Update these here when your year changes.</p>
+                                </div>
+                            )}
+
+                            {!user.hasLinkedCollege && (
+                                <div className="space-y-2">
+                                    <InstitutionEnrollmentFields
+                                        value={institutionEnrollment}
+                                        onChange={setInstitutionEnrollment}
+                                        disabled={loading || institutionLoading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleClaimCollege}
+                                        disabled={loading || institutionLoading}
+                                        className="flex h-10 w-full items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60"
+                                    >
+                                        {institutionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link my college"}
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Name Input Grid */}
                             <div className="grid grid-cols-2 gap-3">

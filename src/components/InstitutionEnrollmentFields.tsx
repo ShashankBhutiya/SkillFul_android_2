@@ -9,24 +9,22 @@ import {
 export interface InstitutionEnrollmentValue {
     institutionId: string;
     code: string;
-    degree: string;
-    academicYear: string;
 }
 
 export const emptyInstitutionEnrollment: InstitutionEnrollmentValue = {
     institutionId: "",
     code: "",
-    degree: "",
-    academicYear: "",
 };
 
-export function toStudentCodeClaim(value: InstitutionEnrollmentValue): StudentCodeClaim | null {
+export function toStudentCodeClaim(
+    value: InstitutionEnrollmentValue,
+    academicDetails?: Pick<StudentCodeClaim, "degree" | "academicYear">,
+): StudentCodeClaim | null {
     if (!value.institutionId || !value.code.trim()) return null;
     return {
         institutionId: value.institutionId,
         code: value.code.trim().toUpperCase(),
-        degree: value.degree,
-        academicYear: value.academicYear,
+        ...academicDetails,
     };
 }
 
@@ -106,17 +104,6 @@ export function InstitutionEnrollmentFields({
                     />
                 </div>
             </label>
-
-            <div className="grid grid-cols-2 gap-2">
-                <label className="block space-y-1">
-                    <span className="text-xs font-bold text-muted-foreground">Degree</span>
-                    <input value={value.degree} onChange={(event) => change("degree", event.target.value)} disabled={disabled} maxLength={100} placeholder="e.g. B.Tech" className="h-11 w-full rounded-xl border border-white/10 bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60" />
-                </label>
-                <label className="block space-y-1">
-                    <span className="text-xs font-bold text-muted-foreground">Academic year</span>
-                    <input value={value.academicYear} onChange={(event) => change("academicYear", event.target.value)} disabled={disabled} maxLength={40} placeholder="e.g. 3rd year" className="h-11 w-full rounded-xl border border-white/10 bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60" />
-                </label>
-            </div>
 
             {loadError && <p className="text-[11px] text-destructive">{loadError}</p>}
             {loading && <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Loading colleges</p>}

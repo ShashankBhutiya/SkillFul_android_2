@@ -78,6 +78,8 @@
     phone_verified BOOLEAN NOT NULL DEFAULT false,
     first_name TEXT,
     last_name TEXT,
+    degree TEXT,
+    academic_year TEXT,
     subscription_status TEXT DEFAULT 'inactive',
     subscription_id TEXT,
     subscription_period_end TIMESTAMPTZ,
@@ -86,6 +88,8 @@
   );
 
   -- Add email_consent column if it doesn't exist (for existing deployments)
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS degree TEXT;
+  ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS academic_year TEXT;
   DO $$
   BEGIN
     IF NOT EXISTS (

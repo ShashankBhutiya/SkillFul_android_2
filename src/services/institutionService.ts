@@ -22,7 +22,7 @@ export async function listAvailableInstitutions(): Promise<AvailableInstitution[
     return (data ?? []) as AvailableInstitution[];
 }
 
-export async function claimStudentCode(claim: StudentCodeClaim): Promise<string> {
+export async function claimStudentCode(claim: StudentCodeClaim, userId?: string): Promise<string> {
     if (!supabase) throw new Error("Supabase is not configured.");
     const { data, error } = await supabase.rpc("claim_student_access_code", {
         p_institution_id: claim.institutionId,
@@ -31,6 +31,25 @@ export async function claimStudentCode(claim: StudentCodeClaim): Promise<string>
         p_academic_year: claim.academicYear?.trim() || null,
     });
     if (error) throw error;
+    if (userId && (claim.degree?.trim() || claim.academicYear?.trim())) {
+        const { data: profile, error: readError } = await supabase
+            .from("profiles")
+            .select("degree,academic_year")
+            .eq("id", userId)
+            .maybeSingle();
+        if (readError) {
+            console.warn("College linked, but academic profile details could not be read:", readError);
+        } else {
+            const details = {
+                ...(!profile?.degree?.trim() && claim.degree?.trim() ? { degree: claim.degree.trim() } : {}),
+                ...(!profile?.academic_year?.trim() && claim.academicYear?.trim() ? { academic_year: claim.academicYear.trim() } : {}),
+            };
+            if (Object.keys(details).length) {
+                const { error: profileError } = await supabase.from("profiles").update(details).eq("id", userId);
+                if (profileError) console.warn("College linked, but academic profile details could not be saved:", profileError);
+            }
+        }
+    }
     return data?.[0]?.institution_name ?? "your college";
 }
 

@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, ChevronRight, RotateCcw, Sparkles, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { savePracticeAttempt } from "@/services/aiPracticeService";
-import type { AIPracticeSet, PracticeAnswer } from "@/types/aiPractice";
+import { PracticeSaveStatus } from "./PracticeSaveStatus";
+import type { AIPracticeSet, LegacyAIPracticeQuestion, PracticeAnswer } from "@/types/aiPractice";
 
 interface AIPracticeQuizProps {
   set: AIPracticeSet;
@@ -18,7 +18,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<PracticeAnswer[]>([]);
   const [finished, setFinished] = useState(false);
-  const question = set.questions[index];
+  const question = set.questions[index] as LegacyAIPracticeQuestion;
 
   const score = useMemo(() => answers.filter((answer) => answer.correct).length, [answers]);
 
@@ -38,7 +38,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
   const continueQuiz = () => {
     if (index === set.questions.length - 1) {
       setFinished(true);
-      savePracticeAttempt(set.id, answers, score).catch(() => undefined);
+
       return;
     }
     setIndex((current) => current + 1);
@@ -48,6 +48,8 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
   if (finished) {
     const percentage = Math.round((score / set.questions.length) * 100);
     return (
+      <>
+      <PracticeSaveStatus setId={set.id} answers={answers} />
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-5 py-10">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="surface p-6 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -56,7 +58,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
           <p className="section-label mt-5">Practice complete</p>
           <h1 className="mt-2 font-display text-3xl font-bold text-foreground">{score}/{set.questions.length}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {percentage >= 80 ? "Strong work — you have a solid grip on this topic." : percentage >= 50 ? "Good start. Review the explanations and try another set." : "This is exactly what practice is for. Try an easier set and build up."}
+            {percentage >= 80 ? "Strong work â€” you have a solid grip on this topic." : percentage >= 50 ? "Good start. Review the explanations and try another set." : "This is exactly what practice is for. Try an easier set and build up."}
           </p>
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percentage}%` }} />
@@ -71,6 +73,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
           </div>
         </motion.div>
       </div>
+      </>
     );
   }
 

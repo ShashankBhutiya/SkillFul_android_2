@@ -1,0 +1,1 @@
+-- Placeholder matching an existing migration already applied to the remote project.

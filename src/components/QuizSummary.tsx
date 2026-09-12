@@ -17,6 +17,8 @@ interface QuizSummaryProps {
   totalSessionTimeSec: number;
   difficulty: "easy" | "intermediate";
   hasIntermediate: boolean;
+  generated?: boolean;
+  levelLabel?: string;
   onPlayAgain: () => void;
   onGoHome: () => void;
   onGoIntermediate: () => void;
@@ -48,6 +50,8 @@ const QuizSummary = ({
   totalSessionTimeSec,
   difficulty,
   hasIntermediate,
+  generated = false,
+  levelLabel,
   onPlayAgain,
   onGoHome,
   onGoIntermediate,
@@ -84,7 +88,7 @@ const QuizSummary = ({
   const title = getTitle(pct);
 
   const wrongAnswers = answeredQuestions.filter((a) => !a.correct);
-  const diffLabel = difficulty === "easy" ? "Easy" : "Intermediate";
+  const diffLabel = levelLabel || (difficulty === "easy" ? "Easy" : "Intermediate");
 
   // Find the slowest question (max response time)
   const slowestEntry = answeredQuestions.length > 0
@@ -294,7 +298,7 @@ const QuizSummary = ({
             className={`w-full py-4 rounded-2xl bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg flex items-center justify-center gap-2`}
           >
             <RotateCcw className="w-5 h-5" />
-            Repeat {diffLabel}
+            {generated ? "Repeat set" : `Repeat ${diffLabel}`}
           </motion.button>
 
           {difficulty === "easy" && hasIntermediate && (
@@ -308,7 +312,7 @@ const QuizSummary = ({
             </motion.button>
           )}
 
-          {difficulty === "intermediate" && (
+          {difficulty === "intermediate" && !generated && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -325,7 +329,7 @@ const QuizSummary = ({
             onClick={onSwitchCategory}
             className="w-full py-4 rounded-2xl bg-muted/80 backdrop-blur-sm text-foreground font-display font-bold text-lg flex items-center justify-center gap-2"
           >
-            <ArrowLeft className="w-5 h-5" /> Change Level
+            <ArrowLeft className="w-5 h-5" /> {generated ? "New set" : "Change Level"}
           </motion.button>
 
           <motion.button

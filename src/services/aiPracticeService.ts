@@ -5,10 +5,7 @@ const LOCAL_HISTORY_KEY = "skillful_ai_practice_history";
 
 export interface GeneratePracticeInput {
   topic: string;
-  degree: string;
-  academicYear: string;
   level: PracticeLevel;
-  questionCount: number;
 }
 
 interface PracticeSetRow {
@@ -44,7 +41,19 @@ export async function generatePracticeSet(input: GeneratePracticeInput): Promise
   if (!supabase) throw new Error("AI practice is not connected yet. Please configure Supabase first.");
 
   const { data, error } = await supabase.functions.invoke("generate-practice", { body: input });
-  if (error) throw new Error(error.message || "Could not generate this practice set.");
+  if (error) {
+    let message = error.message || "Could not generate this practice set.";
+    const context = (error as { context?: Response }).context;
+    if (context instanceof Response) {
+      try {
+        const payload = await context.clone().json() as { error?: string };
+        if (payload.error) message = payload.error;
+      } catch {
+        // Keep the SDK message when the response has no JSON error body.
+      }
+    }
+    throw new Error(message);
+  }
   if (!data?.set?.questions?.length) throw new Error(data?.error || "The AI returned an empty practice set.");
 
   const set = data.set as AIPracticeSet;
@@ -82,13 +91,15 @@ export async function savePracticeAttempt(
   setId: string,
   answers: PracticeAnswer[],
   score: number,
+  attemptId: string = crypto.randomUUID(),
 ) {
-  if (!supabase) return;
+  if (!supabase) throw new Error("Practice storage is unavailable.");
   const { error } = await supabase.from("ai_practice_attempts").insert({
+    id: attemptId,
     question_set_id: setId,
     answers,
     score,
     total_questions: answers.length,
   });
-  if (error) console.warn("Could not save AI practice attempt", error);
+  if (error && error.code !== "23505") throw error;
 }

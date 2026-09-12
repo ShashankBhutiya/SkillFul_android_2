@@ -1,0 +1,26 @@
+// Mirrors the existing student/TPO category catalog.
+export const PRACTICE_CATEGORIES = {
+  "placements": "Placements & Campus Interviews",
+  "internships": "Internships & First Job",
+  "study_strategy": "Study Skills & Exam Strategy",
+  "student_money": "Money for Students",
+  "peer_pressure": "Campus Friendships & Peer Pressure",
+  "public_speaking": "Public Speaking & Presentations",
+  "student_burnout": "Mental Health & Burnout",
+  "online_reputation": "Digital Safety & Online Reputation",
+  "student_scams": "Student Scams & Fake Opportunities",
+  "aptitude_reasoning": "Aptitude & Logical Reasoning",
+  "group_discussion": "Group Discussions & Case Rounds",
+  "resume_linkedin": "Resume & LinkedIn That Get Shortlisted",
+  "hr_behavioural": "HR & Behavioural Interview Rounds",
+  "tech_interview_readiness": "Technical Interview Readiness",
+  "corporate_etiquette": "Corporate Etiquette & Work Readiness",
+  "email_writing": "Professional Email & Business Writing",
+  "business_awareness": "Business Awareness & Company Research",
+  "dsa_fundamentals": "Data Structures & Algorithms",
+  "dbms_sql": "DBMS & SQL",
+  "operating_systems": "Operating Systems",
+  "computer_networks": "Computer Networks",
+  "oop_programming": "OOP & Programming Concepts",
+  "english_verbal": "English & Verbal Ability"
+} as const;
