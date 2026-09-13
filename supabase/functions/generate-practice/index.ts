@@ -124,7 +124,6 @@ serve(async (request) => {
     const { data: attemptRows, error: attemptsError } = await admin.from("ai_practice_attempts")
       .select("answers,ai_question_sets!inner(topic,degree,academic_year,level,questions)")
       .eq("user_id", user.id)
-      .eq("ai_question_sets.topic", topic)
       .eq("ai_question_sets.degree", degree)
       .eq("ai_question_sets.academic_year", academicYear)
       .eq("ai_question_sets.level", level)
@@ -135,8 +134,9 @@ serve(async (request) => {
     const practicedStatements: string[] = [];
     for (const row of attemptRows || []) {
       const rowQuestionIds = new Set(attemptedQuestionIds(row.answers));
-      for (const questionId of rowQuestionIds) practicedQuestionIds.add(questionId);
       const set = Array.isArray(row.ai_question_sets) ? row.ai_question_sets[0] : row.ai_question_sets;
+      if (topicKey(cleanText(set?.topic, 240)) !== requestTopicKey) continue;
+      for (const questionId of rowQuestionIds) practicedQuestionIds.add(questionId);
       if (!Array.isArray(set?.questions)) continue;
       for (const question of set.questions) {
         if (!question || typeof question.id !== "string" || !rowQuestionIds.has(question.id) ||
@@ -178,13 +178,14 @@ serve(async (request) => {
     }
     }
     const { data: bankRows, error: bankError } = await admin.from("ai_question_bank")
-      .select("question,last_served_at")
+      .select("question_key,question,last_served_at")
       .eq("user_id", user.id).eq("context_key", contextKey).eq("topic_key", requestTopicKey)
       .eq("disabled", false).order("last_served_at", { ascending: true, nullsFirst: true }).limit(50);
     if (bankError) throw bankError;
     const reused: BankQuestion[] = [];
     for (const row of bankRows || []) {
       try {
+        if (typeof row.question_key === "string" && practicedQuestionIds.has(row.question_key)) continue;
         const [q] = validateQuestions([row.question], 1, Object.keys(PRACTICE_CATEGORIES));
         if (typeof q.id === "string" && practicedQuestionIds.has(q.id)) continue;
         if (typeof q.id === "string" && !reused.some((item) => item.id === q.id)) reused.push(q);
