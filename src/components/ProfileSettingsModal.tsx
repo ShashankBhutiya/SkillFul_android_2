@@ -12,7 +12,7 @@ import {
     toStudentCodeClaim,
     type InstitutionEnrollmentValue,
 } from "@/components/InstitutionEnrollmentFields";
-import { claimStudentCode } from "@/services/institutionService";
+import { claimStudentCode, clearPendingStudentCodeClaim } from "@/services/institutionService";
 import { toast } from "@/hooks/use-toast";
 
 const ACADEMIC_YEARS = ["1st year", "2nd year", "3rd year", "4th year", "5th year", "Postgraduate"];
@@ -20,9 +20,10 @@ const ACADEMIC_YEARS = ["1st year", "2nd year", "3rd year", "4th year", "5th yea
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    requireAcademicDetails?: boolean;
 }
 
-const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) => {
+const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false }: ProfileSettingsModalProps) => {
     const { user, refreshProfile, updateProfileSettings, updateUserMode, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
     const { mode } = useUserMode();
     const [modeSaving, setModeSaving] = useState(false);
@@ -88,6 +89,18 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
     }, [isOpen, user]);
 
     const isPhoneUnverified = !user.phone || phone.trim() !== user.phone || !user.phoneVerified;
+
+    const saveProfileFields = () => updateProfileSettings(
+        phone.trim(),
+        phoneConsent,
+        emailConsent,
+        whatsappConsent,
+        phone.trim() === user.phone && !!user.phoneVerified,
+        firstName.trim(),
+        lastName.trim(),
+        degree.trim(),
+        academicYear,
+    );
 
     const handleSendOTP = async () => {
         setError("");
@@ -159,21 +172,14 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
             return;
         }
 
-        // If phone has been changed, it resets phone_verified to false unless verified during this modal session
-        const finalVerified = phone.trim() === user.phone && !!user.phoneVerified;
+        if (requireAcademicDetails && (!degree.trim() || !academicYear.trim())) {
+            setError("Enter your degree and select your current year to generate questions.");
+            setLoading(false);
+            return;
+        }
 
         try {
-            const result = await updateProfileSettings(
-                phone.trim(),
-                phoneConsent,
-                emailConsent,
-                whatsappConsent,
-                finalVerified,
-                firstName.trim(),
-                lastName.trim(),
-                degree.trim(),
-                academicYear
-            );
+            const result = await saveProfileFields();
             if (result.error) {
                 setError(result.error);
                 toast({
@@ -212,13 +218,19 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
             academicYear,
         });
         if (!claim) {
-            setError("Select your college and enter the student code from your TPO.");
+            setError("Select your college, enter your roll number, and enter the student code from your TPO.");
             return;
         }
 
         setInstitutionLoading(true);
         try {
+            if (phone.trim() && !/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
+                throw new Error("Please enter a valid phone number before linking your college.");
+            }
+            const profileResult = await saveProfileFields();
+            if (profileResult.error) throw new Error(profileResult.error);
             const institutionName = await claimStudentCode(claim, user.id);
+            clearPendingStudentCodeClaim();
             await refreshProfile();
             setInstitutionEnrollment(emptyInstitutionEnrollment);
             setSuccess(`You are now linked to ${institutionName}.`);
@@ -309,8 +321,9 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                 </div>
                             )}
 
-                            {!user.hasLinkedCollege && (
-                                <div className="space-y-2">
+                            {mode === "student" && !user.hasLinkedCollege && (
+                                <div className="space-y-2 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+                                    <p className="px-1 text-xs font-bold text-foreground">Link my college</p>
                                     <InstitutionEnrollmentFields
                                         value={institutionEnrollment}
                                         onChange={setInstitutionEnrollment}
@@ -324,6 +337,12 @@ const ProfileSettingsModal = ({ isOpen, onClose }: ProfileSettingsModalProps) =>
                                     >
                                         {institutionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link my college"}
                                     </button>
+                                </div>
+                            )}
+
+                            {mode === "student" && user.hasLinkedCollege && (
+                                <div className="flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/5 p-3 text-xs font-semibold text-foreground">
+                                    <CheckCircle2 className="h-4 w-4 text-primary" /> College linked
                                 </div>
                             )}
 

@@ -58,7 +58,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
           <p className="section-label mt-5">Practice complete</p>
           <h1 className="mt-2 font-display text-3xl font-bold text-foreground">{score}/{set.questions.length}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {percentage >= 80 ? "Strong work â€” you have a solid grip on this topic." : percentage >= 50 ? "Good start. Review the explanations and try another set." : "This is exactly what practice is for. Try an easier set and build up."}
+            {percentage >= 80 ? "Strong work - you have a solid grip on this topic." : percentage >= 50 ? "Good start. Review the explanations and try another set." : "This is exactly what practice is for. Try an easier set and build up."}
           </p>
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percentage}%` }} />

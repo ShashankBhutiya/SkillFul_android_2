@@ -1,0 +1,10 @@
+.env
+*.jks
+anon_users.json
+user_progress.json
+leaderboard_scores.json
+android/
+ios/
+tpo-portal/
+node_modules/
+.git/

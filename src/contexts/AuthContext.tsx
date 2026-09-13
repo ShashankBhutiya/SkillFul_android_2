@@ -27,6 +27,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): P
 
 function getProfileSaveErrorMessage(error: any): string {
     const message = typeof error?.message === "string" ? error.message : "";
+    const details = typeof error?.details === "string" ? error.details : "";
 
     if (error?.code === "PGRST116" || /no rows|profile record/i.test(message)) {
         return "Your profile record could not be found. Please sign out, sign back in, and try again.";
@@ -34,8 +35,11 @@ function getProfileSaveErrorMessage(error: any): string {
     if (error?.code === "42501" || /row-level security|permission denied/i.test(message)) {
         return "You do not have permission to update this profile. Please sign in again and try once more.";
     }
-    if (/timed out|network|fetch/i.test(message)) {
-        return "We could not reach the server. Check your connection and try again.";
+    if (/timed out|abort/i.test(`${message} ${details}`)) {
+        return "The profile save timed out. Check your connection and try again.";
+    }
+    if (/network|failed to fetch|fetch failed/i.test(`${message} ${details}`)) {
+        return "The profile save could not connect to the server. Check your connection and try again.";
     }
 
     return message || "Your changes could not be saved. Please try again.";
@@ -292,11 +296,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             description: `You are now linked to ${institutionName}.`,
                         });
                     } catch (error: any) {
-                        // Keep the code in local storage so the student can correct their
-                        // college selection or code from Profile Settings after signing in.
+                        // Invalid or spent codes cannot succeed on a later sign-in. Keep
+                        // pending claims only when the request may have failed temporarily.
+                        if (/invalid for the selected college/i.test(error?.message || "")) {
+                            clearPendingStudentCodeClaim();
+                        }
                         toast({
                             title: "College code was not accepted",
-                            description: error?.message || "Check the selected college and code, then try again in Profile Settings.",
+                            description: /invalid for the selected college/i.test(error?.message || "")
+                                ? "Check the selected college and enter an unused code from your TPO in Profile Settings."
+                                : error?.message || "Try again in Profile Settings.",
                             variant: "destructive",
                         });
                     }
@@ -337,6 +346,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }, 0);
             }
         );
+
+        const initializeSession = async () => {
+            const initialVersion = sessionVersion;
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                // A newer auth event wins over this startup snapshot.
+                if (cancelled || initialVersion !== sessionVersion) return;
+
+                const session = data.session;
+                const version = ++sessionVersion;
+                if (!session?.user) {
+                    if (!cancelled) {
+                        setUser(makeGuestUser());
+                        stopLoading();
+                    }
+                    return;
+                }
+
+                if (!cancelled) {
+                    setUser({
+                        id: session.user.id,
+                        email: session.user.email,
+                        isGuest: false,
+                        unlockCount: 0,
+                        isPremium: false,
+                    });
+                    stopLoading();
+                    setTimeout(() => {
+                        if (!cancelled && version === sessionVersion) {
+                            void handleSession(session, version);
+                        }
+                    }, 0);
+                }
+            } catch (error: any) {
+                console.error("Failed to initialize auth session:", error);
+                if (!cancelled) stopLoading();
+            }
+        };
+
+        void initializeSession();
 
         // Safety net: if everything is somehow still stuck after 3 seconds,
         // force-stop loading. Uses ref to avoid stale closure.
@@ -520,7 +570,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const isNative = Capacitor.isNativePlatform();
             const redirectTo = isNative
                 ? "com.truthswipe.app://callback"
-                : window.location.origin;
+                : `${window.location.origin}/auth/callback`;
 
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
@@ -592,25 +642,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Request the updated row back. Without `.select()`, PostgREST reports
             // a successful update even if RLS (or a missing profile) matches zero rows.
-            const { data, error } = await supabase
+            const saveProfile = () => supabase
                 .from("profiles")
                 .update(updatePayload)
                 .eq("id", user.id)
-                .select("id")
+                .select("id, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, degree, academic_year")
                 .maybeSingle();
+            let { data, error } = await saveProfile();
+            // Repeating the same update is safe if the first request lost its response.
+            if (error && /timed out|abort|network|failed to fetch|fetch failed/i.test(`${error.message} ${error.details || ""}`)) {
+                ({ data, error } = await saveProfile());
+            }
 
             if (error) throw error;
             if (!data) {
                 throw { code: "PGRST116", message: "No profile record was updated." };
             }
             
-            await refreshProfile();
+            setUser(current => current.id === user.id ? {
+                ...current,
+                phone: data.phone || "",
+                phoneConsent: data.phone_consent ?? false,
+                emailConsent: data.email_consent ?? false,
+                whatsappConsent: data.whatsapp_consent ?? false,
+                phoneVerified: data.phone_verified ?? false,
+                firstName: data.first_name || "",
+                lastName: data.last_name || "",
+                degree: data.degree || "",
+                academicYear: data.academic_year || "",
+            } : current);
             return {};
         } catch (err: any) {
             console.error("Failed to update profile settings:", err);
             return { error: getProfileSaveErrorMessage(err) };
         }
-    }, [user, refreshProfile]);
+    }, [user]);
 
     // --- Send Phone Verification OTP (Real + Simulated Fallback) ---
     const sendPhoneVerificationOTP = useCallback(async (phone: string): Promise<{ success: boolean; error?: string }> => {

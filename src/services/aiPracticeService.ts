@@ -6,6 +6,8 @@ const LOCAL_HISTORY_KEY = "skillful_ai_practice_history";
 export interface GeneratePracticeInput {
   topic: string;
   level: PracticeLevel;
+  degree: string;
+  academicYear: string;
 }
 
 interface PracticeSetRow {
@@ -40,7 +42,9 @@ function cachePracticeSet(set: AIPracticeSet) {
 export async function generatePracticeSet(input: GeneratePracticeInput): Promise<AIPracticeSet> {
   if (!supabase) throw new Error("AI practice is not connected yet. Please configure Supabase first.");
 
-  const { data, error } = await supabase.functions.invoke("generate-practice", { body: input });
+  const { data, error } = await supabase.functions.invoke("generate-practice", {
+    body: { ...input, questionCount: 5 },
+  });
   if (error) {
     let message = error.message || "Could not generate this practice set.";
     const context = (error as { context?: Response }).context;
@@ -57,6 +61,13 @@ export async function generatePracticeSet(input: GeneratePracticeInput): Promise
   if (!data?.set?.questions?.length) throw new Error(data?.error || "The AI returned an empty practice set.");
 
   const set = data.set as AIPracticeSet;
+  if (!set.questions.every((question) =>
+    "statement" in question && typeof question.statement === "string" &&
+    "answer" in question && typeof question.answer === "boolean" &&
+    typeof question.explanation === "string"
+  )) {
+    throw new Error("The generator returned an older question format. Please try again shortly.");
+  }
   cachePracticeSet(set);
   return set;
 }

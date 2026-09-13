@@ -12,7 +12,7 @@ const fetchWithTimeout = async (url: RequestInfo | URL, options?: RequestInit) =
     // "Failed to send a request to the Edge Function" message.
     const timeoutMs = requestUrl.includes("/functions/v1/generate-practice")
         ? 90_000
-        : 15_000;
+        : 30_000;
     const id = setTimeout(() => controller.abort(), timeoutMs);
 
     // If the caller already provides a signal, abort ours when theirs aborts too
@@ -37,6 +37,12 @@ const fetchWithTimeout = async (url: RequestInfo | URL, options?: RequestInit) =
 export const supabase =
     supabaseUrl && supabaseAnonKey
         ? createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true,
+                flowType: "pkce",
+            },
             global: {
                 fetch: fetchWithTimeout
             }

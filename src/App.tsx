@@ -1,10 +1,11 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import Index from "./pages/Index";
 import { Analytics } from "@vercel/analytics/react";
 import { initGA } from "@/utils/analytics";
@@ -52,6 +53,61 @@ const PushNotificationInitializer = () => {
   return null;
 };
 
+const AuthCallback = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const completeSignIn = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const redirectError = params.get("error_description") || params.get("error");
+      if (redirectError) {
+        if (active) setError(redirectError);
+        return;
+      }
+      if (!supabase) {
+        if (active) setError("Sign-in is unavailable right now. Please try again later.");
+        return;
+      }
+      try {
+        // getSession waits for Supabase to exchange the OAuth code in the URL.
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (!active) return;
+        if (sessionError) throw sessionError;
+        if (data.session?.user) {
+          navigate("/skills", { replace: true });
+        } else {
+          setError("Sign-in could not be completed. Please return and try Google sign-in again.");
+        }
+      } catch (sessionError) {
+        if (active) setError(sessionError instanceof Error ? sessionError.message : "Sign-in could not be completed.");
+      }
+    };
+    void completeSignIn();
+    return () => { active = false; };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!user.isGuest && !error) navigate("/skills", { replace: true });
+  }, [user.isGuest, error, navigate]);
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <h1 className="text-xl font-semibold">{error ? "Google sign-in failed" : "Finishing sign-in…"}</h1>
+      {error && <><p className="max-w-md text-sm text-muted-foreground">{error}</p><a className="text-primary underline" href="/skills">Return to Skillful</a></>}
+    </div>
+  );
+};
+
+const RootRoute = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("code") || params.has("error") || params.has("error_description") || window.location.hash.includes("access_token=")
+    ? <AuthCallback />
+    : <Navigate to="/skills" replace />;
+};
+
 const App = () => {
   const { needsUpdate, loading, currentVersion, minimumVersion, updateMessage } =
     useForceUpdate();
@@ -82,7 +138,8 @@ const App = () => {
             <PushNotificationInitializer />
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
-                <Route path="/" element={<Navigate to="/skills" replace />} />
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/skills" element={<SkillsPage />} />
                 <Route path="/skills/ai" element={<SkillsPage ai />} />
                 <Route path="/skills/classic" element={<SkillsPage classic />} />

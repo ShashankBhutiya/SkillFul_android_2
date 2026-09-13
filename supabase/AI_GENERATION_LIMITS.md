@@ -1,6 +1,6 @@
 # AI generation limits
 
-Apply `migrations/20260912020000_ai_generation_limits.sql` and `migrations/20260912030000_ai_generation_base_40.sql` and `migrations/20260912040000_ai_question_quota_300.sql` before deploying the updated `generate-practice` Edge Function. The function fails closed if quota reservation is unavailable.
+Apply migrations through `20260913010000_restore_five_question_generation.sql` before deploying the updated `generate-practice` Edge Function. The function fails closed if quota reservation is unavailable.
 
 Each signed-in user has a 60-second cooldown and 40 questions per UTC day by default. Every active saved streak day adds 10 daily questions: `min(300, base + 10 * current_streak)`. With the default base this gives 50 at day 1, 60 at day 2, 110 at day 7, and 290 at day 25, reaching the 300 cap at day 26. The quota resets at 00:00 UTC (5:30 AM IST).
 

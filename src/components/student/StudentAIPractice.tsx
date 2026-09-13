@@ -47,7 +47,9 @@ export default function StudentAIPractice() {
       return;
     }
     if (!user.degree?.trim() || !user.academicYear?.trim()) {
-      setError("Add your degree and current year in Profile Settings to personalise your questions.");
+      setError(!user.degree?.trim()
+        ? "Add your degree in Profile Settings to personalise your questions."
+        : "Select your current year in Profile Settings to personalise your questions.");
       setShowProfile(true);
       return;
     }
@@ -57,6 +59,8 @@ export default function StudentAIPractice() {
       const set = await generatePracticeSet({
         topic: topic.trim(),
         level,
+        degree: user.degree.trim(),
+        academicYear: user.academicYear.trim(),
       });
       setActiveSet(set);
       setHistory((current) => [set, ...current.filter((item) => item.id !== set.id)].slice(0, 12));
@@ -194,7 +198,7 @@ export default function StudentAIPractice() {
                 <button key={item.id} onClick={() => setActiveSet(item)} className="flex w-full items-center justify-between gap-4 rounded-xl border border-border bg-card p-3.5 text-left hover:border-primary/30">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-foreground">{item.title || item.topic}</p>
-                    <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">{item.level} · {item.questions.length} questions · {item.academicYear}</p>
+                    <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">{item.level} · {item.questions.length} {item.questions.length === 1 ? "question" : "questions"} · {item.academicYear}</p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
@@ -205,7 +209,7 @@ export default function StudentAIPractice() {
       </div>
 
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
-      <ProfileSettingsModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
+      <ProfileSettingsModal isOpen={showProfile} onClose={() => setShowProfile(false)} requireAcademicDetails />
     </MainLayout>
   );
 }

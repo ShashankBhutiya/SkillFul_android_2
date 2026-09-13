@@ -9,6 +9,7 @@ export interface AvailableInstitution {
 export interface StudentCodeClaim {
     institutionId: string;
     code: string;
+    rollNumber: string;
     degree?: string;
     academicYear?: string;
 }
@@ -27,6 +28,7 @@ export async function claimStudentCode(claim: StudentCodeClaim, userId?: string)
     const { data, error } = await supabase.rpc("claim_student_access_code", {
         p_institution_id: claim.institutionId,
         p_code: claim.code,
+        p_roll_number: claim.rollNumber.trim(),
         p_degree: claim.degree?.trim() || null,
         p_academic_year: claim.academicYear?.trim() || null,
     });
