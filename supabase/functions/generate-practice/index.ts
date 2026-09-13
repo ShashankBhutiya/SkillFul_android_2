@@ -45,6 +45,38 @@ function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+async function callOpenAI(openAIKey: string, body: Record<string, unknown>) {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${openAIKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  return { response, data };
+}
+
+function outputTextFrom(data: any) {
+  return data.output_text || data.output?.flatMap((item: any) => item.content || [])
+    .find((item: any) => item.type === "output_text")?.text;
+}
+
+function publicOpenAIError(status: number, data: any) {
+  const errorCode = String(data?.error?.code || data?.error?.type || "unknown");
+  console.error("OpenAI response error", status, errorCode, data?.error?.message);
+
+  let publicMessage = "The question generator is busy. Please try again shortly.";
+  if (["invalid_api_key", "authentication_error"].includes(errorCode) || status === 401) {
+    publicMessage = "The AI service key was rejected. Please ask the administrator to update it.";
+  } else if (["insufficient_quota", "billing_not_active", "billing_hard_limit_reached"].includes(errorCode) || status === 429) {
+    publicMessage = "The AI service has no available quota. Please ask the administrator to check API billing.";
+  } else if (["model_not_found", "invalid_model"].includes(errorCode)) {
+    publicMessage = "The configured AI model is unavailable. Please ask the administrator to change it.";
+  } else if (status === 400) {
+    publicMessage = `The AI service rejected this request (${errorCode}).`;
+  }
+  return publicMessage;
+}
+
 serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
@@ -158,11 +190,10 @@ serve(async (request) => {
       }, { status: 429, headers: { ...corsHeaders, "Retry-After": String(quota.retryAfter) } });
     }
 
-    const aiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${openAIKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: Deno.env.get("OPENAI_MODEL") || "gpt-5-mini",
+    const generationModel = Deno.env.get("OPENAI_MODEL") || "gpt-5.4";
+    const reviewModel = Deno.env.get("OPENAI_REVIEW_MODEL") || "gpt-5.4";
+    const { response: aiResponse, data: aiData } = await callOpenAI(openAIKey, {
+        model: generationModel,
         store: false,
         safety_identifier: user.id,
         instructions: [
@@ -185,34 +216,48 @@ serve(async (request) => {
           },
         },
         max_output_tokens: 3500,
-      }),
-    });
-
-    const aiData = await aiResponse.json();
+      });
     if (!aiResponse.ok) {
-      const errorCode = String(aiData?.error?.code || aiData?.error?.type || "unknown");
-      console.error("OpenAI response error", aiResponse.status, errorCode, aiData?.error?.message);
-
-      let publicMessage = "The question generator is busy. Please try again shortly.";
-      if (["invalid_api_key", "authentication_error"].includes(errorCode) || aiResponse.status === 401) {
-        publicMessage = "The AI service key was rejected. Please ask the administrator to update it.";
-      } else if (["insufficient_quota", "billing_not_active", "billing_hard_limit_reached"].includes(errorCode) || aiResponse.status === 429) {
-        publicMessage = "The AI service has no available quota. Please ask the administrator to check API billing.";
-      } else if (["model_not_found", "invalid_model"].includes(errorCode)) {
-        publicMessage = "The configured AI model is unavailable. Please ask the administrator to change it.";
-      } else if (aiResponse.status === 400) {
-        publicMessage = `The AI service rejected this request (${errorCode}).`;
-      }
-
-      return Response.json({ error: publicMessage }, { status: 502, headers: corsHeaders });
+      return Response.json({ error: publicOpenAIError(aiResponse.status, aiData) }, { status: 502, headers: corsHeaders });
     }
 
-    const outputText = aiData.output_text || aiData.output?.flatMap((item: any) => item.content || []).find((item: any) => item.type === "output_text")?.text;
+    const outputText = outputTextFrom(aiData);
     if (!outputText) throw new Error("The AI response did not contain a practice set.");
     const parsed = JSON.parse(outputText);
-    generated = { title: cleanText(parsed.title, 90) || "Practice set",
+    const candidate = { title: cleanText(parsed.title, 90) || "Practice set",
       questions: validateQuestions(parsed.questions, missingCount, Object.keys(PRACTICE_CATEGORIES)) };
-    model = aiData.model || Deno.env.get("OPENAI_MODEL") || "gpt-5-mini";
+
+    const { response: reviewResponse, data: reviewData } = await callOpenAI(openAIKey, {
+      model: reviewModel,
+      store: false,
+      safety_identifier: user.id,
+      instructions: [
+        "You are the quality-review module for student true-or-false practice questions.",
+        "Review every generated question for factual correctness, unambiguous truth value, age/programme suitability, topic relevance, duplicate meaning, and explanation quality.",
+        "Return exactly the requested count in the same JSON schema. Prefer preserving good questions. Rewrite only when needed to fix correctness, ambiguity, topic fit, classification, or explanation clarity.",
+        "Keep questions independently verifiable. Do not add citations. Avoid subjective claims, trick wording, and duplicated concepts.",
+        `Categories: ${JSON.stringify(PRACTICE_CATEGORIES)}`,
+      ].join(" "),
+      input: `Review and return ${missingCount} approved questions for this context.\nTopic: ${topic}\nStudent programme: ${degree}\nAcademic year: ${academicYear}\nChallenge level: ${level}\nExisting stored statements to avoid: ${JSON.stringify(reused.map((q) => q.statement))}\nGenerated draft: ${JSON.stringify(candidate)}`,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "reviewed_student_practice_set",
+          strict: true,
+          schema: { ...questionSchema, properties: { ...questionSchema.properties, questions: { ...questionSchema.properties.questions, minItems: missingCount, maxItems: missingCount } } },
+        },
+      },
+      max_output_tokens: 3500,
+    });
+    if (!reviewResponse.ok) {
+      return Response.json({ error: publicOpenAIError(reviewResponse.status, reviewData) }, { status: 502, headers: corsHeaders });
+    }
+    const reviewOutputText = outputTextFrom(reviewData);
+    if (!reviewOutputText) throw new Error("The AI review response did not contain a practice set.");
+    const reviewed = JSON.parse(reviewOutputText);
+    generated = { title: cleanText(reviewed.title, 90) || candidate.title,
+      questions: validateQuestions(reviewed.questions, missingCount, Object.keys(PRACTICE_CATEGORIES)) };
+    model = `generator:${aiData.model || generationModel};reviewer:${reviewData.model || reviewModel}`;
     for (const question of generated.questions) question.id = await questionKey(question.statement);
     } // Cache hits never reserve generation quota or call the model.
 

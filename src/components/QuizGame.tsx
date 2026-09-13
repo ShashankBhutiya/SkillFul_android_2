@@ -20,7 +20,7 @@ import { PracticeSaveStatus } from "./student/PracticeSaveStatus";
 // Guests can complete one milestone (five correct answers) before signing in.
 const LOGIN_GATE_INTERVAL = 5;
 
-// â”€â”€â”€ Global cumulative question counter (persisted in localStorage) â”€â”€â”€
+// Global cumulative question counter (persisted in localStorage)
 const GLOBAL_COUNT_KEY = "quiz_global_answered_count";
 
 function getGlobalAnsweredCount(): number {
@@ -66,7 +66,7 @@ const milestoneMessages = [
 /** Slice questions by difficulty: easy = first 50, intermediate = rest */
 function getQuestionsForDifficulty(category: Category, difficulty: "easy" | "intermediate"): Question[] {
   if (category.questions.length <= 50) {
-    // Not enough for two levels â€” easy gets all, intermediate gets nothing
+    // Not enough for two levels - easy gets all, intermediate gets nothing
     return difficulty === "easy" ? [...category.questions] : [];
   }
   if (difficulty === "easy") {
@@ -81,7 +81,7 @@ function getUnpracticedSubset(allQuestions: Question[], categoryId: string, user
   return allQuestions.filter((q) => !practiced.has(q.id));
 }
 
-/** Format seconds â†’ "Xm Ys" */
+/** Format seconds to "Xm Ys" */
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -100,7 +100,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
   const category: Category = generatedSet ? {
     id: categoryId,
     name: generatedSet.title || generatedSet.topic,
-    emoji: "ðŸ“š",
+    emoji: "📚",
     gradient: "from-primary to-accent",
     audience: "student",
     questions: (generatedSet.questions as AIPracticeQuestion[]).map((item, index) => ({
@@ -351,7 +351,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
     }
   }, [user.isGuest, currentIndex, questions.length]);
 
-  // When auth modal closes, check if still guest â€” if so, re-show gate
+  // When auth modal closes, check if still guest - if so, re-show gate
   const handleAuthModalClose = useCallback(() => {
     setShowAuthModal(false);
     setShowLoginGate(user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL);
@@ -578,7 +578,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                     <p className="text-sm text-muted-foreground mb-3">
                       The answer is{" "}
                       <span className={`font-bold ${currentCorrectAnswer ? "text-success" : "text-destructive"}`}>
-                        {currentCorrectAnswer ? "TRUE âœ“" : "FALSE âœ—"}
+                        {currentCorrectAnswer ? "TRUE ✓" : "FALSE ✕"}
                       </span>
                     </p>
                     <div className="bg-muted rounded-xl p-4 mb-4 text-left">
@@ -595,7 +595,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                       onClick={dismissExplanation}
                       className={`w-full py-3 rounded-xl bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg`}
                     >
-                      Got it! â†’
+                      Got it! →
                     </motion.button>
                   </div>
                 </div>
@@ -603,7 +603,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
             )}
           </AnimatePresence>
 
-          {/* Milestone Completed Celebration Popup â€” every 5 questions */}
+          {/* Milestone Completed Celebration Popup - every 5 questions */}
           <AnimatePresence>
             {showMilestone && (
               <MilestoneCelebration
