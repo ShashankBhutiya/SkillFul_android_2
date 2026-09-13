@@ -26,6 +26,7 @@ const PremiumPage = () => {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
+  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
 
   const plan = PLANS[selectedPlan];
   const originalYearlyCost = PLANS.monthly.price * 12; // 3588
@@ -171,7 +172,7 @@ const PremiumPage = () => {
           </button>
         </div>
 
-        {paymentStatus === "success" ? (
+        {paymentStatus === "success" || hasIncludedAccess ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -181,11 +182,19 @@ const PremiumPage = () => {
               <ShieldCheck className="h-7 w-7" />
             </div>
             <h2 className="font-display text-2xl font-semibold text-foreground">
-              Upgrade successful
+              {paymentStatus === "success" ? "Upgrade successful" : user.isPremium ? "Premium active" : "College access active"}
             </h2>
             <p className="mb-7 mt-2.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
-              premium skill topics and rapid-fire scenarios are now unlocked.
+              {paymentStatus === "success" || user.isPremium ? (
+                <>
+                  Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
+                  premium skill topics and rapid-fire scenarios are now unlocked.
+                </>
+              ) : (
+                <>
+                  Your college link includes access to premium skill topics and rapid-fire scenarios.
+                </>
+              )}
             </p>
             <button
               onClick={handleStartPracticing}

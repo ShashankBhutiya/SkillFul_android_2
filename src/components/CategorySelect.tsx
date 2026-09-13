@@ -85,6 +85,7 @@ interface CategoryCardProps {
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const { user } = useAuth();
   const { mode, ready: modeReady } = useUserMode();
+  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
 
   // The catalog is filtered by mode, not merely reordered: a student should
   // never be shown salary-negotiation or office-politics topics, and a working
@@ -103,7 +104,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   };
 
   const skillOfTheDayRequiredRefs = skillOfTheDay ? getRequiredReferrals(skillOfTheDay.id) : 0;
-  const isSkillOfTheDayLocked = skillOfTheDay && !user.isPremium && skillOfTheDayRequiredRefs > 0 && user.unlockCount < skillOfTheDayRequiredRefs;
+  const isSkillOfTheDayLocked = skillOfTheDay && !hasIncludedAccess && skillOfTheDayRequiredRefs > 0 && user.unlockCount < skillOfTheDayRequiredRefs;
   const [showReferralFor, setShowReferralFor] = useState<{ id: string; name: string } | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestName, setRequestName] = useState("");
@@ -192,7 +193,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const renderCategoryList = (cats: CategorySummary[], startIndex: number, cardClassName?: string) =>
     cats.map((cat, i) => {
       const requiredRefs = getRequiredReferrals(cat.id);
-      const isLocked = !user.isPremium && requiredRefs > 0 && user.unlockCount < requiredRefs;
+      const isLocked = !hasIncludedAccess && requiredRefs > 0 && user.unlockCount < requiredRefs;
       // Cross-reference practiced IDs with actual question objects
       // to avoid counting stale/orphaned IDs from removed questions
       const practicedIdSet = new Set(getPracticedIds(cat.id, user.id));

@@ -47,6 +47,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
+  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
 
   if (!isOpen) return null;
 
@@ -206,7 +207,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <X className="w-4 h-4" />
               </button>
 
-              {paymentStatus === "success" ? (
+              {paymentStatus === "success" || hasIncludedAccess ? (
                 <fm.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -216,10 +217,14 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     <ShieldCheck className="w-9 h-9" />
                   </div>
                   <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-                    Upgrade Successful!
+                    {paymentStatus === "success" ? "Upgrade Successful!" : user.isPremium ? "Premium Active" : "College Access Active"}
                   </h2>
                   <p className="text-muted-foreground text-sm max-w-xs mb-8">
-                    Welcome to <strong className="text-foreground">Skillful Premium</strong>. All skills are now unlocked for you. Happy practicing!
+                    {paymentStatus === "success" || user.isPremium ? (
+                      <>Welcome to <strong className="text-foreground">Skillful Premium</strong>. All skills are now unlocked for you. Happy practicing!</>
+                    ) : (
+                      <>Your linked college includes access to premium skills. Happy practicing!</>
+                    )}
                   </p>
                   <button
                     onClick={handleClose}

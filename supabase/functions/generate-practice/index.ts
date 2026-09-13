@@ -77,6 +77,12 @@ function publicOpenAIError(status: number, data: any) {
   return publicMessage;
 }
 
+function attemptedQuestionIds(answers: unknown): string[] {
+  if (!Array.isArray(answers)) return [];
+  return answers.flatMap((answer) =>
+    answer && typeof answer.questionId === "string" ? [answer.questionId] : []);
+}
+
 serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
@@ -115,6 +121,29 @@ serve(async (request) => {
 
     const contextKey = [topicKey(degree), topicKey(academicYear), level].join("|");
     const requestTopicKey = topicKey(topic);
+    const { data: attemptRows, error: attemptsError } = await admin.from("ai_practice_attempts")
+      .select("answers,ai_question_sets!inner(topic,degree,academic_year,level,questions)")
+      .eq("user_id", user.id)
+      .eq("ai_question_sets.topic", topic)
+      .eq("ai_question_sets.degree", degree)
+      .eq("ai_question_sets.academic_year", academicYear)
+      .eq("ai_question_sets.level", level)
+      .order("completed_at", { ascending: false })
+      .limit(200);
+    if (attemptsError) throw attemptsError;
+    const practicedQuestionIds = new Set<string>();
+    const practicedStatements: string[] = [];
+    for (const row of attemptRows || []) {
+      const rowQuestionIds = new Set(attemptedQuestionIds(row.answers));
+      for (const questionId of rowQuestionIds) practicedQuestionIds.add(questionId);
+      const set = Array.isArray(row.ai_question_sets) ? row.ai_question_sets[0] : row.ai_question_sets;
+      if (!Array.isArray(set?.questions)) continue;
+      for (const question of set.questions) {
+        if (!question || typeof question.id !== "string" || !rowQuestionIds.has(question.id) ||
+          typeof question.statement !== "string") continue;
+        if (!practicedStatements.includes(question.statement)) practicedStatements.push(question.statement);
+      }
+    }
     const { data: existingBank, error: bankProbeError } = await admin.from("ai_question_bank")
       .select("id").eq("user_id", user.id).eq("context_key", contextKey)
       .eq("topic_key", requestTopicKey).limit(1);
@@ -157,6 +186,7 @@ serve(async (request) => {
     for (const row of bankRows || []) {
       try {
         const [q] = validateQuestions([row.question], 1, Object.keys(PRACTICE_CATEGORIES));
+        if (typeof q.id === "string" && practicedQuestionIds.has(q.id)) continue;
         if (typeof q.id === "string" && !reused.some((item) => item.id === q.id)) reused.push(q);
       } catch { /* Skip obsolete or malformed stored content. */ }
       if (reused.length === questionCount) break;
@@ -206,7 +236,7 @@ serve(async (request) => {
           "Keep explanations concise, educational, and factually grounded. Avoid duplicated statements. Never invent facts or citations.",
           "If a request is unsafe, asks for cheating on an active assessment, or cannot responsibly be answered, create questions about the underlying safe educational concepts instead.",
         ].join(" "),
-        input: `Create ${missingCount} questions about: ${topic}\nStudent programme: ${degree}\nAcademic year: ${academicYear}\nChallenge level: ${level}\nDo not repeat these stored statements: ${JSON.stringify(reused.map((q) => q.statement))}`,
+        input: `Create ${missingCount} questions about: ${topic}\nStudent programme: ${degree}\nAcademic year: ${academicYear}\nChallenge level: ${level}\nDo not repeat these stored or already practised statements: ${JSON.stringify([...reused.map((q) => q.statement), ...practicedStatements])}`,
         text: {
           format: {
             type: "json_schema",
@@ -238,7 +268,7 @@ serve(async (request) => {
         "Keep questions independently verifiable. Do not add citations. Avoid subjective claims, trick wording, and duplicated concepts.",
         `Categories: ${JSON.stringify(PRACTICE_CATEGORIES)}`,
       ].join(" "),
-      input: `Review and return ${missingCount} approved questions for this context.\nTopic: ${topic}\nStudent programme: ${degree}\nAcademic year: ${academicYear}\nChallenge level: ${level}\nExisting stored statements to avoid: ${JSON.stringify(reused.map((q) => q.statement))}\nGenerated draft: ${JSON.stringify(candidate)}`,
+      input: `Review and return ${missingCount} approved questions for this context.\nTopic: ${topic}\nStudent programme: ${degree}\nAcademic year: ${academicYear}\nChallenge level: ${level}\nExisting stored or already practised statements to avoid: ${JSON.stringify([...reused.map((q) => q.statement), ...practicedStatements])}\nGenerated draft: ${JSON.stringify(candidate)}`,
       text: {
         format: {
           type: "json_schema",
