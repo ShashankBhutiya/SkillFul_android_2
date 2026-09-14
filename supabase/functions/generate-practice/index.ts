@@ -145,7 +145,7 @@ serve(async (request) => {
       }
     }
     const { data: existingBank, error: bankProbeError } = await admin.from("ai_question_bank")
-      .select("id").eq("user_id", user.id).eq("context_key", contextKey)
+      .select("id").eq("context_key", contextKey)
       .eq("topic_key", requestTopicKey).limit(1);
     if (bankProbeError) throw bankProbeError;
     if (!existingBank?.length) {
@@ -179,7 +179,7 @@ serve(async (request) => {
     }
     const { data: bankRows, error: bankError } = await admin.from("ai_question_bank")
       .select("question_key,question,last_served_at")
-      .eq("user_id", user.id).eq("context_key", contextKey).eq("topic_key", requestTopicKey)
+      .eq("context_key", contextKey).eq("topic_key", requestTopicKey)
       .eq("disabled", false).order("last_served_at", { ascending: true, nullsFirst: true }).limit(50);
     if (bankError) throw bankError;
     const reused: BankQuestion[] = [];
@@ -318,7 +318,7 @@ serve(async (request) => {
 
     // Rotation is best effort; the saved set is already durable.
     const { error: rotationError } = await admin.from("ai_question_bank").update({ last_served_at: new Date().toISOString() })
-      .eq("user_id", user.id).eq("context_key", contextKey).eq("topic_key", requestTopicKey)
+      .eq("context_key", contextKey).eq("topic_key", requestTopicKey)
       .in("question_key", questions.map((q) => q.id));
     if (rotationError) console.warn("Question bank rotation failed", rotationError.code);
 
