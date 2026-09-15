@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   refreshProfile: vi.fn(async () => undefined),
   claimStudentCode: vi.fn(async () => "Test College"),
   clearPendingStudentCodeClaim: vi.fn(),
+  listAvailableInstitutions: vi.fn(async () => [{ id: "college-1", name: "Test College", city: "Pune" }]),
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({
@@ -32,7 +33,7 @@ vi.mock("@/hooks/useUserMode", () => ({
 }));
 
 vi.mock("@/services/institutionService", () => ({
-  listAvailableInstitutions: async () => [{ id: "college-1", name: "Test College", city: "Pune" }],
+  listAvailableInstitutions: mocks.listAvailableInstitutions,
   claimStudentCode: mocks.claimStudentCode,
   clearPendingStudentCodeClaim: mocks.clearPendingStudentCodeClaim,
   formatStudentCodeClaimError: (error: Error) => error.message,
@@ -44,6 +45,7 @@ vi.mock("@/hooks/use-toast", () => ({ toast: vi.fn() }));
 describe("Profile Settings college link", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listAvailableInstitutions.mockResolvedValue([{ id: "college-1", name: "Test College", city: "Pune" }]);
   });
 
   it("links a completed college entry when Save Changes is pressed", async () => {
@@ -51,7 +53,7 @@ describe("Profile Settings college link", () => {
 
     await screen.findByRole("option", { name: "Test College — Pune" });
     fireEvent.change(screen.getByLabelText("College"), { target: { value: "college-1" } });
-    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "CODE123" } });
+    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "ABCDEF1234567890ABCD" } });
     fireEvent.change(screen.getByLabelText("Roll number"), { target: { value: "22CSE104" } });
     fireEvent.change(screen.getByLabelText("Degree / programme"), { target: { value: "B.Tech CSE" } });
     fireEvent.change(screen.getByLabelText("Current year"), { target: { value: "3rd year" } });
@@ -60,12 +62,52 @@ describe("Profile Settings college link", () => {
 
     await waitFor(() => expect(mocks.claimStudentCode).toHaveBeenCalledWith({
       institutionId: "college-1",
-      code: "CODE123",
+      code: "ABCDEF1234567890ABCD",
       rollNumber: "22CSE104",
       degree: "B.Tech CSE",
       academicYear: "3rd year",
     }, "user-1"));
     expect(mocks.clearPendingStudentCodeClaim).toHaveBeenCalled();
     expect(mocks.refreshProfile).toHaveBeenCalled();
+  });
+
+  it("shows specific field errors and does not submit incomplete college details", async () => {
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "short-code" } });
+    fireEvent.click(screen.getByRole("button", { name: "Link my college" }));
+
+    expect(await screen.findByText("Select your college.")).toBeInTheDocument();
+    expect(screen.getByText("Student codes contain 20 letters and numbers.")).toBeInTheDocument();
+    expect(screen.getByText("Enter your college roll number.")).toBeInTheDocument();
+    expect(screen.getByLabelText("College")).toHaveAttribute("aria-invalid", "true");
+    expect(mocks.updateProfileSettings).not.toHaveBeenCalled();
+    expect(mocks.claimStudentCode).not.toHaveBeenCalled();
+  });
+
+  it("normalizes pasted student codes and roll numbers", async () => {
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    const code = screen.getByLabelText("Student code") as HTMLInputElement;
+    const rollNumber = screen.getByLabelText("Roll number") as HTMLInputElement;
+    fireEvent.change(code, { target: { value: "abcd-ef12 3456-7890-abcd" } });
+    fireEvent.change(rollNumber, { target: { value: "22cse104" } });
+
+    expect(code.value).toBe("ABCDEF1234567890ABCD");
+    expect(rollNumber.value).toBe("22CSE104");
+  });
+
+  it("lets the user retry when the college list fails to load", async () => {
+    mocks.listAvailableInstitutions
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([{ id: "college-1", name: "Test College", city: "Pune" }]);
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Colleges are unavailable right now");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(await screen.findByRole("option", { name: "Test College — Pune" })).toBeInTheDocument();
   });
 });

@@ -32,6 +32,75 @@ const TAB_ITEMS = [
   { to: "/info", label: "Profile", icon: User, pattern: /^\/(info|streak|about|contact|privacy|terms|blog)/ },
 ];
 
+interface BottomTabBarProps {
+  pathname: string;
+  className?: string;
+}
+
+// Keep these components at module scope. Defining them inside MainLayout would
+// give them a new identity on every layout update and reset stateful children
+// such as ProfileBadge (including any modal it currently has open).
+const BottomTabBar = ({ pathname, className = "sticky" }: BottomTabBarProps) => (
+  <div className={`${className} bottom-0 left-0 right-0 h-[64px] bg-background border-t border-border flex items-stretch justify-around px-1 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
+    {TAB_ITEMS.map((tab) => {
+      const isActive = tab.pattern.test(pathname) || (tab.to === "/skills" && pathname === "/");
+      const Icon = tab.icon;
+
+      return (
+        <Link
+          key={tab.to}
+          to={tab.to}
+          aria-current={isActive ? "page" : undefined}
+          className="relative flex flex-col items-center justify-center flex-1 gap-1 text-center group"
+        >
+          {isActive && (
+            <motion.div
+              layoutId="activeTabIndicator"
+              className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary"
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            />
+          )}
+
+          <Icon
+            strokeWidth={isActive ? 2.25 : 1.75}
+            className={`h-5 w-5 transition-colors duration-150 ${
+              isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+            }`}
+          />
+          <span
+            className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+              isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </span>
+        </Link>
+      );
+    })}
+  </div>
+);
+
+const AppHeader = ({ extraClass = "" }: { extraClass?: string }) => (
+  <header className={`sticky top-0 z-40 border-b border-border bg-background shrink-0 ${extraClass}`}>
+    <div className="flex h-14 items-center justify-between px-4">
+      <Link to="/skills" className="flex items-center gap-2.5 group shrink-0">
+        <img
+          src="/favicon.png"
+          alt=""
+          className="h-7 w-7 rounded-md object-cover"
+        />
+        <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">
+          Skillful
+        </span>
+      </Link>
+
+      <div className="flex items-center gap-1.5">
+        <ProfileBadge />
+      </div>
+    </div>
+  </header>
+);
+
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,7 +112,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   useEffect(() => {
     const checkMobile = () => {
       const mobileQuery = window.matchMedia("(max-width: 640px)");
-      const isCapacitor = (window as any).Capacitor !== undefined;
+      const isCapacitor = (window as Window & { Capacitor?: unknown }).Capacitor !== undefined;
       setIsMobile(mobileQuery.matches || isCapacitor);
     };
     checkMobile();
@@ -90,78 +159,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     window.scrollTo({ top: 0 });
   }, [location.pathname]);
 
-  // Bottom Tab Bar Component (shared between layouts)
-  const BottomTabBar = ({ className = "sticky" }: { className?: string }) => {
-    return (
-      <div className={`${className} bottom-0 left-0 right-0 h-[64px] bg-background border-t border-border flex items-stretch justify-around px-1 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
-        {TAB_ITEMS.map((tab) => {
-          const isActive = tab.pattern.test(location.pathname) || (tab.to === "/skills" && location.pathname === "/");
-          const Icon = tab.icon;
-
-          return (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              aria-current={isActive ? "page" : undefined}
-              className="relative flex flex-col items-center justify-center flex-1 gap-1 text-center group"
-            >
-              {/* A 2px rule along the top edge marks the active tab.
-                  Replaces the filled pill — same information, far less
-                  weight at the bottom of every screen. */}
-              {isActive && (
-                <motion.div
-                  layoutId="activeTabIndicator"
-                  className="absolute top-0 inset-x-3 h-0.5 rounded-full bg-primary"
-                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                />
-              )}
-
-              <Icon
-                strokeWidth={isActive ? 2.25 : 1.75}
-                className={`h-5 w-5 transition-colors duration-150 ${
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                }`}
-              />
-              <span
-                className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
-                  isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Header Component (shared between layouts)
-  const AppHeader = ({ extraClass = "" }: { extraClass?: string }) => {
-    return (
-      <header className={`sticky top-0 z-40 border-b border-border bg-background shrink-0 ${extraClass}`}>
-        <div className="flex h-14 items-center justify-between px-4">
-          {/* Logo / Brand */}
-          <Link to="/skills" className="flex items-center gap-2.5 group shrink-0">
-            <img
-              src="/favicon.png"
-              alt=""
-              className="h-7 w-7 rounded-md object-cover"
-            />
-            <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">
-              Skillful
-            </span>
-          </Link>
-
-          {/* Quick actions */}
-          <div className="flex items-center gap-1.5">
-            <ProfileBadge />
-          </div>
-        </div>
-      </header>
-    );
-  };
-
   // ─── Render Mobile Layout ───
   if (isMobile) {
     return (
@@ -182,7 +179,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         </main>
 
         {/* Sticky bottom navigation bar */}
-        <BottomTabBar className="absolute" />
+        <BottomTabBar pathname={location.pathname} className="absolute" />
       </div>
     );
   }
@@ -316,7 +313,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               </main>
 
               {/* Bottom Tab Bar */}
-              <BottomTabBar className="absolute" />
+              <BottomTabBar pathname={location.pathname} className="absolute" />
             </div>
 
           </div>

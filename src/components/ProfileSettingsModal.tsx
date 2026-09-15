@@ -10,6 +10,8 @@ import {
     emptyInstitutionEnrollment,
     InstitutionEnrollmentFields,
     toStudentCodeClaim,
+    validateInstitutionEnrollment,
+    type InstitutionEnrollmentErrors,
     type InstitutionEnrollmentValue,
 } from "@/components/InstitutionEnrollmentFields";
 import {
@@ -57,6 +59,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
     const [institutionEnrollment, setInstitutionEnrollment] = useState<InstitutionEnrollmentValue>(emptyInstitutionEnrollment);
+    const [institutionErrors, setInstitutionErrors] = useState<InstitutionEnrollmentErrors>({});
     const [institutionLoading, setInstitutionLoading] = useState(false);
     const [collegeResetLoading, setCollegeResetLoading] = useState(false);
 
@@ -186,6 +189,14 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             institutionEnrollment.code.trim() ||
             institutionEnrollment.rollNumber.trim()
         );
+        if (hasCollegeEntry) {
+            const validationErrors = validateInstitutionEnrollment(institutionEnrollment);
+            setInstitutionErrors(validationErrors);
+            if (Object.keys(validationErrors).length) {
+                setError("Check the highlighted college details and try again.");
+                return;
+            }
+        }
         const collegeClaim = hasCollegeEntry
             ? toStudentCodeClaim(institutionEnrollment, { degree, academicYear })
             : null;
@@ -208,6 +219,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                 clearPendingStudentCodeClaim();
                 await refreshProfile();
                 setInstitutionEnrollment(emptyInstitutionEnrollment);
+                setInstitutionErrors({});
             }
 
             const message = institutionName
@@ -235,16 +247,20 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     };
 
     const handleClaimCollege = async () => {
+        if (loading || institutionLoading) return;
         setError("");
         setSuccess("");
+        const validationErrors = validateInstitutionEnrollment(institutionEnrollment);
+        setInstitutionErrors(validationErrors);
+        if (Object.keys(validationErrors).length) {
+            setError("Check the highlighted college details and try again.");
+            return;
+        }
         const claim = toStudentCodeClaim(institutionEnrollment, {
             degree,
             academicYear,
         });
-        if (!claim) {
-            setError("Select your college, enter your roll number, and enter the student code from your TPO.");
-            return;
-        }
+        if (!claim) return;
 
         setInstitutionLoading(true);
         try {
@@ -257,9 +273,13 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             clearPendingStudentCodeClaim();
             await refreshProfile();
             setInstitutionEnrollment(emptyInstitutionEnrollment);
+            setInstitutionErrors({});
             setSuccess(`You are now linked to ${institutionName}.`);
+            toast({ title: "College linked", description: `You are now linked to ${institutionName}.` });
         } catch (err: any) {
-            setError(formatStudentCodeClaimError(err));
+            const message = formatStudentCodeClaimError(err);
+            setError(message);
+            toast({ title: "College was not linked", description: message, variant: "destructive" });
         } finally {
             setInstitutionLoading(false);
         }
@@ -369,7 +389,12 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                     <p className="px-1 text-xs font-bold text-foreground">Link my college</p>
                                     <InstitutionEnrollmentFields
                                         value={institutionEnrollment}
-                                        onChange={setInstitutionEnrollment}
+                                        onChange={(next) => {
+                                            setInstitutionEnrollment(next);
+                                            setInstitutionErrors({});
+                                            if (error) setError("");
+                                        }}
+                                        errors={institutionErrors}
                                         disabled={loading || institutionLoading}
                                     />
                                     <button

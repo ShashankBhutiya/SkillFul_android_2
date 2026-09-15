@@ -70,10 +70,16 @@ export async function getLinkedInstitution(): Promise<LinkedInstitution | null> 
 
 export async function claimStudentCode(claim: StudentCodeClaim, userId?: string): Promise<string> {
     if (!supabase) throw new Error("Supabase is not configured.");
+    const institutionId = claim.institutionId.trim();
+    const code = claim.code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const rollNumber = claim.rollNumber.trim();
+    if (!institutionId || !code || !rollNumber) {
+        throw new Error("Select your college and enter both your student code and roll number.");
+    }
     const { data, error } = await supabase.rpc("claim_student_access_code", {
-        p_institution_id: claim.institutionId,
-        p_code: claim.code,
-        p_roll_number: claim.rollNumber.trim(),
+        p_institution_id: institutionId,
+        p_code: code,
+        p_roll_number: rollNumber,
         p_degree: claim.degree?.trim() || null,
         p_academic_year: claim.academicYear?.trim() || null,
     });
