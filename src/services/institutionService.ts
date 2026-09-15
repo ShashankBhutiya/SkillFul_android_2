@@ -6,6 +6,13 @@ export interface AvailableInstitution {
     city: string | null;
 }
 
+export interface LinkedInstitution {
+    id: string;
+    name: string;
+    city: string | null;
+    rollNumber: string | null;
+}
+
 export interface StudentCodeClaim {
     institutionId: string;
     code: string;
@@ -21,6 +28,44 @@ export async function listAvailableInstitutions(): Promise<AvailableInstitution[
     const { data, error } = await supabase.rpc("list_available_institutions");
     if (error) throw error;
     return (data ?? []) as AvailableInstitution[];
+}
+
+export function formatStudentCodeClaimError(error: any): string {
+    const message = typeof error?.message === "string" ? error.message : "";
+    const details = typeof error?.details === "string" ? error.details : "";
+    const text = `${message} ${details}`;
+
+    if (/invalid for the selected college/i.test(text)) {
+        return "This student code was not accepted. Check that you selected the right college and entered an unused code from your TPO.";
+    }
+    if (/already linked to another college/i.test(text)) {
+        return "Your account is already linked to another college. Exit your current college first, or ask your TPO to reset your access.";
+    }
+    if (/roll number/i.test(text)) {
+        return "Enter your roll number before linking your college.";
+    }
+    if (/sign in/i.test(text)) {
+        return "Sign in before entering your student code.";
+    }
+    if (/network|failed to fetch|fetch failed|timed out|abort/i.test(text)) {
+        return "We could not reach the college server. Check your connection and try again.";
+    }
+
+    return message || "The college link could not be completed. Check your details and try again.";
+}
+
+export async function getLinkedInstitution(): Promise<LinkedInstitution | null> {
+    if (!supabase) return null;
+    const { data, error } = await supabase.rpc("get_my_linked_college");
+    if (error) throw error;
+    const row = data?.[0];
+    if (!row) return null;
+    return {
+        id: row.institution_id,
+        name: row.institution_name,
+        city: row.city ?? null,
+        rollNumber: row.roll_number ?? null,
+    };
 }
 
 export async function claimStudentCode(claim: StudentCodeClaim, userId?: string): Promise<string> {
@@ -52,6 +97,13 @@ export async function claimStudentCode(claim: StudentCodeClaim, userId?: string)
             }
         }
     }
+    return data?.[0]?.institution_name ?? "your college";
+}
+
+export async function leaveStudentCollege(): Promise<string> {
+    if (!supabase) throw new Error("Supabase is not configured.");
+    const { data, error } = await supabase.rpc("leave_student_college");
+    if (error) throw error;
     return data?.[0]?.institution_name ?? "your college";
 }
 

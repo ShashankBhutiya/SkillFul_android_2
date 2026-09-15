@@ -11,7 +11,10 @@ import { broadcastUserMode } from "@/hooks/useUserMode";
 import {
     claimStudentCode,
     clearPendingStudentCodeClaim,
+    formatStudentCodeClaimError,
+    getLinkedInstitution,
     readPendingStudentCodeClaim,
+    type LinkedInstitution,
 } from "@/services/institutionService";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
@@ -62,6 +65,7 @@ export interface AppUser {
     degree?: string;
     academicYear?: string;
     hasLinkedCollege?: boolean;
+    linkedCollege?: LinkedInstitution | null;
     isPremium: boolean;
     subscriptionStatus?: string;
     subscriptionId?: string;
@@ -162,15 +166,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         .eq("user_id", uid)
                         .eq("role", "student")
                         .maybeSingle(),
+                    getLinkedInstitution(),
                 ]),
                 6000,
                 "Profile fetch"
             );
 
-            const [profileResult, countResult, membershipResult] = result;
+            const [profileResult, countResult, membershipResult, linkedCollegeResult] = result;
             const profile = profileResult.status === "fulfilled" ? (profileResult.value.data as any) : null;
             const count = countResult.status === "fulfilled" ? countResult.value.data : 0;
             const membership = membershipResult.status === "fulfilled" ? membershipResult.value.data : null;
+            const linkedCollege = linkedCollegeResult.status === "fulfilled"
+                ? linkedCollegeResult.value
+                : null;
 
             const isPremium = profile?.subscription_status === "active";
 
@@ -189,7 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 lastName: profile?.last_name || "",
                 degree: profile?.degree || "",
                 academicYear: profile?.academic_year || "",
-                hasLinkedCollege: !!membership,
+                hasLinkedCollege: !!membership || !!linkedCollege,
+                linkedCollege: linkedCollege ?? (membership?.institution_id ? {
+                    id: membership.institution_id,
+                    name: "Linked college",
+                    city: null,
+                    rollNumber: null,
+                } : null),
                 isPremium,
                 subscriptionStatus: profile?.subscription_status || "inactive",
                 subscriptionId: profile?.subscription_id || "",
@@ -298,14 +312,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     } catch (error: any) {
                         // Invalid or spent codes cannot succeed on a later sign-in. Keep
                         // pending claims only when the request may have failed temporarily.
-                        if (/invalid for the selected college/i.test(error?.message || "")) {
+                        const studentCodeError = formatStudentCodeClaimError(error);
+                        if (/invalid for the selected college|already linked to another college|roll number/i.test(error?.message || "")) {
                             clearPendingStudentCodeClaim();
                         }
                         toast({
                             title: "College code was not accepted",
-                            description: /invalid for the selected college/i.test(error?.message || "")
-                                ? "Check the selected college and enter an unused code from your TPO in Profile Settings."
-                                : error?.message || "Try again in Profile Settings.",
+                            description: studentCodeError,
                             variant: "destructive",
                         });
                     }

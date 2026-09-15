@@ -10,7 +10,7 @@ import {
   cancelAllLocalNotifications,
 } from "@/services/pushNotificationService";
 import { getNotificationSettings, isInQuietHours } from "@/services/notificationService";
-import { getStreak, todayKey, type StreakState } from "@/services/streakService";
+import { getStreak, subscribeToStreak, todayKey, type StreakState } from "@/services/streakService";
 
 // ─── Notification ID map ────────────────────────────────────────────
 // 9001       — daily practice reminder (repeating)
@@ -87,7 +87,11 @@ export function usePushNotifications() {
     };
 
     document.addEventListener("visibilitychange", reschedule);
-    return () => document.removeEventListener("visibilitychange", reschedule);
+    const unsubscribe = subscribeToStreak(reschedule);
+    return () => {
+      document.removeEventListener("visibilitychange", reschedule);
+      unsubscribe();
+    };
   }, [user.id]);
 }
 

@@ -6,6 +6,7 @@ import {
   ExternalLink, 
   FileText, 
   Gift, 
+  Flame,
   HelpCircle, 
   Info, 
   Mail, 
@@ -26,6 +27,12 @@ export const InfoPage = () => {
     {
       title: "Explore Skillful",
       items: [
+        {
+          to: "/streak",
+          icon: Flame,
+          title: "Daily streak",
+          description: "See your practice streak, weekly activity, and freezes.",
+        },
         {
           to: "/skills",
           icon: BookOpen,

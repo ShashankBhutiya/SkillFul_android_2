@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, ChevronRight, RotateCcw, Sparkles, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useStreak } from "@/hooks/useStreak";
 import { PracticeSaveStatus } from "./PracticeSaveStatus";
 import type { AIPracticeSet, LegacyAIPracticeQuestion, PracticeAnswer } from "@/types/aiPractice";
 
@@ -14,6 +15,7 @@ interface AIPracticeQuizProps {
 const optionLetters = ["A", "B", "C", "D"];
 
 export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuizProps) {
+  const { recordVisit } = useStreak();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<PracticeAnswer[]>([]);
@@ -24,6 +26,7 @@ export default function AIPracticeQuiz({ set, onExit, onNewSet }: AIPracticeQuiz
 
   const chooseAnswer = (optionIndex: number) => {
     if (selected !== null) return;
+    void recordVisit();
     setSelected(optionIndex);
     setAnswers((current) => [
       ...current,

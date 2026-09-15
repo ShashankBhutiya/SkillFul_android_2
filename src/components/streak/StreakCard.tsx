@@ -20,7 +20,7 @@ interface StreakCardProps {
 const DAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
 
 /**
- * Home-screen streak widget: current count, the last seven days, and the
+ * Streak detail widget: current count, the last seven days, and the
  * banked freezes.
  */
 export const StreakCard = ({ streak, checkedInToday, className = "" }: StreakCardProps) => {

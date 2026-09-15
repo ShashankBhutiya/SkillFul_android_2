@@ -1,13 +1,13 @@
 /**
- * Daily usage streak service.
+ * Daily practice streak service.
  *
- * Tracks consecutive days of app usage, with a pool of "streak freezes"
+ * Tracks consecutive days of practice, with a pool of "streak freezes"
  * that absorb missed days automatically so a single skipped day doesn't
  * wipe a long streak.
  *
  * Storage follows the same pattern as progressService:
  *   - AUTH USERS: localStorage cache + Supabase sync.
- *   - GUESTS:     in-memory only + Supabase sync (no local cache).
+ *   - GUESTS:     in-memory only (no local cache).
  *
  * All date maths runs in the user's LOCAL timezone, keyed by "YYYY-MM-DD".
  * Using UTC here would roll the streak over at the wrong hour for most of
@@ -137,7 +137,27 @@ function normalize(raw: Partial<StreakState> | null): StreakState {
 function readCache(userId: string): StreakState {
   if (isGuest(userId)) return normalize(guestMemoryCache);
   try {
-    return normalize(JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"));
+    const stored = localStorage.getItem(`${LOCAL_KEY}:${userId}`);
+    if (stored) return normalize(JSON.parse(stored));
+
+    // Claim the previous device-wide cache once when upgrading to account storage.
+    const legacy = localStorage.getItem(LOCAL_KEY);
+    const oldPractice = JSON.parse(localStorage.getItem("skillful_daily_streak") || "null");
+    let migrated = legacy ? normalize(JSON.parse(legacy)) : null;
+    if (!migrated && oldPractice?.lastPracticeDate && oldPractice.currentStreak > 0) {
+      const count = oldPractice.currentStreak;
+      migrated = normalize({
+        current: count, longest: count, totalDays: count,
+        lastActiveDate: oldPractice.lastPracticeDate,
+        history: Array.from({ length: Math.min(count, MAX_HISTORY) }, (_, i) =>
+          dateKeyOffsetFrom(oldPractice.lastPracticeDate, i - Math.min(count, MAX_HISTORY) + 1)),
+      });
+    }
+    if (!migrated) return normalize(null);
+    localStorage.setItem(`${LOCAL_KEY}:${userId}`, JSON.stringify(migrated));
+    localStorage.removeItem(LOCAL_KEY);
+    localStorage.removeItem("skillful_daily_streak");
+    return migrated;
   } catch {
     return { ...EMPTY_STREAK };
   }
@@ -148,7 +168,7 @@ function writeCache(userId: string, state: StreakState) {
     guestMemoryCache = state;
   } else {
     try {
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+      localStorage.setItem(`${LOCAL_KEY}:${userId}`, JSON.stringify(state));
     } catch (e) {
       console.warn("[streakService] Could not persist streak locally:", e);
     }
@@ -319,6 +339,9 @@ export function getStreak(userId?: string): StreakState {
  * freezes were spent, or stay quiet when it's a repeat visit.
  */
 export async function checkIn(userId: string): Promise<CheckInResult> {
+  // Finish startup hydration before advancing so a fresh install preserves
+  // the server streak instead of replacing it with day one.
+  await pullStreakFromDB(userId);
   const result = computeCheckIn(readCache(userId));
 
   // Nothing changed — skip the write entirely.
@@ -368,7 +391,7 @@ export async function grantFreezes(userId: string, count: number): Promise<Strea
 // ───────── Supabase sync ─────────
 
 async function syncToSupabase(userId: string, state: StreakState): Promise<void> {
-  if (!supabase) return;
+  if (!supabase || isGuest(userId)) return;
 
   try {
     await supabase.from("user_streaks").upsert(
@@ -398,14 +421,32 @@ async function syncToSupabase(userId: string, state: StreakState): Promise<void>
  * Merge rather than overwrite: the same account on two devices should end
  * up with the better of the two records, not whichever synced last.
  */
-export async function pullStreakFromDB(userId: string): Promise<StreakState> {
-  if (!supabase) return projectStreak(readCache(userId)).state;
+const pullsInFlight = new Map<string, Promise<StreakState>>();
+const hydratedUsers = new Map<string, string>();
 
+export function pullStreakFromDB(userId: string): Promise<StreakState> {
+  const pending = pullsInFlight.get(userId);
+  if (pending) return pending;
+  if (hydratedUsers.get(userId) === todayKey()) return Promise.resolve(getStreak(userId));
+  const pull = fetchStreakFromDB(userId).finally(() => {
+    pullsInFlight.delete(userId);
+    hydratedUsers.set(userId, todayKey());
+  });
+  pullsInFlight.set(userId, pull);
+  return pull;
+}
+
+async function fetchStreakFromDB(userId: string): Promise<StreakState> {
+  if (!supabase || isGuest(userId)) return projectStreak(readCache(userId)).state;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const { data } = await supabase
       .from("user_streaks")
       .select("*")
       .eq("user_id", userId)
+      .abortSignal(controller.signal)
       .maybeSingle();
 
     // Read the local cache AFTER the round-trip, never before: a check-in
@@ -437,17 +478,19 @@ export async function pullStreakFromDB(userId: string): Promise<StreakState> {
       ...winner,
       longest: Math.max(local.longest, remote.longest),
       totalDays: Math.max(local.totalDays, remote.totalDays),
-      freezes: Math.max(local.freezes, remote.freezes),
+      freezes: winner.freezes,
       history: [...new Set([...local.history, ...remote.history])]
         .sort()
         .slice(-MAX_HISTORY),
     };
 
     const projected = projectStreak(merged).state;
-    writeCache(userId, projected);
+    writeCache(userId, merged);
     return projected;
   } catch (err) {
     console.warn("[streakService] Failed to pull streak from Supabase:", err);
     return projectStreak(readCache(userId)).state;
+  } finally {
+    clearTimeout(timeout);
   }
 }

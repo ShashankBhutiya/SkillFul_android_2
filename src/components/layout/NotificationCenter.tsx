@@ -40,7 +40,6 @@ import {
   schedule5SecondTestReminder,
   NotificationItem,
   NotificationSettings,
-  getDailyStreak,
   pullNotificationsFromDB,
 } from "@/services/notificationService";
 import {
@@ -51,6 +50,7 @@ import {
   scheduleLocalNotification,
   NotificationTemplates,
 } from "@/services/pushNotificationService";
+import { useStreak } from "@/hooks/useStreak";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const NotificationCenter = () => {
@@ -61,7 +61,8 @@ export const NotificationCenter = () => {
   const [settings, setSettings] = useState<NotificationSettings>(getNotificationSettings());
   const [unreadCount, setUnreadCount] = useState(0);
   const [testModeActive, setTestModeActive] = useState(false);
-  const [streak, setStreak] = useState(0);
+  const { streak: dailyStreak } = useStreak();
+  const streak = dailyStreak.current;
   const navigate = useNavigate();
   
   const { isInstallable, isIOSInstallable } = usePwaInstallState();
@@ -91,7 +92,6 @@ export const NotificationCenter = () => {
     setNotifications(getNotifications());
     setSettings(getNotificationSettings());
     setUnreadCount(getUnreadCount());
-    setStreak(getDailyStreak().currentStreak);
   };
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export const NotificationCenter = () => {
 
     if (isNativePlatform()) {
       scheduleLocalNotification(
-        NotificationTemplates.streakReminder(getDailyStreak().currentStreak || 1),
+        NotificationTemplates.streakReminder(dailyStreak.current || 1),
         5000,
         7777
       );

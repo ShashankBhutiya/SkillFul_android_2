@@ -81,9 +81,9 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         // profile already has a mode of its own.
         if (tab === "signup" && userMode) broadcastUserMode(userMode);
         const studentCodeClaim = toStudentCodeClaim(institutionEnrollment);
-        if (institutionEnrollment.institutionId || institutionEnrollment.code) {
+        if (institutionEnrollment.institutionId || institutionEnrollment.code || institutionEnrollment.rollNumber) {
             if (!studentCodeClaim) {
-                setError("Select your college and enter the student code from your TPO.");
+                setError("Select your college, enter your roll number, and enter the student code from your TPO.");
                 setGoogleLoading(false);
                 return;
             }
@@ -134,9 +134,9 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         }
 
         const studentCodeClaim = toStudentCodeClaim(institutionEnrollment);
-        if (institutionEnrollment.institutionId || institutionEnrollment.code) {
+        if (institutionEnrollment.institutionId || institutionEnrollment.code || institutionEnrollment.rollNumber) {
             if (!studentCodeClaim) {
-                setError("Select your college and enter the student code from your TPO.");
+                setError("Select your college, enter your roll number, and enter the student code from your TPO.");
                 return;
             }
             storePendingStudentCodeClaim(studentCodeClaim);
@@ -168,7 +168,6 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     setError(formatAuthError(result.error));
                 } else {
                     setSuccess("Account created! Check your email to confirm. 📬");
-                    setTimeout(() => { onClose(); resetForm(); }, 2000);
                 }
             }
         } finally {

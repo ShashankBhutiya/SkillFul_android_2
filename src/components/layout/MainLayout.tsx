@@ -29,7 +29,7 @@ const TAB_ITEMS = [
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy, pattern: /^\/leaderboard/ },
   { to: "/refer", label: "Refer", icon: Gift, pattern: /^\/refer/ },
   { to: "/premium", label: "Premium", icon: Sparkles, pattern: /^\/premium/ },
-  { to: "/info", label: "Profile", icon: User, pattern: /^\/(info|about|contact|privacy|terms|blog)/ },
+  { to: "/info", label: "Profile", icon: User, pattern: /^\/(info|streak|about|contact|privacy|terms|blog)/ },
 ];
 
 export const MainLayout = ({ children }: MainLayoutProps) => {

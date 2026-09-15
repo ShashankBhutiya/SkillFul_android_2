@@ -14,6 +14,7 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import ForceUpdateModal from "@/components/ForceUpdateModal";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import DailyStreakPrompt from "@/components/streak/DailyStreakPrompt";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -30,6 +31,7 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const ReferPage = lazy(() => import("./pages/ReferPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const InfoPage = lazy(() => import("./pages/InfoPage"));
+const StreakPage = lazy(() => import("./pages/StreakPage"));
 
 const queryClient = new QueryClient();
 
@@ -136,6 +138,7 @@ const App = () => {
           <BrowserRouter>
             <NavigationTracker />
             <PushNotificationInitializer />
+            <DailyStreakPrompt />
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
                 <Route path="/" element={<RootRoute />} />
@@ -157,6 +160,7 @@ const App = () => {
                 <Route path="/refer" element={<ReferPage />} />
                 <Route path="/premium" element={<PremiumPage />} />
                 <Route path="/info" element={<InfoPage />} />
+                <Route path="/streak" element={<StreakPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

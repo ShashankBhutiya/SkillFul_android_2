@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   checkIn as checkInService,
@@ -13,7 +15,6 @@ import {
   EMPTY_STREAK,
 } from "@/services/streakService";
 import {
-  isNativePlatform,
   scheduleLocalNotification,
   sendCrossPlatformNotification,
   NotificationTemplates,
@@ -24,25 +25,28 @@ import {
  * useStreak() instance, since more than one component mounts the hook and
  * any of them may call recordVisit().
  */
-let checkInFlight = false;
+const checkInsInFlight = new Set<string>();
 
 /**
  * Streak state for the current user, plus a `recordVisit` trigger.
  *
  * `recordVisit` is idempotent per local day, so callers can fire it freely
- * (on mount, after a quiz, on resume) without double-counting.
+ * (after each accepted practice answer) without double-counting.
  */
 export function useStreak() {
   const { user } = useAuth();
   const userId = user?.id;
+  const activeUser = useRef(userId);
+  activeUser.current = userId;
 
   const [streak, setStreak] = useState<StreakState>(() =>
     userId ? getStreak(userId) : EMPTY_STREAK
   );
+  const [hydratedUser, setHydratedUser] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<CheckInResult | null>(null);
 
   // Keep every mounted useStreak() in step: a check-in from one component
-  // must update the header badge and the home card together.
+  // must update every streak display together.
   useEffect(() => {
     if (!userId) return;
     return subscribeToStreak(() => setStreak(getStreak(userId)));
@@ -55,7 +59,10 @@ export function useStreak() {
 
     setStreak(getStreak(userId));
     pullStreakFromDB(userId).then((next) => {
-      if (!cancelled) setStreak(next);
+      if (!cancelled) {
+        setStreak(next);
+        setHydratedUser(userId);
+      }
     });
 
     return () => {
@@ -64,14 +71,15 @@ export function useStreak() {
   }, [userId]);
 
   const recordVisit = useCallback(async () => {
-    if (!userId || checkInFlight) return null;
+    if (!userId || checkInsInFlight.has(userId)) return null;
 
     // Cheap guard: skip the async path entirely on repeat visits.
     if (getStreak(userId).lastActiveDate === todayKey()) return null;
 
-    checkInFlight = true;
+    checkInsInFlight.add(userId);
     try {
       const result = await checkInService(userId);
+      if (activeUser.current !== userId) return result;
       setStreak(result.state);
       if (result.isNewDay || result.freezesSpent > 0 || result.streakBroken) {
         setLastResult(result);
@@ -79,7 +87,7 @@ export function useStreak() {
       fireCheckInNotifications(result);
       return result;
     } finally {
-      checkInFlight = false;
+      checkInsInFlight.delete(userId);
     }
   }, [userId]);
 
@@ -109,11 +117,20 @@ export function useStreak() {
     };
 
     document.addEventListener("visibilitychange", refresh);
-    return () => document.removeEventListener("visibilitychange", refresh);
+    const listener = Capacitor.isNativePlatform()
+      ? CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+          if (isActive) setStreak(getStreak(userId));
+        })
+      : null;
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      void listener?.then((handle) => handle.remove());
+    };
   }, [userId]);
 
   return {
     streak,
+    isHydrated: hydratedUser === userId,
     lastResult,
     recordVisit,
     spendFreeze,

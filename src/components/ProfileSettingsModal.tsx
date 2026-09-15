@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { X, AlertCircle, Loader2, CheckCircle2, Unlink } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { useUserMode } from "@/hooks/useUserMode";
@@ -12,7 +12,12 @@ import {
     toStudentCodeClaim,
     type InstitutionEnrollmentValue,
 } from "@/components/InstitutionEnrollmentFields";
-import { claimStudentCode, clearPendingStudentCodeClaim } from "@/services/institutionService";
+import {
+    claimStudentCode,
+    clearPendingStudentCodeClaim,
+    formatStudentCodeClaimError,
+    leaveStudentCollege,
+} from "@/services/institutionService";
 import { toast } from "@/hooks/use-toast";
 
 const ACADEMIC_YEARS = ["1st year", "2nd year", "3rd year", "4th year", "5th year", "Postgraduate"];
@@ -53,6 +58,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [loading, setLoading] = useState(false);
     const [institutionEnrollment, setInstitutionEnrollment] = useState<InstitutionEnrollmentValue>(emptyInstitutionEnrollment);
     const [institutionLoading, setInstitutionLoading] = useState(false);
+    const [collegeResetLoading, setCollegeResetLoading] = useState(false);
 
     // Verification States
     const [isVerifying, setIsVerifying] = useState(false);
@@ -193,9 +199,6 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                     title: "Profile updated",
                     description: "Your changes have been saved.",
                 });
-                setTimeout(() => {
-                    onClose();
-                }, 1500);
             }
         } catch (err: any) {
             const message = err?.message || "Your changes could not be saved. Please try again.";
@@ -235,9 +238,28 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             setInstitutionEnrollment(emptyInstitutionEnrollment);
             setSuccess(`You are now linked to ${institutionName}.`);
         } catch (err: any) {
-            setError(err?.message || "The student code could not be accepted.");
+            setError(formatStudentCodeClaimError(err));
         } finally {
             setInstitutionLoading(false);
+        }
+    };
+
+    const handleLeaveCollege = async () => {
+        if (!window.confirm("Exit your linked college? Your college access will be removed and you will need a fresh student code to link again.")) {
+            return;
+        }
+
+        setError("");
+        setSuccess("");
+        setCollegeResetLoading(true);
+        try {
+            const institutionName = await leaveStudentCollege();
+            await refreshProfile();
+            setSuccess(`You exited ${institutionName}. You can link another college with a fresh student code.`);
+        } catch (err: any) {
+            setError(err?.message || "Could not reset your college link. Please try again.");
+        } finally {
+            setCollegeResetLoading(false);
         }
     };
 
@@ -341,8 +363,33 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                             )}
 
                             {mode === "student" && user.hasLinkedCollege && (
-                                <div className="flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/5 p-3 text-xs font-semibold text-foreground">
-                                    <CheckCircle2 className="h-4 w-4 text-primary" /> College linked
+                                <div className="space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+                                    <div className="flex items-start gap-2">
+                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-bold text-foreground">College linked</p>
+                                            <p className="mt-0.5 break-words text-sm font-semibold text-foreground">
+                                                {user.linkedCollege?.name || "Linked college"}
+                                            </p>
+                                            {(user.linkedCollege?.city || user.linkedCollege?.rollNumber) && (
+                                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                                    {[user.linkedCollege.city, user.linkedCollege.rollNumber ? `Roll no. ${user.linkedCollege.rollNumber}` : ""].filter(Boolean).join(" · ")}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleLeaveCollege()}
+                                        disabled={loading || collegeResetLoading}
+                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-60"
+                                    >
+                                        {collegeResetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlink className="h-4 w-4" />}
+                                        Exit / reset college
+                                    </button>
+                                    <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                        This removes college access and your roster link. Ask your TPO for a fresh code if you need to join again.
+                                    </p>
                                 </div>
                             )}
 

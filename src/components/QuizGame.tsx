@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { categories, Category, Question } from "@/data/questions";
 import { savePracticedIds, getPracticedIds } from "@/services/progressService";
 import { submitScore } from "@/services/leaderboardService";
-import { registerPracticeSession } from "@/services/notificationService";
+import { useStreak } from "@/hooks/useStreak";
 import { useAuth } from "@/contexts/AuthContext";
 import SwipeCard from "./SwipeCard";
 import QuizSummary from "./QuizSummary";
@@ -97,6 +97,7 @@ export interface AnsweredQuestion {
 
 const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, generatedSet }: QuizGameProps) => {
   const { user } = useAuth();
+  const { recordVisit } = useStreak();
   const category: Category = generatedSet ? {
     id: categoryId,
     name: generatedSet.title || generatedSet.topic,
@@ -171,13 +172,10 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
     if (!isFinished || completedRef.current) return;
     completedRef.current = true;
     if (isFinished && generatedSet) {
-      if (answeredQuestions.length > 0) registerPracticeSession();
       return;
     }
     if (isFinished && correctIdsRef.current.length > 0) {
       savePracticedIds(user.id, categoryId, correctIdsRef.current);
-      // Register this practice session in daily streak & notifications (works for guests too!)
-      registerPracticeSession();
     }
 
     // Submit score to leaderboard (both guests and authenticated users)
@@ -229,6 +227,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
           (user.isGuest && getGlobalAnsweredCount() >= LOGIN_GATE_INTERVAL)) return;
       const question = questions[currentIndex];
       if (!question) return;
+      void recordVisit();
       const userAnswer = direction === "right";
       const isCorrect = userAnswer === question.answer;
       const responseTimeMs = Date.now() - questionStartRef.current;
@@ -326,7 +325,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
         setTimeout(() => setIsShaking(false), 500);
       }
     },
-    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, user.isGuest, answeredQuestions, score, bestStreak, difficulty, user.firstName, user.lastName, user.email, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal, generatedSet]
+    [currentIndex, questions, streak, spawnParticles, categoryId, user.id, user.isGuest, answeredQuestions, score, bestStreak, difficulty, user.firstName, user.lastName, user.email, showFeedback, showExplanation, showMilestone, showLoginGate, showAuthModal, generatedSet, recordVisit]
   );
 
   const dismissExplanation = useCallback(() => {
