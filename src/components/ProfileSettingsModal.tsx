@@ -169,42 +169,63 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
         e.preventDefault();
         setError("");
         setSuccess("");
-        setLoading(true);
 
         // Optional basic format check: if they entered a phone number, make sure it has some digits
         if (phone.trim() && !/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
             setError("Please enter a valid phone number (e.g. +15550000000)");
-            setLoading(false);
             return;
         }
 
         if (requireAcademicDetails && (!degree.trim() || !academicYear.trim())) {
             setError("Enter your degree and select your current year to generate questions.");
-            setLoading(false);
             return;
         }
+
+        const hasCollegeEntry = !!(
+            institutionEnrollment.institutionId ||
+            institutionEnrollment.code.trim() ||
+            institutionEnrollment.rollNumber.trim()
+        );
+        const collegeClaim = hasCollegeEntry
+            ? toStudentCodeClaim(institutionEnrollment, { degree, academicYear })
+            : null;
+        if (hasCollegeEntry && !collegeClaim) {
+            setError("Select your college, enter your roll number, and enter the student code from your TPO.");
+            return;
+        }
+
+        setLoading(true);
 
         try {
             const result = await saveProfileFields();
             if (result.error) {
-                setError(result.error);
-                toast({
-                    title: "Changes were not saved",
-                    description: result.error,
-                    variant: "destructive",
-                });
-            } else {
-                setSuccess("Settings updated successfully! ✨");
-                toast({
-                    title: "Profile updated",
-                    description: "Your changes have been saved.",
-                });
+                throw new Error(result.error);
             }
+
+            let institutionName = "";
+            if (collegeClaim) {
+                institutionName = await claimStudentCode(collegeClaim, user.id);
+                clearPendingStudentCodeClaim();
+                await refreshProfile();
+                setInstitutionEnrollment(emptyInstitutionEnrollment);
+            }
+
+            const message = institutionName
+                ? `Your settings were saved and you are now linked to ${institutionName}.`
+                : "Your changes have been saved.";
+            setSuccess(institutionName ? `College linked to ${institutionName}.` : "Settings updated successfully! ✨");
+            toast({
+                title: institutionName ? "College linked" : "Profile updated",
+                description: message,
+            });
+            if (requireAcademicDetails) onClose();
         } catch (err: any) {
-            const message = err?.message || "Your changes could not be saved. Please try again.";
+            const message = collegeClaim
+                ? formatStudentCodeClaimError(err)
+                : err?.message || "Your changes could not be saved. Please try again.";
             setError(message);
             toast({
-                title: "Changes were not saved",
+                title: collegeClaim ? "College was not linked" : "Changes were not saved",
                 description: message,
                 variant: "destructive",
             });
