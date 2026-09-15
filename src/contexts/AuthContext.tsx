@@ -132,6 +132,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AppUser>(makeGuestUser());
+    const userRef = useRef(user);
     const [isLoading, setIsLoading] = useState(true);
     const isLoadingRef = useRef(true); // mirror for use in timeout closures
     // Helper: stop loading and update the ref mirror
@@ -142,13 +143,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Fetch extra profile data (referral code, unlock count)
     // Both queries run in PARALLEL with a 6s hard timeout to prevent mobile hangs
-    const fetchProfileData = async (uid: string, email?: string): Promise<AppUser> => {
+    const fetchProfileData = async (uid: string, email?: string, previous?: AppUser): Promise<AppUser> => {
         if (!supabase) return { id: uid, email, isGuest: false, unlockCount: 0, isPremium: false };
 
         // Generate a deterministic fallback code from user ID
         // (used when profiles table doesn't exist yet)
         const fallbackCode = uid.replace(/-/g, "").slice(0, 6).toUpperCase();
-        const fallbackUser: AppUser = { id: uid, email, isGuest: false, referralCode: fallbackCode, unlockCount: 0, isPremium: false };
+        // A refresh is enrichment, not a reason to blank data that is already on
+        // screen. Preserve the last confirmed state when an individual request
+        // fails or the whole profile fetch times out.
+        const fallbackUser: AppUser = previous?.id === uid && !previous.isGuest
+            ? { ...previous, email: email ?? previous.email }
+            : { id: uid, email, isGuest: false, referralCode: fallbackCode, unlockCount: 0, isPremium: false };
 
         try {
             // Run both queries in parallel with a hard timeout
@@ -173,42 +179,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             );
 
             const [profileResult, countResult, membershipResult, linkedCollegeResult] = result;
-            const profile = profileResult.status === "fulfilled" ? (profileResult.value.data as any) : null;
-            const count = countResult.status === "fulfilled" ? countResult.value.data : 0;
-            const membership = membershipResult.status === "fulfilled" ? membershipResult.value.data : null;
+            const profile = profileResult.status === "fulfilled" && !profileResult.value.error
+                ? (profileResult.value.data as any)
+                : undefined;
+            const count = countResult.status === "fulfilled" && !countResult.value.error
+                ? countResult.value.data
+                : fallbackUser.unlockCount;
+            const membershipKnown = membershipResult.status === "fulfilled" && !membershipResult.value.error;
+            const membership = membershipKnown ? membershipResult.value.data : undefined;
             const linkedCollege = linkedCollegeResult.status === "fulfilled"
                 ? linkedCollegeResult.value
-                : null;
+                : undefined;
 
-            const isPremium = profile?.subscription_status === "active";
+            const membershipCollege = membership?.institution_id ? {
+                id: membership.institution_id,
+                name: "Linked college",
+                city: null,
+                rollNumber: null,
+            } : null;
+            const resolvedCollege = linkedCollege ?? membershipCollege;
+            const hasLinkedCollege = resolvedCollege
+                ? true
+                : membershipKnown
+                    ? false
+                    : fallbackUser.hasLinkedCollege;
 
             return {
-                id: uid,
-                email,
-                isGuest: false,
-                referralCode: profile?.referral_code || fallbackCode,
+                ...fallbackUser,
+                referralCode: profile ? (profile.referral_code || fallbackCode) : fallbackUser.referralCode,
                 unlockCount: count || 0,
-                phone: profile?.phone || "",
-                phoneConsent: profile?.phone_consent ?? false,
-                emailConsent: profile?.email_consent ?? false,
-                phoneVerified: profile?.phone_verified ?? false,
-                whatsappConsent: profile?.whatsapp_consent ?? false,
-                firstName: profile?.first_name || "",
-                lastName: profile?.last_name || "",
-                degree: profile?.degree || "",
-                academicYear: profile?.academic_year || "",
-                hasLinkedCollege: !!membership || !!linkedCollege,
-                linkedCollege: linkedCollege ?? (membership?.institution_id ? {
-                    id: membership.institution_id,
-                    name: "Linked college",
-                    city: null,
-                    rollNumber: null,
-                } : null),
-                isPremium,
-                subscriptionStatus: profile?.subscription_status || "inactive",
-                subscriptionId: profile?.subscription_id || "",
-                subscriptionPeriodEnd: profile?.subscription_period_end || "",
-                userMode: isUserMode(profile?.user_mode) ? profile.user_mode : undefined,
+                ...(profile ? {
+                    phone: profile.phone || "",
+                    phoneConsent: profile.phone_consent ?? false,
+                    emailConsent: profile.email_consent ?? false,
+                    phoneVerified: profile.phone_verified ?? false,
+                    whatsappConsent: profile.whatsapp_consent ?? false,
+                    firstName: profile.first_name || "",
+                    lastName: profile.last_name || "",
+                    degree: profile.degree || "",
+                    academicYear: profile.academic_year || "",
+                    isPremium: profile.subscription_status === "active",
+                    subscriptionStatus: profile.subscription_status || "inactive",
+                    subscriptionId: profile.subscription_id || "",
+                    subscriptionPeriodEnd: profile.subscription_period_end || "",
+                    userMode: isUserMode(profile.user_mode) ? profile.user_mode : fallbackUser.userMode,
+                } : {}),
+                hasLinkedCollege,
+                linkedCollege: resolvedCollege ?? (membershipKnown ? null : fallbackUser.linkedCollege),
             };
         } catch (err) {
             console.warn("Failed to load profile (timeout or error):", err);
@@ -217,11 +234,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const refreshProfile = async () => {
-        if (!user.isGuest && supabase) {
-            const updated = await fetchProfileData(user.id, user.email);
+        const current = userRef.current;
+        if (!current.isGuest && supabase) {
+            const updated = await fetchProfileData(current.id, current.email, current);
+            userRef.current = updated;
             setUser(updated);
         }
     };
+
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
 
     // On mount, check for an existing Supabase session
     useEffect(() => {
@@ -672,18 +695,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw { code: "PGRST116", message: "No profile record was updated." };
             }
             
-            setUser(current => current.id === user.id ? {
-                ...current,
-                phone: data.phone || "",
-                phoneConsent: data.phone_consent ?? false,
-                emailConsent: data.email_consent ?? false,
-                whatsappConsent: data.whatsapp_consent ?? false,
-                phoneVerified: data.phone_verified ?? false,
-                firstName: data.first_name || "",
-                lastName: data.last_name || "",
-                degree: data.degree || "",
-                academicYear: data.academic_year || "",
-            } : current);
+            setUser(current => {
+                if (current.id !== user.id) return current;
+                const updated = {
+                    ...current,
+                    phone: data.phone || "",
+                    phoneConsent: data.phone_consent ?? false,
+                    emailConsent: data.email_consent ?? false,
+                    whatsappConsent: data.whatsapp_consent ?? false,
+                    phoneVerified: data.phone_verified ?? false,
+                    firstName: data.first_name || "",
+                    lastName: data.last_name || "",
+                    degree: data.degree || "",
+                    academicYear: data.academic_year || "",
+                };
+                // College claiming refreshes immediately after saving these
+                // fields, before React necessarily commits another render.
+                userRef.current = updated;
+                return updated;
+            });
             return {};
         } catch (err: any) {
             console.error("Failed to update profile settings:", err);

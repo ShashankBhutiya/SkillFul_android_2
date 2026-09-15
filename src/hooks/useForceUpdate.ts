@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/lib/supabase";
 import { getAppVersion, compareVersions } from "@/config/appVersion";
 
@@ -23,6 +24,14 @@ export function useForceUpdate(): ForceUpdateState {
     let cancelled = false;
 
     async function checkVersion() {
+      // Store-version gates only apply to the installed Android app. The web
+      // build is updated by deploying it and must never be blocked by the
+      // Android minimum version stored in Supabase.
+      if (Capacitor.getPlatform() !== "android") {
+        setState((s) => ({ ...s, loading: false }));
+        return;
+      }
+
       if (!supabase) {
         setState((s) => ({ ...s, loading: false }));
         return;
