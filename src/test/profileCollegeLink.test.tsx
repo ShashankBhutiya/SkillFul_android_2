@@ -23,8 +23,6 @@ vi.mock("@/contexts/AuthContext", () => ({
     refreshProfile: mocks.refreshProfile,
     updateProfileSettings: mocks.updateProfileSettings,
     updateUserMode: vi.fn(async () => undefined),
-    sendPhoneVerificationOTP: vi.fn(),
-    confirmPhoneVerificationOTP: vi.fn(),
   }),
 }));
 

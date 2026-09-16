@@ -31,7 +31,7 @@ interface ProfileSettingsModalProps {
 }
 
 const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false }: ProfileSettingsModalProps) => {
-    const { user, refreshProfile, updateProfileSettings, updateUserMode, sendPhoneVerificationOTP, confirmPhoneVerificationOTP } = useAuth();
+    const { user, refreshProfile, updateProfileSettings, updateUserMode } = useAuth();
     const { mode } = useUserMode();
     const [modeSaving, setModeSaving] = useState(false);
 
@@ -63,20 +63,6 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [institutionLoading, setInstitutionLoading] = useState(false);
     const [collegeResetLoading, setCollegeResetLoading] = useState(false);
 
-    // Verification States
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [verificationCode, setVerificationCode] = useState("");
-    const [verificationLoading, setVerificationLoading] = useState(false);
-    const [resendCooldown, setResendCooldown] = useState(0);
-
-    // Cooldown Countdown
-    useEffect(() => {
-        if (resendCooldown > 0) {
-            const timer = setTimeout(() => setResendCooldown(prev => prev - 1), 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [resendCooldown]);
-
     // Initialize state when modal opens or user profile loads
     useEffect(() => {
         if (isOpen && user) {
@@ -90,83 +76,20 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             setWhatsappConsent(!!user.whatsappConsent);
             setError("");
             setSuccess("");
-            setIsVerifying(false);
-            setVerificationCode("");
-            setResendCooldown(0);
             setInstitutionEnrollment(emptyInstitutionEnrollment);
         }
     }, [isOpen, user]);
-
-    const isPhoneUnverified = !user.phone || phone.trim() !== user.phone || !user.phoneVerified;
 
     const saveProfileFields = () => updateProfileSettings(
         phone.trim(),
         phoneConsent,
         emailConsent,
         whatsappConsent,
-        phone.trim() === user.phone && !!user.phoneVerified,
         firstName.trim(),
         lastName.trim(),
         degree.trim(),
         academicYear,
     );
-
-    const handleSendOTP = async () => {
-        setError("");
-        setSuccess("");
-        
-        if (!phone.trim()) {
-            setError("Please enter a phone number first.");
-            return;
-        }
-
-        if (!/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
-            setError("Please enter a valid phone number (e.g. +15550000000).");
-            return;
-        }
-
-        setVerificationLoading(true);
-        try {
-            const res = await sendPhoneVerificationOTP(phone.trim());
-            if (res.success) {
-                setSuccess("Verification code sent! Check your phone.");
-                setIsVerifying(true);
-                setResendCooldown(60);
-            } else {
-                setError(res.error || "Failed to send verification code.");
-            }
-        } catch (err: any) {
-            setError(err.message || "An error occurred.");
-        } finally {
-            setVerificationLoading(false);
-        }
-    };
-
-    const handleVerifyOTP = async () => {
-        setError("");
-        setSuccess("");
-
-        if (!verificationCode.trim() || verificationCode.length !== 6) {
-            setError("Please enter a 6-digit verification code.");
-            return;
-        }
-
-        setVerificationLoading(true);
-        try {
-            const res = await confirmPhoneVerificationOTP(phone.trim(), verificationCode.trim());
-            if (res.success) {
-                setSuccess("Phone number verified successfully! 🎉");
-                setIsVerifying(false);
-                setVerificationCode("");
-            } else {
-                setError(res.error || "Invalid verification code.");
-            }
-        } catch (err: any) {
-            setError(err.message || "Verification failed.");
-        } finally {
-            setVerificationLoading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -472,101 +395,15 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         type="tel"
                                         placeholder="+1 (555) 000-0000"
                                         value={phone}
-                                        onChange={(e) => {
-                                            setPhone(e.target.value);
-                                            // Reset verifying states when typing
-                                            if (isVerifying) {
-                                                setIsVerifying(false);
-                                                setVerificationCode("");
-                                            }
-                                        }}
+                                        onChange={(e) => setPhone(e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 bg-muted/30 backdrop-blur-sm rounded-xl border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
                                     />
                                 </div>
-                                
-                                {/* Verification Status Indicator */}
-                                {phone.trim() && (
-                                    isPhoneUnverified ? (
-                                        <div className="flex items-center justify-between mt-1.5 px-1">
-                                            <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1">
-                                                ⚠️ Phone is unverified
-                                            </span>
-                                            {!isVerifying && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleSendOTP}
-                                                    disabled={verificationLoading}
-                                                    className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
-                                                >
-                                                    {verificationLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Verify Now"}
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1.5 mt-1.5 px-1 text-[10px] text-emerald-500 font-bold">
-                                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                            Verified Phone Number
-                                        </div>
-                                    )
-                                )}
                                 
                                 <p className="text-[10px] text-muted-foreground ml-1 pt-0.5">
                                     Provide your phone number to receive learning notifications.
                                 </p>
                             </div>
-
-                            {/* Verification OTP Box */}
-                            <AnimatePresence>
-                                {isVerifying && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        className="p-4 bg-muted/40 backdrop-blur-sm border border-white/10 rounded-2xl space-y-3 overflow-hidden"
-                                    >
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-foreground">Verification Code</label>
-                                            <input
-                                                type="text"
-                                                maxLength={6}
-                                                placeholder="Enter 6-digit OTP"
-                                                value={verificationCode}
-                                                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
-                                                className="w-full text-center py-2.5 bg-muted/50 rounded-xl border border-white/10 text-foreground text-lg tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                            />
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button
-                                                type="button"
-                                                disabled={verificationLoading}
-                                                onClick={handleVerifyOTP}
-                                                className="flex-1 py-2 px-3 text-xs bg-primary text-primary-foreground font-bold rounded-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-                                            >
-                                                {verificationLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Verify Code"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                disabled={resendCooldown > 0 || verificationLoading}
-                                                onClick={handleSendOTP}
-                                                className="py-2 px-3 text-xs bg-muted/80 text-foreground font-bold rounded-lg hover:bg-muted active:scale-[0.98] transition-all disabled:opacity-50"
-                                            >
-                                                {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : "Resend"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsVerifying(false);
-                                                    setVerificationCode("");
-                                                    setError("");
-                                                }}
-                                                className="py-2 px-3 text-xs bg-transparent border border-white/10 text-muted-foreground font-bold rounded-lg hover:bg-white/5 transition-all"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
 
                             {/* WhatsApp Updates Consent */}
                             <div
@@ -663,7 +500,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
-                                disabled={loading || isVerifying}
+                                disabled={loading}
                                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-display font-bold text-base shadow-lg disabled:opacity-60 transition-all flex items-center justify-center gap-2 mt-2"
                             >
                                 {loading ? (

@@ -97,14 +97,11 @@ interface AuthContextType {
         phoneConsent: boolean,
         emailConsent: boolean,
         whatsappConsent: boolean,
-        phoneVerified?: boolean,
         firstName?: string,
         lastName?: string,
         degree?: string,
         academicYear?: string
     ) => Promise<{ error?: string }>;
-    sendPhoneVerificationOTP: (phone: string) => Promise<{ success: boolean; error?: string }>;
-    confirmPhoneVerificationOTP: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const GUEST_KEY = "quiz_guest_id";
@@ -649,7 +646,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phoneConsent: boolean,
         emailConsent: boolean,
         whatsappConsent: boolean,
-        phoneVerified?: boolean,
         firstName?: string,
         lastName?: string,
         degree?: string,
@@ -664,9 +660,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email_consent: emailConsent,
                 whatsapp_consent: whatsappConsent,
             };
-            if (phoneVerified !== undefined) {
-                updatePayload.phone_verified = phoneVerified;
-            }
             if (firstName !== undefined) {
                 updatePayload.first_name = firstName;
             }
@@ -721,107 +714,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [user]);
 
-    // --- Send Phone Verification OTP (Real + Simulated Fallback) ---
-    const sendPhoneVerificationOTP = useCallback(async (phone: string): Promise<{ success: boolean; error?: string }> => {
-        if (!supabase || user.isGuest) return { success: false, error: "Must be logged in" };
-
-        try {
-            // 1. Try real Supabase auth phone update
-            const { error } = await supabase.auth.updateUser({ phone });
-            
-            if (error) {
-                // If it fails because SMS is not configured, fall back to mock verification.
-                const errMsg = error.message.toLowerCase();
-                const isConfigError = errMsg.includes("sms") || 
-                                     errMsg.includes("provider") || 
-                                     errMsg.includes("credentials") || 
-                                     errMsg.includes("not configured") ||
-                                     errMsg.includes("not activated");
-                
-                if (isConfigError) {
-                    console.info("Supabase SMS provider not configured, falling back to simulated OTP flow.");
-                    throw new Error("MOCK_FALLBACK");
-                }
-                
-                throw error;
-            }
-
-            return { success: true };
-        } catch (err: any) {
-            if (err.message === "MOCK_FALLBACK") {
-                // Generate a 6-digit OTP code
-                const code = Math.floor(100000 + Math.random() * 900000).toString();
-                sessionStorage.setItem("mock_otp_" + phone, code);
-                
-                toast({
-                    title: "🧪 Dev Mode OTP Simulator",
-                    description: `SMS OTP code sent to ${phone}: ${code}. Use this to verify.`,
-                });
-                
-                return { success: true };
-            }
-            console.error("Failed to send phone OTP:", err);
-            return { success: false, error: err.message || "Failed to send verification code." };
-        }
-    }, [user]);
-
-    // --- Confirm Phone Verification OTP ---
-    const confirmPhoneVerificationOTP = useCallback(async (phone: string, token: string): Promise<{ success: boolean; error?: string }> => {
-        if (!supabase || user.isGuest) return { success: false, error: "Must be logged in" };
-
-        try {
-            const mockCode = sessionStorage.getItem("mock_otp_" + phone);
-            
-            if (mockCode) {
-                if (token === mockCode) {
-                    sessionStorage.removeItem("mock_otp_" + phone);
-                    
-                    // Persist to profiles
-                    const { error } = await supabase
-                        .from("profiles")
-                        .update({
-                            phone,
-                            phone_verified: true
-                        })
-                        .eq("id", user.id);
-                    
-                    if (error) throw error;
-                    
-                    await refreshProfile();
-                    return { success: true };
-                } else {
-                    return { success: false, error: "Invalid verification code." };
-                }
-            }
-
-            // Real Supabase OTP verification
-            const { error } = await supabase.auth.verifyOtp({
-                phone,
-                token,
-                type: 'phone_change'
-            });
-
-            if (error) throw error;
-
-            // Persist verified phone status to profiles table
-            const { error: profileError } = await supabase
-                .from("profiles")
-                .update({
-                    phone,
-                    phone_verified: true
-                })
-                .eq("id", user.id);
-
-            if (profileError) throw profileError;
-
-            await refreshProfile();
-            return { success: true };
-        } catch (err: any) {
-            console.error("Failed to verify phone OTP:", err);
-            return { success: false, error: err.message || "Verification failed." };
-        }
-    }, [user, refreshProfile]);
-
     // --- User mode (Student / Professional) ---
     const updateUserMode = useCallback(async (mode: UserMode): Promise<void> => {
         // Local first: switching modes should feel instant and must keep working
@@ -861,9 +753,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             applyReferralCode,
             refreshProfile,
             updateUserMode,
-            updateProfileSettings,
-            sendPhoneVerificationOTP,
-            confirmPhoneVerificationOTP
+            updateProfileSettings
         }}>
             {children}
         </AuthContext.Provider>

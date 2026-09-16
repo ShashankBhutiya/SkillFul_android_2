@@ -13,6 +13,22 @@ interface GenerateRequest {
   level: Level;
 }
 
+interface OpenAIResponseData {
+  error?: { code?: string; type?: string; message?: string };
+  incomplete_details?: { reason?: string };
+  model?: string;
+  output_text?: string;
+  status?: string;
+  output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+}
+
+class PublicGenerationError extends Error {
+  constructor(public readonly publicMessage: string, public readonly status = 500) {
+    super(publicMessage);
+    this.name = "PublicGenerationError";
+  }
+}
+
 const questionSchema = {
   type: "object",
   additionalProperties: false,
@@ -46,21 +62,34 @@ function cleanText(value: unknown, max: number) {
 }
 
 async function callOpenAI(openAIKey: string, body: Record<string, unknown>) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${openAIKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await response.json();
-  return { response, data };
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${openAIKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const raw = await response.text();
+    let data: OpenAIResponseData;
+    try {
+      data = JSON.parse(raw) as OpenAIResponseData;
+    } catch {
+      console.error("OpenAI returned a non-JSON response", response.status, raw.slice(0, 200));
+      throw new PublicGenerationError("The question generator received an invalid response. Please try again shortly.", 502);
+    }
+    return { response, data };
+  } catch (error) {
+    if (error instanceof PublicGenerationError) throw error;
+    console.error("OpenAI request failed", error);
+    throw new PublicGenerationError("The question generator could not reach the AI service. Please try again shortly.", 502);
+  }
 }
 
-function outputTextFrom(data: any) {
-  return data.output_text || data.output?.flatMap((item: any) => item.content || [])
-    .find((item: any) => item.type === "output_text")?.text;
+function outputTextFrom(data: OpenAIResponseData) {
+  return data.output_text || data.output?.flatMap((item) => item.content || [])
+    .find((item) => item.type === "output_text")?.text;
 }
 
-function publicOpenAIError(status: number, data: any) {
+function publicOpenAIError(status: number, data: OpenAIResponseData) {
   const errorCode = String(data?.error?.code || data?.error?.type || "unknown");
   console.error("OpenAI response error", status, errorCode, data?.error?.message);
 
@@ -77,6 +106,38 @@ function publicOpenAIError(status: number, data: any) {
   return publicMessage;
 }
 
+function parsePracticeSet(data: OpenAIResponseData, count: number) {
+  const outputText = outputTextFrom(data);
+  if (!outputText) {
+    const reason = data?.incomplete_details?.reason || data?.status || "missing_output";
+    console.error("OpenAI response contained no output text", reason);
+    throw new Error(`No output text (${reason})`);
+  }
+  const parsed = JSON.parse(outputText);
+  return {
+    title: cleanText(parsed.title, 90) || "Practice set",
+    questions: validateQuestions(parsed.questions, count, Object.keys(PRACTICE_CATEGORIES)),
+  };
+}
+
+async function requestPracticeSet(openAIKey: string, body: Record<string, unknown>, count: number) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const { response, data } = await callOpenAI(openAIKey, body);
+    if (!response.ok) {
+      throw new PublicGenerationError(publicOpenAIError(response.status, data), 502);
+    }
+    try {
+      return { data, set: parsePracticeSet(data, count) };
+    } catch (error) {
+      console.warn("Invalid structured practice response", { attempt, error });
+    }
+  }
+  throw new PublicGenerationError(
+    "The AI could not produce a valid practice set. Please try a more specific topic.",
+    502,
+  );
+}
+
 function attemptedQuestionIds(answers: unknown): string[] {
   if (!Array.isArray(answers)) return [];
   return answers.flatMap((answer) =>
@@ -87,7 +148,10 @@ serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
 
+  let stage = "starting";
+  const reference = crypto.randomUUID().slice(0, 8);
   try {
+    stage = "configuration";
     const authorization = request.headers.get("Authorization") || "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -95,10 +159,12 @@ serve(async (request) => {
     const openAIKey = Deno.env.get("OPENAI_API_KEY") || "";
     if (!supabaseUrl || !anonKey || !serviceKey) throw new Error("AI practice secrets are not configured.");
 
+    stage = "authentication";
     const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } } });
     const { data: { user }, error: authError } = await authClient.auth.getUser();
     if (authError || !user) return Response.json({ error: "Sign in to generate personalised questions." }, { status: 401, headers: corsHeaders });
 
+    stage = "profile";
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: profile, error: profileError } = await admin
       .from("profiles")
@@ -119,6 +185,7 @@ serve(async (request) => {
       return Response.json({ error: "Enter a topic to practise." }, { status: 400, headers: corsHeaders });
     }
 
+    stage = "practice history";
     const contextKey = [topicKey(degree), topicKey(academicYear), level].join("|");
     const requestTopicKey = topicKey(topic);
     const { data: attemptRows, error: attemptsError } = await admin.from("ai_practice_attempts")
@@ -144,6 +211,7 @@ serve(async (request) => {
         if (!practicedStatements.includes(question.statement)) practicedStatements.push(question.statement);
       }
     }
+    stage = "question bank";
     const { data: existingBank, error: bankProbeError } = await admin.from("ai_question_bank")
       .select("id").eq("context_key", contextKey)
       .eq("topic_key", requestTopicKey).limit(1);
@@ -197,6 +265,7 @@ serve(async (request) => {
     let model = "question-bank";
     if (missingCount > 0) {
     if (!openAIKey) throw new Error("AI service key is not configured.");
+    stage = "generation quota";
     const { data: streak, error: streakError } = await admin
       .from("user_streaks")
       .select("current_streak,last_active_date,freezes")
@@ -221,9 +290,10 @@ serve(async (request) => {
       }, { status: 429, headers: { ...corsHeaders, "Retry-After": String(quota.retryAfter) } });
     }
 
+    stage = "question generation";
     const generationModel = Deno.env.get("OPENAI_MODEL") || "gpt-5.4";
     const reviewModel = Deno.env.get("OPENAI_REVIEW_MODEL") || "gpt-5.4";
-    const { response: aiResponse, data: aiData } = await callOpenAI(openAIKey, {
+    const { data: aiData, set: candidate } = await requestPracticeSet(openAIKey, {
         model: generationModel,
         store: false,
         safety_identifier: user.id,
@@ -247,18 +317,13 @@ serve(async (request) => {
           },
         },
         max_output_tokens: 3500,
-      });
-    if (!aiResponse.ok) {
-      return Response.json({ error: publicOpenAIError(aiResponse.status, aiData) }, { status: 502, headers: corsHeaders });
-    }
+      }, missingCount);
 
-    const outputText = outputTextFrom(aiData);
-    if (!outputText) throw new Error("The AI response did not contain a practice set.");
-    const parsed = JSON.parse(outputText);
-    const candidate = { title: cleanText(parsed.title, 90) || "Practice set",
-      questions: validateQuestions(parsed.questions, missingCount, Object.keys(PRACTICE_CATEGORIES)) };
-
-    const { response: reviewResponse, data: reviewData } = await callOpenAI(openAIKey, {
+    stage = "quality review";
+    let reviewed = candidate;
+    let reviewData: OpenAIResponseData | null = null;
+    try {
+      const reviewResult = await requestPracticeSet(openAIKey, {
       model: reviewModel,
       store: false,
       safety_identifier: user.id,
@@ -279,19 +344,22 @@ serve(async (request) => {
         },
       },
       max_output_tokens: 3500,
-    });
-    if (!reviewResponse.ok) {
-      return Response.json({ error: publicOpenAIError(reviewResponse.status, reviewData) }, { status: 502, headers: corsHeaders });
+      }, missingCount);
+      reviewed = reviewResult.set;
+      reviewData = reviewResult.data;
+    } catch (error) {
+      // The first pass is already schema-validated. Review improves quality but
+      // should not make the whole feature unavailable during a transient outage.
+      console.warn("Practice quality review unavailable; using validated draft", { reference, error });
     }
-    const reviewOutputText = outputTextFrom(reviewData);
-    if (!reviewOutputText) throw new Error("The AI review response did not contain a practice set.");
-    const reviewed = JSON.parse(reviewOutputText);
-    generated = { title: cleanText(reviewed.title, 90) || candidate.title,
-      questions: validateQuestions(reviewed.questions, missingCount, Object.keys(PRACTICE_CATEGORIES)) };
-    model = `generator:${aiData.model || generationModel};reviewer:${reviewData.model || reviewModel}`;
+    generated = reviewed;
+    model = reviewData
+      ? `generator:${aiData.model || generationModel};reviewer:${reviewData.model || reviewModel}`
+      : `generator:${aiData.model || generationModel};reviewer:unavailable`;
     for (const question of generated.questions) question.id = await questionKey(question.statement);
     } // Cache hits never reserve generation quota or call the model.
 
+    stage = "saving questions";
     const questions = [...reused, ...generated.questions];
     if (new Set(questions.map((q) => q.id)).size !== questionCount) throw new Error("Duplicate generated questions");
     if (generated.questions.length > 0) {
@@ -336,7 +404,15 @@ serve(async (request) => {
       },
     }, { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    console.error("generate-practice failed", error);
-    return Response.json({ error: "Could not generate questions. Please try again." }, { status: 500, headers: corsHeaders });
+    console.error("generate-practice failed", { reference, stage, error });
+    const publicError = error instanceof PublicGenerationError
+      ? error
+      : new PublicGenerationError(
+        `Could not generate questions while ${stage}. Please try again. Reference: ${reference}`,
+      );
+    return Response.json(
+      { error: publicError.publicMessage, code: "generation_failed", reference },
+      { status: publicError.status, headers: corsHeaders },
+    );
   }
 });
