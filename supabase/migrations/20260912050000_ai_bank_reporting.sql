@@ -83,8 +83,9 @@ language sql stable security invoker set search_path = public as $$
     where public.is_tpo_for_institution(p_institution_id)
   ), answered as (
     select a.user_id, a.id, a.completed_at, s.level,
+      lower(regexp_replace(trim(s.topic), '\s+', ' ', 'g')) as topic_key,
+      trim(s.topic) as topic,
       md5(lower(regexp_replace(trim(coalesce(q->>'statement', q->>'question')), '\s+', ' ', 'g'))) as question_key,
-      coalesce(nullif(q->>'categoryId',''), 'other') as category_id,
       case when q ? 'statement' then
         (ans->>'selectedOption') = case when (q->>'answer')::boolean then '1' else '0' end
       else (ans->>'selectedOption') = (q->>'correctOption') end as correct
@@ -93,14 +94,20 @@ language sql stable security invoker set search_path = public as $$
     cross join lateral jsonb_array_elements(a.answers) ans
     where ans->>'questionId' = q->>'id'
   ), latest as (
-    select distinct on (user_id, question_key) * from answered
-    order by user_id, question_key, completed_at desc, id desc
+    select distinct on (user_id, topic_key, question_key) * from answered
+    order by user_id, topic_key, question_key, completed_at desc, id desc
   ), groups as (
-    select user_id, category_id, level, count(*) as questions,
-      count(*) filter (where correct) as correct from latest group by user_id, category_id, level
+    select user_id, topic_key, max(topic) as topic, level, count(*) as questions,
+      count(*) filter (where correct) as correct from latest group by user_id, topic_key, level
   ), category_summary as (
-    select user_id, jsonb_agg(jsonb_build_object('categoryId',category_id,'level',level,'questions',questions,'correct',correct)
-      order by category_id,level) as categories from groups group by user_id
+    select user_id, jsonb_agg(jsonb_build_object(
+      'categoryId', 'topic:' || md5(topic_key),
+      'categoryName', topic,
+      'topic', topic,
+      'level', level,
+      'questions', questions,
+      'correct', correct
+    ) order by topic_key, level) as categories from groups group by user_id
   ), totals as (
     select user_id, count(*) as sessions, max(completed_at) as last_completed from attempts group by user_id
   ), unique_totals as (
