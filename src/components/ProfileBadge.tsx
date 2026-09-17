@@ -229,7 +229,7 @@ const ProfileBadge = () => {
                                             }}
                                             className="text-[10px] text-muted-foreground hover:text-destructive hover:underline transition-colors block"
                                         >
-                                            Cancel Mock Subscription
+                                            Cancel Subscription
                                         </button>
                                 </div>
                             )}
