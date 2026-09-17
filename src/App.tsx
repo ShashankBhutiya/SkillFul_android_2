@@ -14,7 +14,6 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import { useForceUpdate } from "@/hooks/useForceUpdate";
 import ForceUpdateModal from "@/components/ForceUpdateModal";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import DailyStreakPrompt from "@/components/streak/DailyStreakPrompt";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -138,7 +137,6 @@ const App = () => {
           <BrowserRouter>
             <NavigationTracker />
             <PushNotificationInitializer />
-            <DailyStreakPrompt />
             <Suspense fallback={<div className="min-h-screen bg-background" />}>
               <Routes>
                 <Route path="/" element={<RootRoute />} />
