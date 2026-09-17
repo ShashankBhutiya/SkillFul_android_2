@@ -96,14 +96,14 @@ const QuizSummary = ({
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden p-4">
+    <div id="main-content" className="min-h-[100dvh] flex flex-col relative overflow-x-hidden px-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
       <FloatingOrbs />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 z-0" />
 
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 flex-1 flex flex-col items-center justify-start pt-8 max-w-md mx-auto w-full"
+        className="relative z-10 flex-1 flex flex-col items-center justify-start pt-3 sm:pt-8 max-w-md mx-auto w-full"
       >
         {/* Score Card */}
         <motion.div

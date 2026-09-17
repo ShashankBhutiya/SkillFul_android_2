@@ -618,14 +618,6 @@ export const NotificationTemplates = {
     actionLabel: "View Stats",
   }),
 
-  mascotTip: (tip: string): PushPayload => ({
-    title: "Companion Tip from Skillful! 🦉",
-    body: tip,
-    type: "tip",
-    actionUrl: "/skills",
-    actionLabel: "Try a Scenario",
-  }),
-
   welcomeBack: (): PushPayload => ({
     title: "Welcome back! 🎉",
     body: "Great to see you again. Let's pick up where you left off and sharpen those skills!",

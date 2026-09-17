@@ -107,7 +107,7 @@ const RootRoute = () => {
   const params = new URLSearchParams(window.location.search);
   return params.has("code") || params.has("error") || params.has("error_description") || window.location.hash.includes("access_token=")
     ? <AuthCallback />
-    : <Navigate to="/skills" replace />;
+    : <Navigate to="/streak" replace />;
 };
 
 const App = () => {

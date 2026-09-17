@@ -119,7 +119,7 @@ const SECTIONS = [
         <p>We utilize the collected information to manage the platform and support your personal growth:</p>
         <ul className="list-disc pl-5 space-y-2">
           <li><strong>Operation:</strong> Authenticate users, restore progress across devices, and deliver core learning scenarios.</li>
-          <li><strong>Personalization:</strong> Run interactive elements such as our Companion Mascot recommendations and smart coaching tips.</li>
+          <li><strong>Personalization:</strong> Provide relevant recommendations and smart coaching tips.</li>
           <li><strong>Reminders & Practice Habits:</strong> Deliver daily practice alerts via SMS (if opted in) and notification cards to maintain learning streaks.</li>
           <li><strong>Analytics & Improvement:</strong> Analyze trends and usage statistics to debug issues, adjust difficulty settings, and refine content categories.</li>
         </ul>
@@ -322,7 +322,7 @@ const SECTIONS = [
     content: (
       <div className="space-y-3">
         <p>
-          We use local browser storage and cookie tokens to keep you logged in across sessions, store quiz settings (such as volume levels or mascot preferences), and remember your dark/light theme options. These files do not run programs or download spyware. You can clear cookies or limit local storage in your browser settings, though doing so might require signing in again.
+          We use local browser storage and cookie tokens to keep you logged in across sessions, store quiz settings such as volume levels, and remember your dark/light theme options. These files do not run programs or download spyware. You can clear cookies or limit local storage in your browser settings, though doing so might require signing in again.
         </p>
       </div>
     )

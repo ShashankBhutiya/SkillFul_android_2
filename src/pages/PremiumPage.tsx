@@ -79,6 +79,9 @@ const PremiumPage = () => {
         amount: data.amount,
         currency: data.currency,
         order_id: data.order_id,
+        // Enable UPI Intent when Checkout is hosted inside the Capacitor WebView.
+        // Razorpay continues to choose the appropriate UPI experience on the web.
+        webview_intent: true,
         name: "Skillful Premium",
         description: `Upgrade to ${planType} Premium`,
         handler: async function (response: any) {

@@ -402,16 +402,16 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
   const diffLabel = generatedSet ? ({ beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" }[generatedSet.level]) : difficulty === "easy" ? "Easy" : "Intermediate";
 
   return (
-    <div className={`h-[100dvh] flex flex-col relative overflow-hidden ${isShaking ? "shake-animation" : ""}`}>
+    <div id="main-content" className={`app-viewport flex flex-col relative overflow-hidden px-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] ${isShaking ? "shake-animation" : ""}`}>
       <FloatingOrbs />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 z-0" />
 
       {/* Top Bar */}
-      <div className="relative z-10 flex items-center justify-between p-3 shrink-0">
+      <div className="relative z-10 flex items-center justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] shrink-0">
         <button onClick={onBack} className="p-2 rounded-full bg-muted/80 backdrop-blur-sm hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
           {/* Difficulty badge */}
           <span className={`text-xs font-display font-bold px-3 py-1 rounded-full backdrop-blur-sm ${difficulty === "easy"
             ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
@@ -437,7 +437,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
             key={score}
             initial={{ scale: 1.3 }}
             animate={{ scale: 1 }}
-            className="bg-primary/90 backdrop-blur-sm rounded-full px-4 py-1"
+            className="whitespace-nowrap bg-primary/90 backdrop-blur-sm rounded-full px-2.5 sm:px-4 py-1"
           >
             <span className="font-display font-bold text-primary-foreground">{score} pts</span>
           </motion.div>
@@ -445,7 +445,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
       </div>
 
       {/* Milestone Progress Bar */}
-      <div className="relative z-10 px-4 py-1 shrink-0">
+      <div className="compact-landscape-hide relative z-10 px-3 sm:px-4 py-1 shrink-0">
         <div className="max-w-md mx-auto bg-card/70 backdrop-blur-md rounded-2xl p-3 border border-border/40 shadow-sm flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
             <span className="flex items-center gap-1 font-display">
@@ -467,8 +467,8 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
       </div>
 
       {/* Card Stack */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-3 min-h-0">
-        <div className="relative w-full max-w-lg h-full max-h-[70vh]">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-3 pb-2 min-h-0">
+        <div className="compact-landscape-card relative w-full max-w-lg h-full max-h-[min(70vh,46rem)]">
           {!showLoginGate && currentIndex + 1 < questions.length && (
             <SwipeCard
               question={questions[currentIndex + 1]}

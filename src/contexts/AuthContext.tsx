@@ -211,10 +211,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     emailConsent: profile.email_consent ?? false,
                     phoneVerified: profile.phone_verified ?? false,
                     whatsappConsent: profile.whatsapp_consent ?? false,
-                    firstName: profile.first_name || "",
-                    lastName: profile.last_name || "",
-                    degree: profile.degree || "",
-                    academicYear: profile.academic_year || "",
+                    firstName: profile.first_name ?? fallbackUser.firstName ?? "",
+                    lastName: profile.last_name ?? fallbackUser.lastName ?? "",
+                    degree: profile.degree ?? fallbackUser.degree ?? "",
+                    academicYear: profile.academic_year ?? fallbackUser.academicYear ?? "",
                     isPremium: profile.subscription_status === "active",
                     subscriptionStatus: profile.subscription_status || "inactive",
                     subscriptionId: profile.subscription_id || "",
@@ -343,8 +343,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         });
                     }
                 }
-                const appUser = await fetchProfileData(session.user.id, session.user.email);
-                if (!cancelled && version === sessionVersion) setUser(appUser);
+                const appUser = await fetchProfileData(
+                    session.user.id,
+                    session.user.email,
+                    userRef.current.id === session.user.id ? userRef.current : undefined,
+                );
+                if (!cancelled && version === sessionVersion) {
+                    userRef.current = appUser;
+                    setUser(appUser);
+                    stopLoading();
+                }
             }
         };
 
@@ -371,7 +379,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         unlockCount: 0,
                         isPremium: false,
                     });
-                stopLoading();
                 setTimeout(() => {
                     if (!cancelled && version === sessionVersion) {
                         void handleSession(session, version);
@@ -406,7 +413,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         unlockCount: 0,
                         isPremium: false,
                     });
-                    stopLoading();
                     setTimeout(() => {
                         if (!cancelled && version === sessionVersion) {
                             void handleSession(session, version);
@@ -428,7 +434,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.warn("Auth safety timeout fired — forcing loading=false");
                 stopLoading();
             }
-        }, 3000);
+        }, 7000);
 
         let appListener: any;
         if (Capacitor.isNativePlatform()) {

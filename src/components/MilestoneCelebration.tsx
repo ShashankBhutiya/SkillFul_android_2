@@ -127,38 +127,12 @@ export const MilestoneCelebration = ({
           </div>
         </div>
 
-        {/* Mascot section */}
-        <div className="flex items-end gap-3 w-full mb-6 text-left">
-          {/* Animated Mascot */}
-          <motion.div
-            animate={{ 
-              y: [0, -6, 0],
-              rotate: [-1.5, 1.5, -1.5]
-            }}
-            transition={{ 
-              repeat: Infinity, 
-              duration: 2.2,
-              ease: "easeInOut"
-            }}
-            className="w-14 h-14 shrink-0 relative"
-          >
-            <div className="absolute inset-0 bg-primary rounded-[1.8rem] rounded-bl-lg shadow-md border border-primary-foreground/10 overflow-hidden">
-              <div className="absolute top-2.5 left-1.5 right-1.5 bottom-2.5 bg-white/20 backdrop-blur-md rounded-[1.2rem] flex items-center justify-center gap-1.5">
-                <div className="w-2 h-2.5 bg-primary-foreground rounded-full" />
-                <div className="w-2 h-2.5 bg-primary-foreground rounded-full" />
-              </div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-0.5 w-2 h-2 bg-orange-400 rotate-45 rounded-sm" />
-            </div>
-            <div className="absolute -top-1 left-1 w-3 h-4 bg-primary rounded-t-full -rotate-12 -z-10" />
-            <div className="absolute -top-1 right-1 w-3 h-4 bg-primary rounded-t-full rotate-12 -z-10" />
-          </motion.div>
-
-          {/* Speech Bubble */}
+        <div className="w-full mb-6 text-left">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 bg-muted/40 p-3 rounded-2xl rounded-bl-sm border border-border/40"
+            className="bg-muted/40 p-3 rounded-2xl border border-border/40"
           >
             <p className="font-display font-bold text-sm text-foreground italic leading-tight">
               "{message}"

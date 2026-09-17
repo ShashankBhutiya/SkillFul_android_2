@@ -104,6 +104,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         amount: data.amount,
         currency: data.currency,
         order_id: data.order_id,
+        // Required for UPI apps (Google Pay, PhonePe, Paytm, etc.) to open
+        // from Razorpay Checkout when the web app is running in an Android WebView.
+        // It is ignored by regular desktop/mobile browsers, where Razorpay selects
+        // the appropriate UPI flow (such as QR) automatically.
+        webview_intent: true,
         name: "Skillful Premium",
         description: `Upgrade to ${planType} Premium`,
         handler: async function (response: any) {

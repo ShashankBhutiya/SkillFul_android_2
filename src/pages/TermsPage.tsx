@@ -171,7 +171,7 @@ const SECTIONS = [
     content: (
       <div className="space-y-3">
         <p>
-          Unless otherwise stated, all materials on the platform—including quiz questions, correct/incorrect explanations, graphic interfaces, website design, text layout, mascot characters, icons, logos, and code—are the intellectual property of Skillful.
+          Unless otherwise stated, all materials on the platform—including quiz questions, correct/incorrect explanations, graphic interfaces, website design, text layout, icons, logos, and code—are the intellectual property of Skillful.
         </p>
         <p>
           We grant you a limited, non-exclusive, non-transferable, revocable license to access the app for personal, non-commercial education. You may not copy, scrape, distribute, reproduce, or frame any platform content without our explicit written consent.

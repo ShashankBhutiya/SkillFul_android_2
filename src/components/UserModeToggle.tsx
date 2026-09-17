@@ -63,7 +63,7 @@ const UserModeToggle = ({ showLabel = true, compact = false, className = "" }: U
             <div
                 role="group"
                 aria-label="Switch between Student and Professional"
-                className="flex gap-1 rounded-xl border border-border/40 bg-muted/40 p-1"
+                className="flex divide-x divide-border border border-border bg-background"
             >
                 {USER_MODES.map((option) => {
                     const Icon = MODE_ICONS[option.value];
@@ -76,8 +76,8 @@ const UserModeToggle = ({ showLabel = true, compact = false, className = "" }: U
                             disabled={saving}
                             aria-pressed={selected}
                             onClick={() => handleSelect(option.value)}
-                            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition-all active:scale-[0.97] disabled:opacity-60 ${selected
-                                ? "bg-primary text-primary-foreground shadow-sm"
+                            className={`flex flex-1 items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-60 ${selected
+                                ? "bg-foreground text-background"
                                 : "text-muted-foreground hover:bg-muted"
                                 }`}
                         >

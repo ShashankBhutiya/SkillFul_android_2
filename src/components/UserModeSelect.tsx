@@ -32,7 +32,7 @@ const UserModeSelect = ({
     const isRows = variant === "rows";
 
     return (
-        <div className={isRows ? "space-y-2" : "grid gap-3 sm:grid-cols-2"}>
+        <div className="divide-y divide-border border-y border-border">
             {USER_MODES.map((option) => {
                 const Icon = MODE_ICONS[option.value];
                 const selected = value === option.value;
@@ -49,14 +49,14 @@ const UserModeSelect = ({
                             onChange(option.value);
                         }}
                         aria-pressed={selected}
-                        className={`group relative flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors disabled:opacity-50 ${selected
-                            ? "border-primary bg-primary/5"
-                            : "border-border bg-card hover:border-primary/40"
+                        className={`group relative flex w-full items-start gap-4 px-1 py-5 text-left transition-colors disabled:opacity-50 ${selected
+                            ? "bg-primary/[0.045]"
+                            : "bg-transparent hover:bg-muted/55"
                             }`}
                     >
                         <span
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${selected
-                                ? "bg-primary text-primary-foreground"
+                            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ${selected
+                                ? "bg-foreground text-background"
                                 : "bg-muted text-muted-foreground"
                                 }`}
                         >
@@ -68,9 +68,6 @@ const UserModeSelect = ({
                                 <span className="font-display text-sm font-semibold text-foreground">
                                     {option.label}
                                 </span>
-                                {selected && (
-                                    <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                )}
                             </span>
                             <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                                 {option.tagline}
@@ -80,6 +77,9 @@ const UserModeSelect = ({
                                     {option.description}
                                 </span>
                             )}
+                        </span>
+                        <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-foreground bg-foreground text-background" : "border-border"}`}>
+                            {selected && <Check className="h-3 w-3" strokeWidth={3} />}
                         </span>
                     </motion.button>
                 );

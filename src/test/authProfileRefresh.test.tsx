@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   profile: {
     data: {
       referral_code: "ABC123",
+      first_name: "Asha",
       degree: "B.Tech Computer Science",
       academic_year: "3rd year",
       subscription_status: "inactive",
@@ -60,6 +61,7 @@ describe("profile refresh", () => {
     mocks.profile = {
       data: {
         referral_code: "ABC123",
+        first_name: "Asha",
         degree: "B.Tech Computer Science",
         academic_year: "3rd year",
         subscription_status: "inactive",
@@ -83,11 +85,11 @@ describe("profile refresh", () => {
     let auth: ReturnType<typeof useAuth>;
     function Probe() {
       auth = useAuth();
-      return <span>{auth.user.degree}|{auth.user.linkedCollege?.name}</span>;
+      return <span>{auth.user.firstName}|{auth.user.degree}|{auth.user.linkedCollege?.name}</span>;
     }
 
     const screen = render(<AuthProvider><Probe /></AuthProvider>);
-    await waitFor(() => expect(screen.getByText("B.Tech Computer Science|Test College")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Asha|B.Tech Computer Science|Test College")).toBeInTheDocument());
 
     mocks.profile = { data: null, error: { message: "temporary profile failure" } };
     mocks.membership = { data: null, error: { message: "temporary membership failure" } };
@@ -98,6 +100,7 @@ describe("profile refresh", () => {
     });
 
     expect(auth!.user.degree).toBe("B.Tech Computer Science");
+    expect(auth!.user.firstName).toBe("Asha");
     expect(auth!.user.academicYear).toBe("3rd year");
     expect(auth!.user.hasLinkedCollege).toBe(true);
     expect(auth!.user.linkedCollege?.name).toBe("Test College");

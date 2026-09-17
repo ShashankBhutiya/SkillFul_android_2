@@ -20,7 +20,6 @@ export interface NotificationSettings {
   reminderTime: string; // e.g. "09:00"
   browserNotificationsEnabled: boolean;
   nativePushEnabled: boolean;
-  mascotTipsEnabled: boolean;
   streakAlertsEnabled: boolean;
   achievementAlertsEnabled: boolean;
   leaderboardAlertsEnabled: boolean;
@@ -39,7 +38,6 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   reminderTime: "09:00",
   browserNotificationsEnabled: false,
   nativePushEnabled: false,
-  mascotTipsEnabled: true,
   streakAlertsEnabled: true,
   achievementAlertsEnabled: true,
   leaderboardAlertsEnabled: true,
@@ -62,8 +60,8 @@ const SEEDED_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "welcome-2",
-    title: "Your Companion is Ready! 🦉",
-    description: "Skillful the companion is here to motivate you and track your progress. Let's make swiping a daily habit!",
+    title: "Your Practice Plan is Ready!",
+    description: "Build a daily habit with short, focused scenario practice.",
     type: "challenge",
     read: false,
     createdAt: new Date(Date.now() - 30 * 60000).toISOString(), // 30 mins ago

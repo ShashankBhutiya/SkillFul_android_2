@@ -14,9 +14,7 @@ import {
   Laptop
 } from "lucide-react";
 import ProfileBadge from "@/components/ProfileBadge";
-import { CompanionMascot } from "@/components/mascot/CompanionMascot";
 import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
-import { getNotificationSettings } from "@/services/notificationService";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
@@ -41,7 +39,7 @@ interface BottomTabBarProps {
 // give them a new identity on every layout update and reset stateful children
 // such as ProfileBadge (including any modal it currently has open).
 const BottomTabBar = ({ pathname, className = "sticky" }: BottomTabBarProps) => (
-  <div className={`${className} bottom-0 left-0 right-0 h-[64px] bg-background border-t border-border flex items-stretch justify-around px-1 z-40 pb-[env(safe-area-inset-bottom,4px)] shrink-0`}>
+  <nav aria-label="Primary" className={`${className} bottom-0 left-0 right-0 min-h-16 bg-background/95 backdrop-blur-lg border-t border-border flex items-stretch justify-around px-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))] z-40 safe-bottom shrink-0`}>
     {TAB_ITEMS.map((tab) => {
       const isActive = tab.pattern.test(pathname) || (tab.to === "/skills" && pathname === "/");
       const Icon = tab.icon;
@@ -77,12 +75,12 @@ const BottomTabBar = ({ pathname, className = "sticky" }: BottomTabBarProps) => 
         </Link>
       );
     })}
-  </div>
+  </nav>
 );
 
 const AppHeader = ({ extraClass = "" }: { extraClass?: string }) => (
-  <header className={`sticky top-0 z-40 border-b border-border bg-background shrink-0 ${extraClass}`}>
-    <div className="flex h-14 items-center justify-between px-4">
+  <header className={`sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg shrink-0 safe-top ${extraClass}`}>
+    <div className="flex h-14 items-center justify-between safe-x">
       <Link to="/skills" className="flex items-center gap-2.5 group shrink-0">
         <img
           src="/favicon.png"
@@ -104,6 +102,7 @@ const AppHeader = ({ extraClass = "" }: { extraClass?: string }) => (
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isFixedViewportRoute = location.pathname === "/streak";
 
   const [isMobile, setIsMobile] = useState(true);
   const [currentTime, setCurrentTime] = useState("9:41 AM");
@@ -111,7 +110,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   // Track window resizing to dynamically switch between mobile full-screen and desktop device showcase
   useEffect(() => {
     const checkMobile = () => {
-      const mobileQuery = window.matchMedia("(max-width: 640px)");
+      // Phones and tablets use the real fluid app shell. The framed phone is
+      // only a presentation treatment for genuinely desktop-sized browsers.
+      const mobileQuery = window.matchMedia("(max-width: 1023px)");
       const isCapacitor = (window as Window & { Capacitor?: unknown }).Capacitor !== undefined;
       setIsMobile(mobileQuery.matches || isCapacitor);
     };
@@ -135,22 +136,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Companion Mascot greetings
-  const [mascotMessage, setMascotMessage] = useState("");
-  const [mascotTrigger, setMascotTrigger] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const settings = getNotificationSettings();
-      if (settings.mascotTipsEnabled) {
-        setMascotMessage("Hey! 🦉 Ready to sharpen your skills today? Let's go!");
-        setMascotTrigger((t) => t + 1);
-      }
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   // Scroll to top when path changes
   useEffect(() => {
     if (scrollRef.current) {
@@ -162,11 +147,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   // ─── Render Mobile Layout ───
   if (isMobile) {
     return (
-      <div className="relative h-screen h-[100dvh] bg-background flex flex-col overflow-hidden">
-        {mascotMessage && (
-          <CompanionMascot message={mascotMessage} triggerKey={mascotTrigger} />
-        )}
-
+      <div className="app-viewport relative bg-background flex flex-col overflow-hidden">
         <PwaInstallPrompt />
 
 
@@ -174,7 +155,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         <AppHeader />
 
         {/* Scrollable screen container */}
-        <main ref={scrollRef} className="flex-1 relative z-10 w-full overflow-y-auto pb-24">
+        <main id="main-content" ref={scrollRef} className={`app-scroll-content flex-1 min-h-0 relative z-10 w-full overflow-x-hidden ${isFixedViewportRoute ? "overflow-y-hidden" : "overflow-y-auto"}`}>
           {children}
         </main>
 
@@ -297,10 +278,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
             {/* Inner Phone Screen Content */}
             <div className="flex-1 flex flex-col overflow-hidden relative rounded-[42px]">
-              {/* Mascot, Prompts inside the device view */}
-              {mascotMessage && (
-                <CompanionMascot message={mascotMessage} triggerKey={mascotTrigger} />
-              )}
               <PwaInstallPrompt />
       
 
@@ -308,7 +285,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
               <AppHeader extraClass="pt-7" />
 
               {/* Scrollable Content inside phone screen */}
-              <main ref={scrollRef} className="flex-1 relative z-10 w-full overflow-y-auto scrollbar-none pb-24">
+              <main id="main-content" ref={scrollRef} className={`app-scroll-content flex-1 min-h-0 relative z-10 w-full overflow-x-hidden scrollbar-none ${isFixedViewportRoute ? "overflow-y-hidden" : "overflow-y-auto"}`}>
                 {children}
               </main>
 

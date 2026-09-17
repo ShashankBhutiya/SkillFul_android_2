@@ -130,11 +130,6 @@ export const NotificationCenter = () => {
     saveNotificationSettings({ remindersEnabled: newVal });
   };
 
-  const handleToggleTips = () => {
-    const newVal = !settings.mascotTipsEnabled;
-    saveNotificationSettings({ mascotTipsEnabled: newVal });
-  };
-
   const handleTogglePush = async () => {
     if (isNativePlatform()) {
       if (settings.nativePushEnabled) {
@@ -380,7 +375,7 @@ export const NotificationCenter = () => {
                         </div>
                         <p className="font-display font-bold text-sm text-foreground">Inbox is empty</p>
                         <p className="text-xs text-muted-foreground mt-1 max-w-[200px] leading-relaxed">
-                          We will notify you here when new daily scenarios, streak achievements, or mascot tips are ready!
+                          We will notify you here when new daily scenarios, streak achievements, or coaching tips are ready!
                         </p>
                       </div>
                     ) : (
@@ -513,29 +508,7 @@ export const NotificationCenter = () => {
                         </button>
                       </div>
 
-                      {/* Toggle 3: Mascot Companion tips */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <label className="font-display font-extrabold text-xs text-foreground block">
-                            Mascot Companion Advice
-                          </label>
-                          <span className="text-[10px] text-muted-foreground font-body block mt-0.5">
-                            Friendly tips popped into your inbox
-                          </span>
-                        </div>
-                        <button
-                          onClick={handleToggleTips}
-                          className="text-primary hover:text-primary/80 transition-colors cursor-pointer shrink-0"
-                        >
-                          {settings.mascotTipsEnabled ? (
-                            <ToggleRight className="h-9 w-9" />
-                          ) : (
-                            <ToggleLeft className="h-9 w-9 text-muted-foreground/40" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Toggle 4: Streak Alerts */}
+                      {/* Toggle 3: Streak Alerts */}
                       <div className="flex items-center justify-between">
                         <div>
                           <label className="font-display font-extrabold text-xs text-foreground block">

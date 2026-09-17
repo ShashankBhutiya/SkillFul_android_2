@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useStreak } from "@/hooks/useStreak";
 import { SeoHead } from "@/components/SeoHead";
@@ -10,11 +9,12 @@ export default function StreakPage() {
   return (
     <MainLayout>
       <SeoHead title="Daily streak" description="Track your daily practice streak, weekly activity, and streak freezes." path="/streak" />
-      <div className="mx-auto max-w-lg px-5 py-6">
-        <Link to="/info" className="inline-flex items-center gap-2 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Profile</Link>
-        <h1 className="mb-6 mt-5 text-center font-display text-2xl font-bold">Daily streak</h1>
-        <StreakDetails streak={streak} checkedInToday={checkedInToday} />
-        <Link to="/skills" className="mt-7 block rounded-xl bg-primary px-5 py-3.5 text-center font-semibold text-primary-foreground">Practise now</Link>
+      <div className="streak-screen mx-auto flex h-full w-full max-w-lg flex-col px-5 py-3">
+        <h1 className="streak-page-title text-center font-display text-xl font-bold">Daily streak</h1>
+        <div className="min-h-0 flex-1 content-center">
+          <StreakDetails streak={streak} checkedInToday={checkedInToday} compact />
+        </div>
+        <Link to="/skills" className="streak-practise-link block shrink-0 rounded-xl bg-primary px-5 py-3 text-center font-semibold text-primary-foreground">Practise now</Link>
       </div>
     </MainLayout>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import categorySummaries from "@/data/categorySummaries.json";
@@ -23,8 +23,6 @@ import {
   Heart,
   GraduationCap,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
   Search,
   ArrowRight,
   Calculator,
@@ -84,7 +82,6 @@ interface CategoryCardProps {
   onSelect: (categoryId: string) => void;
   setShowReferralFor: (v: { id: string; name: string } | null) => void;
   i: number;
-  className?: string;
 }
 
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
@@ -202,7 +199,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
     });
   }
 
-  const renderCategoryList = (cats: CategorySummary[], startIndex: number, cardClassName?: string) =>
+  const renderCategoryList = (cats: CategorySummary[], startIndex: number) =>
     cats.map((cat, i) => {
       const requiredRefs = getRequiredReferrals(cat.id);
       const isPremiumLocked = mode === "student" && !isStudentCategoryAccessible(cat.id, hasPremiumAccess);
@@ -229,7 +226,6 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
           onSelect={onSelect}
           setShowReferralFor={setShowReferralFor}
           i={startIndex + i}
-          className={cardClassName}
         />
       );
     });
@@ -278,12 +274,12 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             The emphasis now comes from the label and the single filled
             button, not from a gradient fill and a coloured border. */}
         {skillOfTheDay && (
-          <div className="surface mb-8 p-5">
+          <div className="mb-8 border-y border-border py-5">
             <span className="section-label">Skill of the day</span>
 
             <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3.5 text-left">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center text-foreground">
                   <CategoryIcon categoryId={skillOfTheDay.id} className="h-6 w-6 text-primary" />
                 </div>
                 <div className="min-w-0">
@@ -308,7 +304,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
                     onSelect(skillOfTheDay.id);
                   }
                 }}
-                className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80 sm:w-auto"
+                className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-md bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-foreground/90 sm:w-auto"
               >
                 {isSkillOfTheDayLocked ? (
                   <>
@@ -327,7 +323,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
         )}
 
         {/* Search input */}
-        <div className="relative mb-6">
+        <div className="relative mb-8 border-b border-border">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
@@ -335,7 +331,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search skills"
             aria-label="Search skills"
-            className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary focus:ring-1 focus:ring-primary/25"
+            className="w-full border-0 bg-transparent py-3 pl-10 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:ring-0"
           />
         </div>
 
@@ -354,11 +350,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
                 icon={section.icon}
                 count={section.categories.length}
               >
-                {renderCategoryList(
-                  section.categories,
-                  startIdx,
-                  "w-[150px] sm:w-[168px] md:w-[184px] shrink-0 snap-start"
-                )}
+                {renderCategoryList(section.categories, startIdx)}
               </CategoryCarousel>
             );
           })}
@@ -370,7 +362,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
             hapticLight();
             setShowRequestModal(true);
           }}
-          className="mt-9 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-4 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          className="mt-9 flex w-full items-center justify-center gap-2 border-t border-border px-4 py-5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <MessageSquarePlus className="h-4 w-4" />
           Request a new category
@@ -547,46 +539,6 @@ const CategoryCarousel = ({
   count,
   children,
 }: CategoryCarouselProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const check = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
-    };
-
-    check();
-    el.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-
-    // Card widths settle after the cover images lay out, so re-measure
-    // on content changes as well as on scroll/resize.
-    const observer = new ResizeObserver(check);
-    observer.observe(el);
-
-    return () => {
-      el.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-      observer.disconnect();
-    };
-  }, [children]);
-
-  const scrollBy = (direction: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const amount = el.clientWidth * 0.75;
-    el.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
-  };
-
-  const arrowClass =
-    "absolute top-1/2 z-20 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted md:flex";
-
   return (
     <section>
       {/* Section header sits directly on the page background */}
@@ -610,32 +562,9 @@ const CategoryCarousel = ({
         )}
       </div>
 
-      <div className="relative">
-        {canScrollLeft && (
-          <button
-            type="button"
-            onClick={() => scrollBy("left")}
-            className={`${arrowClass} -left-3`}
-            aria-label={`Scroll ${title} left`}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-        )}
-
-        {canScrollRight && (
-          <button
-            type="button"
-            onClick={() => scrollBy("right")}
-            className={`${arrowClass} -right-3`}
-            aria-label={`Scroll ${title} right`}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        )}
-
+      <div className="relative border-t border-border">
         <div
-          ref={scrollRef}
-          className="flex snap-x snap-mandatory scroll-smooth flex-row gap-3 overflow-x-auto px-0.5 pb-2 pt-0.5 scrollbar-none"
+          className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8"
         >
           {children}
         </div>
@@ -654,7 +583,6 @@ const CategoryCard = ({
   onSelect,
   setShowReferralFor,
   i,
-  className,
 }: CategoryCardProps) => {
   const navigate = useNavigate();
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -680,9 +608,9 @@ const CategoryCard = ({
           onSelect(cat.id);
         }
       }}
-      className={`surface-interactive group flex flex-col overflow-hidden text-left ${className || "w-full"}`}
+      className="group flex w-full items-center gap-4 py-4 text-left transition-colors hover:bg-muted/40"
     >
-      <div className="relative h-[88px] w-full shrink-0 overflow-hidden border-b border-border">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
         {/* Loading skeleton */}
         {!imgLoaded && coverImage && (
           <div className="absolute inset-0 animate-pulse bg-muted" />
@@ -707,8 +635,8 @@ const CategoryCard = ({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 p-3">
-        <span className="line-clamp-2 font-display text-[13px] font-semibold leading-snug text-foreground">
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+        <span className="line-clamp-2 font-display text-sm font-semibold leading-snug text-foreground">
           {cat.name}
         </span>
 
@@ -722,12 +650,12 @@ const CategoryCard = ({
           <div className="space-y-1.5">
             {/* Progress bar carries the number, so the old icon +
                 "x/y correct" line is redundant alongside it. */}
-            <div className="h-1 overflow-hidden rounded-full bg-muted">
+            <div className="h-1 overflow-hidden bg-muted">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ delay: 0.15 + i * 0.03, duration: 0.5 }}
-                className="h-full rounded-full bg-primary"
+                className="h-full bg-primary"
               />
             </div>
             <div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
@@ -739,6 +667,7 @@ const CategoryCard = ({
           </div>
         )}
       </div>
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </motion.button>
   );
 };

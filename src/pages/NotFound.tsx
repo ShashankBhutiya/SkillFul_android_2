@@ -9,10 +9,6 @@ import { hapticLight, hapticSuccess } from "@/hooks/useHaptics";
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [speechText, setSpeechText] = useState(
-    "Hoo... where are we? This page isn't in my guidebook! Swipe the card to navigate."
-  );
-
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
   }, [location.pathname]);
@@ -41,22 +37,8 @@ const NotFound = () => {
     ["rgba(34, 197, 94, 0.1)", "rgba(34, 197, 94, 0.2)"]
   );
 
-  // Monitor dragging to update owl speech in real-time
-  useEffect(() => {
-    return x.onChange((latest) => {
-      if (latest < -30) {
-        setSpeechText("Going back? Smart move to play it safe!");
-      } else if (latest > 30) {
-        setSpeechText("To the home page! Let's practice some real skills.");
-      } else {
-        setSpeechText("Hoo... where are we? This page isn't in my guidebook! Swipe the card to navigate.");
-      }
-    });
-  }, [x]);
-
   const handleSwipe = (direction: "left" | "right") => {
     if (direction === "left") {
-      setSpeechText("Navigating back...");
       hapticSuccess();
       setTimeout(() => {
         if (window.history.length > 1) {
@@ -66,7 +48,6 @@ const NotFound = () => {
         }
       }, 300);
     } else {
-      setSpeechText("Heading home...");
       hapticSuccess();
       setTimeout(() => {
         navigate("/");
@@ -144,59 +125,6 @@ const NotFound = () => {
       <div className="relative flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12 overflow-hidden">
         {/* Dot grid background */}
         <div className="absolute inset-0 bg-dot-grid [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)] pointer-events-none" aria-hidden />
-
-        {/* Confused Owl Mascot & Speech Bubble */}
-        <div className="flex flex-col items-center max-w-sm w-full mb-8 relative z-20">
-          {/* Speech Bubble */}
-          <div className="relative bg-card/95 backdrop-blur-sm text-foreground px-4 py-3 rounded-2xl rounded-bl-sm shadow-lg border border-border max-w-[280px] text-center mb-6">
-            <p className="font-display font-semibold text-xs sm:text-sm leading-snug">
-              {speechText}
-            </p>
-            {/* Speech bubble pointer */}
-            <div className="absolute bottom-[-6px] left-[calc(50%-6px)] w-3 h-3 bg-card border-r border-b border-border rotate-45" />
-          </div>
-
-          {/* Animated Mascot */}
-          <motion.div
-            animate={{ 
-              y: [0, -6, 0],
-              rotate: [-3, 3, -3]
-            }}
-            transition={{ 
-              repeat: Infinity, 
-              duration: 3,
-              ease: "easeInOut"
-            }}
-            className="w-20 h-20 shrink-0 relative"
-          >
-            {/* Body */}
-            <div className="absolute inset-0 bg-primary rounded-[2.5rem] rounded-bl-xl shadow-lg border-2 border-primary-foreground/20 overflow-hidden">
-              {/* Face Area */}
-              <div className="absolute top-3 left-2 right-2 bottom-3 bg-white/20 backdrop-blur-md rounded-[2rem] flex items-center justify-center gap-2">
-                {/* Spinning Confused Eyes */}
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  className="w-5 h-5 rounded-full border border-dashed border-primary-foreground/60 flex items-center justify-center text-[10px] font-bold text-primary-foreground select-none"
-                >
-                  ?
-                </motion.div>
-                <motion.div 
-                  animate={{ rotate: -360 }}
-                  transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                  className="w-5 h-5 rounded-full border border-dashed border-primary-foreground/60 flex items-center justify-center text-[10px] font-bold text-primary-foreground select-none"
-                >
-                  ?
-                </motion.div>
-              </div>
-              {/* Beak */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-1 w-3 h-3 bg-orange-400 rotate-45 rounded-sm" />
-            </div>
-            {/* Ears */}
-            <div className="absolute -top-2 left-2 w-4 h-6 bg-primary rounded-t-full -rotate-12 -z-10" />
-            <div className="absolute -top-2 right-2 w-4 h-6 bg-primary rounded-t-full rotate-12 -z-10" />
-          </motion.div>
-        </div>
 
         {/* 404 Heading */}
         <div className="text-center mb-6 relative z-20">
