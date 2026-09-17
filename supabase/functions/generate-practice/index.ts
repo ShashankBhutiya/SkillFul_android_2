@@ -23,7 +23,11 @@ interface OpenAIResponseData {
 }
 
 class PublicGenerationError extends Error {
-  constructor(public readonly publicMessage: string, public readonly status = 500) {
+  constructor(
+    public readonly publicMessage: string,
+    public readonly status = 500,
+    public readonly code = "generation_failed",
+  ) {
     super(publicMessage);
     this.name = "PublicGenerationError";
   }
@@ -37,8 +41,8 @@ const questionSchema = {
     title: { type: "string", minLength: 3, maxLength: 90 },
     questions: {
       type: "array",
-      minItems: 5,
-      maxItems: 5,
+      minItems: 10,
+      maxItems: 10,
       items: {
         type: "object",
         additionalProperties: false,
@@ -74,13 +78,21 @@ async function callOpenAI(openAIKey: string, body: Record<string, unknown>) {
       data = JSON.parse(raw) as OpenAIResponseData;
     } catch {
       console.error("OpenAI returned a non-JSON response", response.status, raw.slice(0, 200));
-      throw new PublicGenerationError("The question generator received an invalid response. Please try again shortly.", 502);
+      throw new PublicGenerationError(
+        "The AI service returned an invalid response. Please try again.",
+        502,
+        "invalid_ai_response",
+      );
     }
     return { response, data };
   } catch (error) {
     if (error instanceof PublicGenerationError) throw error;
     console.error("OpenAI request failed", error);
-    throw new PublicGenerationError("The question generator could not reach the AI service. Please try again shortly.", 502);
+    throw new PublicGenerationError(
+      "The AI service is temporarily unreachable. Please try again shortly.",
+      503,
+      "ai_service_unavailable",
+    );
   }
 }
 
@@ -124,7 +136,7 @@ async function requestPracticeSet(openAIKey: string, body: Record<string, unknow
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     const { response, data } = await callOpenAI(openAIKey, body);
     if (!response.ok) {
-      throw new PublicGenerationError(publicOpenAIError(response.status, data), 502);
+      throw new PublicGenerationError(publicOpenAIError(response.status, data), 502, "ai_service_error");
     }
     try {
       return { data, set: parsePracticeSet(data, count) };
@@ -135,6 +147,7 @@ async function requestPracticeSet(openAIKey: string, body: Record<string, unknow
   throw new PublicGenerationError(
     "The AI could not produce a valid practice set. Please try a more specific topic.",
     502,
+    "invalid_ai_response",
   );
 }
 
@@ -180,7 +193,7 @@ serve(async (request) => {
     const body = (await request.json()) as GenerateRequest;
     const topic = cleanText(body.topic, 240);
     const level: Level = ["beginner", "intermediate", "advanced"].includes(body.level) ? body.level : "intermediate";
-    const questionCount = 5;
+    const questionCount = 10;
     if (topic.length < 2) {
       return Response.json({ error: "Enter a topic to practise." }, { status: 400, headers: corsHeaders });
     }
@@ -264,26 +277,42 @@ serve(async (request) => {
     let generated: { title: string; questions: BankQuestion[] } = { title: "Practice set", questions: [] };
     let model = "question-bank";
     if (missingCount > 0) {
-    if (!openAIKey) throw new Error("AI service key is not configured.");
+    if (!openAIKey) {
+      throw new PublicGenerationError(
+        "AI practice is temporarily unavailable. Please try again later.",
+        503,
+        "service_unavailable",
+      );
+    }
     stage = "generation quota";
     const { data: streak, error: streakError } = await admin
       .from("user_streaks")
       .select("current_streak,last_active_date,freezes")
       .eq("user_id", user.id)
       .maybeSingle();
-    // Streak storage is optional in older deployments; those users get the base quota.
-    if (streakError && !["42P01", "PGRST205"].includes(streakError.code)) throw streakError;
-    const dailyLimit = generationDailyLimit(Deno.env.get("AI_DAILY_GENERATION_LIMIT"), streak);
+    // Streak bonuses are optional. Schema drift or a temporary streak read
+    // failure must not block the base generation allowance.
+    if (streakError) console.warn("Streak bonus unavailable; using base quota", {
+      reference, code: streakError.code,
+    });
+    const dailyLimit = generationDailyLimit(Deno.env.get("AI_DAILY_GENERATION_LIMIT"), streakError ? null : streak);
     const { data: quota, error: quotaError } = await admin.rpc("reserve_ai_generation", {
       p_user_id: user.id,
-      // Reservations count whole five-question sets, so never round up the quota.
+      // Reservations count whole ten-question sets, so never round up the quota.
       p_daily_limit: Math.floor(dailyLimit / questionCount),
     });
-    if (quotaError || typeof quota?.allowed !== "boolean") throw quotaError || new Error("Generation quota unavailable");
+    if (quotaError || typeof quota?.allowed !== "boolean") {
+      console.error("Generation quota reservation failed", { reference, error: quotaError });
+      throw new PublicGenerationError(
+        "Question generation is temporarily unavailable. Your daily allowance was not used; please try again shortly.",
+        503,
+        "quota_service_unavailable",
+      );
+    }
     if (!quota.allowed) {
       return Response.json({
         error: quota.reason === "daily_quota"
-          ? `You don't have enough of today's ${dailyLimit}-question quota left for another five-question set. It resets at 00:00 UTC (5:30 AM IST). You can still practise saved sets.`
+          ? `You don't have enough of today's ${dailyLimit}-question quota left for another ten-question set. It resets at 00:00 UTC (5:30 AM IST). You can still practise saved sets.`
           : `Please wait ${quota.retryAfter} seconds before generating another set.`,
         retryAfter: quota.retryAfter,
         code: quota.reason,
@@ -316,7 +345,7 @@ serve(async (request) => {
             schema: { ...questionSchema, properties: { ...questionSchema.properties, questions: { ...questionSchema.properties.questions, minItems: missingCount, maxItems: missingCount } } },
           },
         },
-        max_output_tokens: 3500,
+        max_output_tokens: 7000,
       }, missingCount);
 
     stage = "quality review";
@@ -343,7 +372,7 @@ serve(async (request) => {
           schema: { ...questionSchema, properties: { ...questionSchema.properties, questions: { ...questionSchema.properties.questions, minItems: missingCount, maxItems: missingCount } } },
         },
       },
-      max_output_tokens: 3500,
+      max_output_tokens: 7000,
       }, missingCount);
       reviewed = reviewResult.set;
       reviewData = reviewResult.data;
@@ -407,11 +436,9 @@ serve(async (request) => {
     console.error("generate-practice failed", { reference, stage, error });
     const publicError = error instanceof PublicGenerationError
       ? error
-      : new PublicGenerationError(
-        `Could not generate questions while ${stage}. Please try again. Reference: ${reference}`,
-      );
+      : new PublicGenerationError("We couldn't prepare your questions right now. Please try again.");
     return Response.json(
-      { error: publicError.publicMessage, code: "generation_failed", reference },
+      { error: publicError.publicMessage, code: publicError.code, reference },
       { status: publicError.status, headers: corsHeaders },
     );
   }

@@ -10,6 +10,26 @@ export interface GeneratePracticeInput {
   academicYear: string;
 }
 
+interface GenerationErrorPayload {
+  error?: string;
+  code?: string;
+  reference?: string;
+  retryAfter?: number;
+}
+
+export class AIPracticeGenerationError extends Error {
+  constructor(
+    message: string,
+    public readonly code = "generation_failed",
+    public readonly status?: number,
+    public readonly retryAfter?: number,
+    public readonly reference?: string,
+  ) {
+    super(message);
+    this.name = "AIPracticeGenerationError";
+  }
+}
+
 interface PracticeSetRow {
   id: string;
   title: string;
@@ -43,20 +63,29 @@ export async function generatePracticeSet(input: GeneratePracticeInput): Promise
   if (!supabase) throw new Error("AI practice is not connected yet. Please configure Supabase first.");
 
   const { data, error } = await supabase.functions.invoke("generate-practice", {
-    body: { ...input, questionCount: 5 },
+    body: { ...input, questionCount: 10 },
   });
   if (error) {
     let message = error.message || "Could not generate this practice set.";
+    let code = "generation_failed";
+    let status: number | undefined;
+    let retryAfter: number | undefined;
+    let reference: string | undefined;
     const context = (error as { context?: Response }).context;
     if (context instanceof Response) {
+      status = context.status;
       try {
-        const payload = await context.clone().json() as { error?: string };
+        const payload = await context.clone().json() as GenerationErrorPayload;
         if (payload.error) message = payload.error;
+        if (payload.code) code = payload.code;
+        retryAfter = payload.retryAfter;
+        reference = payload.reference;
       } catch {
-        // Keep the SDK message when the response has no JSON error body.
+        if (status === 429) message = "Please wait a moment before generating another practice set.";
+        else if (status >= 500) message = "AI practice is temporarily unavailable. Please try again shortly.";
       }
     }
-    throw new Error(message);
+    throw new AIPracticeGenerationError(message, code, status, retryAfter, reference);
   }
   if (!data?.set?.questions?.length) throw new Error(data?.error || "The AI returned an empty practice set.");
 

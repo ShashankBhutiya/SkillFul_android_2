@@ -29,16 +29,16 @@ BEGIN
   ASSERT (v_result->>'allowed')::boolean, 'New UTC day must reset quota';
   ASSERT (v_result->>'remaining')::integer = 1, 'New day must start with one attempt';
 
-  -- At 300 questions, at most 60 five-question reservations are allowed.
-  UPDATE public.ai_generation_usage SET attempts = 59, last_requested_at = clock_timestamp() - interval '61 seconds' WHERE user_id = v_user;
-  v_result := public.reserve_ai_generation(v_user, 60);
-  ASSERT (v_result->>'allowed')::boolean, 'Final five questions should fit';
-  ASSERT (v_result->>'remaining')::integer = 0, '300-question quota must be exhausted';
-  v_result := public.reserve_ai_generation(v_user, 60);
-  ASSERT v_result->>'reason' = 'daily_quota', 'Cannot generate more than 300 questions';
+  -- At 1,000 questions, at most 100 ten-question reservations are allowed.
+  UPDATE public.ai_generation_usage SET attempts = 99, last_requested_at = clock_timestamp() - interval '61 seconds' WHERE user_id = v_user;
+  v_result := public.reserve_ai_generation(v_user, 100);
+  ASSERT (v_result->>'allowed')::boolean, 'Final ten questions should fit';
+  ASSERT (v_result->>'remaining')::integer = 0, '1,000-question quota must be exhausted';
+  v_result := public.reserve_ai_generation(v_user, 100);
+  ASSERT v_result->>'reason' = 'daily_quota', 'Cannot generate more than 1,000 questions';
 
   BEGIN
-    PERFORM public.reserve_ai_generation(v_user, 61);
+    PERFORM public.reserve_ai_generation(v_user, 101);
     RAISE EXCEPTION 'Expected oversized quota rejection';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM <> 'Invalid daily generation limit' THEN RAISE; END IF;

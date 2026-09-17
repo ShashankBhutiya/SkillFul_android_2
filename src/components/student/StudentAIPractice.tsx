@@ -168,7 +168,7 @@ export default function StudentAIPractice() {
                 className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showQuotaDetails ? "rotate-180" : ""}`} />
-                Five questions per set · How it works
+                Ten questions per set · How it works
               </button>
               {showQuotaDetails && (
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -178,7 +178,7 @@ export default function StudentAIPractice() {
             </div>
 
             <AnimatePresence>
-              {error && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-lg bg-destructive/8 px-3 py-2.5 text-xs font-medium text-destructive">{error}</motion.p>}
+              {error && <motion.p role="alert" aria-live="polite" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-lg bg-destructive/8 px-3 py-2.5 text-xs font-medium text-destructive">{error}</motion.p>}
             </AnimatePresence>
           </div>
 
