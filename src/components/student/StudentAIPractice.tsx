@@ -125,7 +125,7 @@ export default function StudentAIPractice() {
   return (
     <MainLayout>
       <SeoHead title="AI Practice" description="Generate personalised practice questions for your degree, level, and topic." path="/skills" />
-      <div className="relative mx-auto w-full max-w-2xl px-4 pb-12 pt-7 sm:px-6">
+      <div className="relative mx-auto w-full max-w-2xl px-4 pb-12 pt-3 sm:px-6">
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_68%)]" />
 
         <div className="flex items-center justify-between gap-3">
@@ -139,28 +139,42 @@ export default function StudentAIPractice() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="mt-7 font-display text-[32px] font-bold leading-[1.08] tracking-tight text-foreground sm:text-4xl">
-            What do you want to <span className="text-gradient">master today?</span>
-          </h1>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
             Name a topic. We’ll tailor 10 questions to your degree and level.
           </p>
         </motion.div>
 
-        <form onSubmit={submit} className="mt-8">
+        <form onSubmit={submit} className="mt-6">
           <div>
             <label htmlFor="practice-topic" className="text-sm font-semibold text-foreground">I want to practise</label>
-            <div className="relative mt-2">
-              <WandSparkles className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-primary" />
-              <textarea
-                id="practice-topic"
-                aria-describedby="practice-visibility"
-                value={topic}
-                onChange={(event) => setTopic(event.target.value)}
-                maxLength={240}
-                placeholder="e.g. Binary trees or thermodynamics chapter 2"
-                className="min-h-[88px] w-full resize-none rounded-xl border border-border bg-background py-3 pl-10 pr-3 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground/70 focus:border-primary focus:ring-2 focus:ring-primary/10"
-              />
+            <div className={`topic-prompt relative mt-4${topic.trim() ? " is-filled" : ""}`}>
+              <div className="topic-prompt__atmosphere" aria-hidden="true">
+                <div className="topic-prompt__glow topic-prompt__glow--ambient" />
+                <div className="topic-prompt__glow topic-prompt__glow--core" />
+                <span className="topic-prompt__mote topic-prompt__mote--1" />
+                <span className="topic-prompt__mote topic-prompt__mote--2" />
+                <span className="topic-prompt__mote topic-prompt__mote--3" />
+              </div>
+              <span className="topic-prompt__tab">Your topic</span>
+              <div className="topic-prompt__shell">
+                <span className="topic-prompt__stud topic-prompt__stud--tl" />
+                <span className="topic-prompt__stud topic-prompt__stud--tr" />
+                <span className="topic-prompt__stud topic-prompt__stud--bl" />
+                <span className="topic-prompt__stud topic-prompt__stud--br" />
+                <div className="topic-prompt__frame">
+                  <WandSparkles className="pointer-events-none absolute left-3 top-3 z-10 h-4 w-4 text-primary" />
+                  <textarea
+                    id="practice-topic"
+                    aria-describedby="practice-visibility"
+                    value={topic}
+                    onChange={(event) => setTopic(event.target.value)}
+                    maxLength={240}
+                    placeholder="e.g. Binary trees or thermodynamics chapter 2"
+                    className="topic-prompt__input min-h-[88px] w-full resize-none bg-background py-3 pl-10 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/65"
+                  />
+                </div>
+              </div>
+              <span className="topic-prompt__caret" aria-hidden="true" />
             </div>
 
             <p id="practice-visibility" className="mt-2 text-xs leading-relaxed text-muted-foreground">

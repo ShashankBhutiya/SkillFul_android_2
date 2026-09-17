@@ -50,12 +50,26 @@ export function InstitutionEnrollmentFields({
     onChange,
     disabled = false,
     errors = {},
+    variant = "default",
 }: {
     value: InstitutionEnrollmentValue;
     onChange: (next: InstitutionEnrollmentValue) => void;
     disabled?: boolean;
     errors?: InstitutionEnrollmentErrors;
+    variant?: "default" | "minimal";
 }) {
+    const minimal = variant === "minimal";
+    const fieldClass = minimal
+        ? "h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-60 transition-colors"
+        : "h-11 w-full rounded-xl border bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 disabled:opacity-60";
+    const fieldBorder = (hasError: boolean) =>
+        hasError
+            ? minimal
+                ? "border-destructive/60"
+                : "border-destructive/60 focus:ring-destructive/30"
+            : minimal
+              ? "border-border"
+              : "border-white/10 focus:ring-primary/50";
     const [institutions, setInstitutions] = useState<AvailableInstitution[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
@@ -86,19 +100,32 @@ export function InstitutionEnrollmentFields({
         onChange({ ...value, [field]: nextValue });
 
     return (
-        <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
-            <div className="flex gap-2">
-                <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <div>
-                    <p className="text-xs font-bold text-foreground">Join your college placement cohort</p>
-                    <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
-                        Select your college and enter the one-time code given by your TPO. Codes from another college are rejected.
-                    </p>
+        <div
+            className={
+                minimal
+                    ? "space-y-3 rounded-md border border-border bg-primary/[0.03] p-3"
+                    : "space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-3"
+            }
+        >
+            {!minimal && (
+                <div className="flex gap-2">
+                    <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div>
+                        <p className="text-xs font-bold text-foreground">Join your college placement cohort</p>
+                        <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
+                            Select your college and enter the one-time code given by your TPO. Codes from another college are rejected.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
+            {minimal && (
+                <p className="text-xs text-muted-foreground leading-snug">
+                    Join your college cohort (optional): select your college and enter the code from your TPO.
+                </p>
+            )}
 
             <div className="block space-y-1">
-                <label htmlFor="college-institution" className="text-xs font-bold text-muted-foreground">College</label>
+                <label htmlFor="college-institution" className="text-xs text-muted-foreground">College</label>
                 <select
                     id="college-institution"
                     aria-describedby={errors.institutionId ? "college-institution-error" : undefined}
@@ -106,7 +133,7 @@ export function InstitutionEnrollmentFields({
                     value={value.institutionId}
                     onChange={(event) => change("institutionId", event.target.value)}
                     disabled={disabled || loading}
-                    className={`h-11 w-full rounded-xl border bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 disabled:opacity-60 ${errors.institutionId ? "border-destructive/60 focus:ring-destructive/30" : "border-white/10 focus:ring-primary/50"}`}
+                    className={`${fieldClass} ${fieldBorder(!!errors.institutionId)}`}
                 >
                     <option value="">{loading ? "Loading colleges…" : "Select your college"}</option>
                     {institutions.map((institution) => (
@@ -119,9 +146,11 @@ export function InstitutionEnrollmentFields({
             </div>
 
             <div className="block space-y-1">
-                <label htmlFor="college-student-code" className="text-xs font-bold text-muted-foreground">Student code</label>
+                <label htmlFor="college-student-code" className="text-xs text-muted-foreground">Student code</label>
                 <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    {!minimal && (
+                        <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    )}
                     <input
                         id="college-student-code"
                         aria-describedby={errors.code ? "college-student-code-error" : undefined}
@@ -134,14 +163,14 @@ export function InstitutionEnrollmentFields({
                         autoComplete="off"
                         spellCheck={false}
                         placeholder="Code from your TPO"
-                        className={`h-11 w-full rounded-xl border bg-muted/30 pl-10 pr-3 font-mono text-sm tracking-wider text-foreground outline-none placeholder:font-sans placeholder:tracking-normal focus:ring-2 disabled:opacity-60 ${errors.code ? "border-destructive/60 focus:ring-destructive/30" : "border-white/10 focus:ring-primary/50"}`}
+                        className={`${fieldClass} font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal ${minimal ? "px-3" : "pl-10 pr-3"} ${fieldBorder(!!errors.code)}`}
                     />
                 </div>
                 {errors.code && <p id="college-student-code-error" className="text-[11px] text-destructive">{errors.code}</p>}
             </div>
 
             <div className="block space-y-1">
-                <label htmlFor="college-roll-number" className="text-xs font-bold text-muted-foreground">Roll number</label>
+                <label htmlFor="college-roll-number" className="text-xs text-muted-foreground">Roll number</label>
                 <input
                     id="college-roll-number"
                     aria-describedby={errors.rollNumber ? "college-roll-number-error" : undefined}
@@ -156,7 +185,7 @@ export function InstitutionEnrollmentFields({
                     autoComplete="off"
                     spellCheck={false}
                     placeholder="e.g. 22CSE104"
-                    className={`h-11 w-full rounded-xl border bg-muted/30 px-3 font-mono text-sm text-foreground outline-none placeholder:font-sans focus:ring-2 disabled:opacity-60 ${errors.rollNumber ? "border-destructive/60 focus:ring-destructive/30" : "border-white/10 focus:ring-primary/50"}`}
+                    className={`${fieldClass} font-mono placeholder:font-sans ${fieldBorder(!!errors.rollNumber)}`}
                 />
                 {errors.rollNumber && <p id="college-roll-number-error" className="text-[11px] text-destructive">{errors.rollNumber}</p>}
             </div>

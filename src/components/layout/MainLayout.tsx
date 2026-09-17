@@ -3,8 +3,6 @@ import {
   ArrowRight, 
   Compass, 
   Trophy, 
-  Gift, 
-  Sparkles, 
   User, 
   Check, 
   Wifi, 
@@ -23,11 +21,9 @@ interface MainLayoutProps {
 }
 
 const TAB_ITEMS = [
-  { to: "/skills", label: "Explore", icon: Compass, pattern: /^\/skills/ },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy, pattern: /^\/leaderboard/ },
-  { to: "/refer", label: "Refer", icon: Gift, pattern: /^\/refer/ },
-  { to: "/premium", label: "Premium", icon: Sparkles, pattern: /^\/premium/ },
-  { to: "/info", label: "Profile", icon: User, pattern: /^\/(info|streak|about|contact|privacy|terms|blog)/ },
+  { to: "/skills", label: "Explore", icon: Compass, pattern: /^\/skills/, center: true },
+  { to: "/info", label: "Profile", icon: User, pattern: /^\/(info|streak|about|contact|privacy|terms|blog|refer|premium)/ },
 ];
 
 interface BottomTabBarProps {
@@ -39,17 +35,45 @@ interface BottomTabBarProps {
 // give them a new identity on every layout update and reset stateful children
 // such as ProfileBadge (including any modal it currently has open).
 const BottomTabBar = ({ pathname, className = "sticky" }: BottomTabBarProps) => (
-  <nav aria-label="Primary" className={`${className} bottom-0 left-0 right-0 min-h-16 bg-background/95 backdrop-blur-lg border-t border-border flex items-stretch justify-around px-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))] z-40 safe-bottom shrink-0`}>
+  <nav aria-label="Primary" className={`${className} bottom-0 left-0 right-0 min-h-16 bg-background/95 backdrop-blur-lg border-t border-border flex items-end justify-around px-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))] z-40 safe-bottom shrink-0`}>
     {TAB_ITEMS.map((tab) => {
       const isActive = tab.pattern.test(pathname) || (tab.to === "/skills" && pathname === "/");
       const Icon = tab.icon;
+
+      if (tab.center) {
+        return (
+          <Link
+            key={tab.to}
+            to={tab.to}
+            aria-current={isActive ? "page" : undefined}
+            className="relative -mt-4 flex flex-1 flex-col items-center justify-end gap-1 pb-1.5 text-center group"
+          >
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-full shadow-md transition-all duration-150 ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-primary/30"
+                  : "bg-primary/90 text-primary-foreground group-hover:bg-primary group-hover:shadow-primary/25"
+              }`}
+            >
+              <Icon strokeWidth={2.25} className="h-5 w-5" />
+            </div>
+            <span
+              className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+                isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </span>
+          </Link>
+        );
+      }
 
       return (
         <Link
           key={tab.to}
           to={tab.to}
           aria-current={isActive ? "page" : undefined}
-          className="relative flex flex-col items-center justify-center flex-1 gap-1 text-center group"
+          className="relative flex flex-col items-center justify-center flex-1 gap-1 py-2 text-center group"
         >
           {isActive && (
             <motion.div
@@ -282,7 +306,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       
 
               {/* Header with status bar padding */}
-              <AppHeader extraClass="pt-7" />
+              <AppHeader extraClass="pt-4" />
 
               {/* Scrollable Content inside phone screen */}
               <main id="main-content" ref={scrollRef} className={`app-scroll-content flex-1 min-h-0 relative z-10 w-full overflow-x-hidden scrollbar-none ${isFixedViewportRoute ? "overflow-y-hidden" : "overflow-y-auto"}`}>

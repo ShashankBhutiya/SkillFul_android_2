@@ -243,7 +243,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
 
       <section
         id="categories"
-        className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+        className="relative z-10 mx-auto max-w-7xl px-4 pt-3 pb-8 sm:px-6 sm:pt-4 sm:pb-12 lg:px-8"
       >
         {/* Page header — left-aligned. Centred display type at the top
             of a scrolling list reads as a landing page, not an app. */}

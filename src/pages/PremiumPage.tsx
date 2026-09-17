@@ -164,7 +164,7 @@ const PremiumPage = () => {
         path="/premium"
       />
 
-      <section className="relative mx-auto max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+      <section className="relative mx-auto max-w-7xl px-4 pb-24 pt-3 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6 flex justify-start">
           <button

@@ -49,14 +49,14 @@ const UserModeSelect = ({
                             onChange(option.value);
                         }}
                         aria-pressed={selected}
-                        className={`group relative flex w-full items-start gap-4 px-1 py-5 text-left transition-colors disabled:opacity-50 ${selected
-                            ? "bg-primary/[0.045]"
+                        className={`group relative flex w-full items-start gap-3 px-2 text-left transition-colors disabled:opacity-50 ${isRows ? "py-3.5" : "py-5"} ${selected
+                            ? "bg-primary/[0.06]"
                             : "bg-transparent hover:bg-muted/55"
                             }`}
                     >
                         <span
                             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ${selected
-                                ? "bg-foreground text-background"
+                                ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-muted-foreground"
                                 }`}
                         >
@@ -78,7 +78,7 @@ const UserModeSelect = ({
                                 </span>
                             )}
                         </span>
-                        <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-foreground bg-foreground text-background" : "border-border"}`}>
+                        <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
                             {selected && <Check className="h-3 w-3" strokeWidth={3} />}
                         </span>
                     </motion.button>

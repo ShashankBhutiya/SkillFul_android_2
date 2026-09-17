@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, LogIn, Users, Star, Check, Copy, Settings, Sparkles } from "lucide-react";
+import { LogOut, Users, Star, Check, Copy, Settings, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
@@ -47,15 +47,13 @@ const ProfileBadge = () => {
             <div className="relative flex items-center gap-2">
                 {/* Guests pick a mode before signup, so they must be able to change it here too */}
                 <UserModeToggle showLabel={false} compact className="w-auto min-[400px]:w-[188px]" />
-                <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                <button
+                    type="button"
                     onClick={() => setShowModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 hover:bg-primary/20 transition-all text-xs font-display font-bold text-primary"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-border text-xs font-medium text-foreground transition-colors hover:bg-muted/60"
                 >
-                    <LogIn className="w-3.5 h-3.5" />
                     Sign In
-                </motion.button>
+                </button>
                 <AuthModal isOpen={showModal} onClose={() => setShowModal(false)} />
             </div>
         );

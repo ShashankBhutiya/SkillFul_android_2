@@ -118,7 +118,7 @@ export default function ReferPage() {
     <MainLayout>
       <div className="relative min-h-[85vh]">
         {/* Page header */}
-        <section className="mx-auto max-w-5xl px-4 pb-6 pt-8">
+        <section className="mx-auto max-w-5xl px-4 pb-6 pt-3">
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

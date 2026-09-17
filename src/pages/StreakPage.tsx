@@ -9,7 +9,7 @@ export default function StreakPage() {
   return (
     <MainLayout>
       <SeoHead title="Daily streak" description="Track your daily practice streak, weekly activity, and streak freezes." path="/streak" />
-      <div className="streak-screen mx-auto flex h-full w-full max-w-lg flex-col px-5 py-3">
+      <div className="streak-screen mx-auto flex h-full w-full max-w-lg flex-col px-5 pt-2 pb-3">
         <h1 className="streak-page-title text-center font-display text-xl font-bold">Daily streak</h1>
         <div className="min-h-0 flex-1 content-center">
           <StreakDetails streak={streak} checkedInToday={checkedInToday} compact />
