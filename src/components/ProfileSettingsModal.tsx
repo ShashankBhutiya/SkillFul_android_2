@@ -357,7 +357,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         Exit / reset college
                                     </button>
                                     <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                        This removes college access and your roster link. Ask your TPO for a fresh code if you need to join again.
+                                        This removes your roster link and eligibility for the college student price. Ask your TPO for a fresh code if you need to join again.
                                     </p>
                                 </div>
                             )}

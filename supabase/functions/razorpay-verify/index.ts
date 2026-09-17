@@ -44,6 +44,13 @@ serve(async (req) => {
       )
     }
 
+    if (planType !== 'monthly' && planType !== 'yearly') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid subscription plan.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // 4. Verify Razorpay Signature
     const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
     if (!razorpayKeySecret) {
@@ -80,6 +87,58 @@ serve(async (req) => {
       console.warn(`Payment verification failed: Signature mismatch for user ${user.id}`)
       return new Response(
         JSON.stringify({ error: 'Payment signature verification failed' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate the server-created order rather than trusting the amount or plan
+    // submitted by the browser during verification.
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID')
+    if (!razorpayKeyId) {
+      return new Response(
+        JSON.stringify({ error: 'Razorpay key ID not configured in Supabase' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const authString = btoa(`${razorpayKeyId}:${razorpayKeySecret}`)
+    const orderResponse = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(orderId)}`, {
+      headers: { 'Authorization': `Basic ${authString}` },
+    })
+    const order = await orderResponse.json()
+    if (!orderResponse.ok) {
+      console.error('Could not retrieve Razorpay order:', order)
+      return new Response(
+        JSON.stringify({ error: 'Could not validate the payment order.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const offer = order.notes?.offer
+    const expectedAmount = offer === 'college_yearly'
+      ? 2500
+      : offer === 'standard_monthly'
+        ? 29900
+        : offer === 'standard_yearly'
+          ? 179900
+          : null
+    const expectedPlanType = offer === 'college_yearly'
+      ? 'yearly'
+      : offer === 'standard_monthly'
+        ? 'monthly'
+        : offer === 'standard_yearly'
+          ? 'yearly'
+          : null
+
+    if (
+      order.notes?.userId !== user.id ||
+      order.notes?.planType !== planType ||
+      expectedPlanType !== planType ||
+      order.amount !== expectedAmount
+    ) {
+      console.warn(`Payment verification failed: invalid order details for user ${user.id}`)
+      return new Response(
+        JSON.stringify({ error: 'Payment order details do not match this subscription.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

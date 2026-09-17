@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import categorySummaries from "@/data/categorySummaries.json";
 import { categories as questionCategories } from "@/data/questions";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPracticedIds } from "@/services/progressService";
-import { LOCKED_CATEGORY_IDS, REFERRALS_PER_UNLOCK } from "@/config/lockedCategories";
+import {
+  isStudentCategoryAccessible,
+  LOCKED_CATEGORY_IDS,
+  REFERRALS_PER_UNLOCK,
+} from "@/config/lockedCategories";
 import { getModeSections, isCategoryInMode, type CategoryAudience } from "@/config/userMode";
 import { useUserMode } from "@/hooks/useUserMode";
 
@@ -73,6 +77,7 @@ type CategorySummary = (typeof categorySummaries)[number];
 interface CategoryCardProps {
   cat: CategorySummary;
   isLocked: boolean;
+  isPremiumLocked: boolean;
   requiredRefs: number;
   practiced: number;
   total: number;
@@ -85,7 +90,8 @@ interface CategoryCardProps {
 const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const { user } = useAuth();
   const { mode, ready: modeReady } = useUserMode();
-  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
+  const navigate = useNavigate();
+  const hasPremiumAccess = user.isPremium;
 
   // The catalog is filtered by mode, not merely reordered: a student should
   // never be shown salary-negotiation or office-politics topics, and a working
@@ -104,7 +110,13 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   };
 
   const skillOfTheDayRequiredRefs = skillOfTheDay ? getRequiredReferrals(skillOfTheDay.id) : 0;
-  const isSkillOfTheDayLocked = skillOfTheDay && !hasIncludedAccess && skillOfTheDayRequiredRefs > 0 && user.unlockCount < skillOfTheDayRequiredRefs;
+  const isSkillOfTheDayPremiumLocked = Boolean(
+    skillOfTheDay && mode === "student" && !isStudentCategoryAccessible(skillOfTheDay.id, hasPremiumAccess)
+  );
+  const isSkillOfTheDayLocked = Boolean(
+    isSkillOfTheDayPremiumLocked ||
+    (skillOfTheDay && mode !== "student" && !hasPremiumAccess && skillOfTheDayRequiredRefs > 0 && user.unlockCount < skillOfTheDayRequiredRefs)
+  );
   const [showReferralFor, setShowReferralFor] = useState<{ id: string; name: string } | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestName, setRequestName] = useState("");
@@ -193,7 +205,9 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
   const renderCategoryList = (cats: CategorySummary[], startIndex: number, cardClassName?: string) =>
     cats.map((cat, i) => {
       const requiredRefs = getRequiredReferrals(cat.id);
-      const isLocked = !hasIncludedAccess && requiredRefs > 0 && user.unlockCount < requiredRefs;
+      const isPremiumLocked = mode === "student" && !isStudentCategoryAccessible(cat.id, hasPremiumAccess);
+      const isReferralLocked = mode !== "student" && !hasPremiumAccess && requiredRefs > 0 && user.unlockCount < requiredRefs;
+      const isLocked = isPremiumLocked || isReferralLocked;
       // Cross-reference practiced IDs with actual question objects
       // to avoid counting stale/orphaned IDs from removed questions
       const practicedIdSet = new Set(getPracticedIds(cat.id, user.id));
@@ -208,6 +222,7 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
           key={cat.id}
           cat={cat}
           isLocked={isLocked}
+          isPremiumLocked={isPremiumLocked}
           requiredRefs={requiredRefs}
           practiced={practiced}
           total={total}
@@ -286,7 +301,8 @@ const CategorySelect = ({ onSelect }: CategorySelectProps) => {
                 onClick={() => {
                   if (isSkillOfTheDayLocked) {
                     hapticError();
-                    setShowReferralFor({ id: skillOfTheDay.id, name: skillOfTheDay.name });
+                    if (isSkillOfTheDayPremiumLocked) navigate("/premium");
+                    else setShowReferralFor({ id: skillOfTheDay.id, name: skillOfTheDay.name });
                   } else {
                     hapticLight();
                     onSelect(skillOfTheDay.id);
@@ -631,6 +647,7 @@ const CategoryCarousel = ({
 const CategoryCard = ({
   cat,
   isLocked,
+  isPremiumLocked,
   requiredRefs,
   practiced,
   total,
@@ -639,6 +656,7 @@ const CategoryCard = ({
   i,
   className,
 }: CategoryCardProps) => {
+  const navigate = useNavigate();
   const [imgLoaded, setImgLoaded] = useState(false);
   const coverImage = cat.coverImage;
   const progress = total > 0 ? Math.min(100, (practiced / total) * 100) : 0;
@@ -651,7 +669,10 @@ const CategoryCard = ({
       transition={{ delay: 0.04 + i * 0.025, duration: 0.25 }}
       whileTap={{ scale: 0.985 }}
       onClick={() => {
-        if (isLocked) {
+        if (isPremiumLocked) {
+          hapticError();
+          navigate("/premium");
+        } else if (isLocked) {
           hapticError();
           setShowReferralFor({ id: cat.id, name: cat.name });
         } else {
@@ -693,7 +714,9 @@ const CategoryCard = ({
 
         {isLocked ? (
           <p className="text-[11px] leading-tight text-muted-foreground">
-            Refer {requiredRefs} friend{requiredRefs > 1 ? "s" : ""} to unlock
+            {isPremiumLocked
+              ? "Premium required"
+              : `Refer ${requiredRefs} friend${requiredRefs > 1 ? "s" : ""} to unlock`}
           </p>
         ) : (
           <div className="space-y-1.5">

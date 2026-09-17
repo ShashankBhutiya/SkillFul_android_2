@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut, LogIn, Users, Star, Check, Copy, Settings, Sparkles, GraduationCap } from "lucide-react";
+import { LogOut, LogIn, Users, Star, Check, Copy, Settings, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
@@ -24,7 +24,7 @@ const ProfileBadge = () => {
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [copied, setCopied] = useState(false);
-    const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
+    const hasPremiumAccess = user.isPremium;
 
     const handleCopy = () => {
         if (user.referralCode) {
@@ -69,20 +69,20 @@ const ProfileBadge = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowMenu(!showMenu)}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-card backdrop-blur-sm border shadow-sm transition-all text-xs font-display font-bold hover:shadow-md ${
-                    hasIncludedAccess 
+                    hasPremiumAccess
                         ? "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10" 
                         : "border-border/60 text-foreground hover:bg-muted"
                 }`}
             >
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold ${
-                    hasIncludedAccess ? "bg-gradient-to-r from-amber-500 to-yellow-500" : "bg-primary"
+                    hasPremiumAccess ? "bg-gradient-to-r from-amber-500 to-yellow-500" : "bg-primary"
                 }`}>
                     {avatarLetter}
                 </div>
                 <span className="max-w-[100px] truncate pr-1">
                     {displayName}
                 </span>
-                {hasIncludedAccess && <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse fill-amber-500" />}
+                {hasPremiumAccess && <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse fill-amber-500" />}
             </motion.button>
 
             <AnimatePresence>
@@ -103,7 +103,7 @@ const ProfileBadge = () => {
                             <div className="px-5 py-4 border-b border-border/40">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
-                                        hasIncludedAccess ? "bg-gradient-to-r from-amber-500 to-yellow-500" : "bg-primary"
+                                        hasPremiumAccess ? "bg-gradient-to-r from-amber-500 to-yellow-500" : "bg-primary"
                                     }`}>
                                         {avatarLetter}
                                     </div>
@@ -112,9 +112,9 @@ const ProfileBadge = () => {
                                             <p className="text-sm font-bold text-foreground truncate">
                                                 {displayName}
                                             </p>
-                                            {hasIncludedAccess && (
+                                            {hasPremiumAccess && (
                                                 <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                                                    {user.isPremium ? "Pro" : "College"}
+                                                    Pro
                                                 </span>
                                             )}
                                         </div>
@@ -195,7 +195,7 @@ const ProfileBadge = () => {
                             </button>
 
                             {/* Upgrade to Premium option */}
-                            {!hasIncludedAccess ? (
+                            {!hasPremiumAccess ? (
                                 <button
                                     onClick={() => {
                                         navigate("/premium");
@@ -204,16 +204,15 @@ const ProfileBadge = () => {
                                     className="w-full flex items-center gap-2.5 px-5 py-3 text-sm hover:bg-amber-500/10 transition-colors font-bold text-amber-500 bg-amber-500/5 group border-t border-border/40"
                                 >
                                     <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
-                                    Upgrade to Premium
+                                    {user.hasLinkedCollege ? "Get Premium for ₹25/year" : "Upgrade to Premium"}
                                 </button>
                             ) : (
                                 <div className="px-5 py-3 border-t border-border/40 bg-emerald-500/5 text-left">
                                     <p className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                        {user.isPremium ? <Check className="w-3.5 h-3.5" /> : <GraduationCap className="w-3.5 h-3.5" />}
-                                        {user.isPremium ? "Premium Member" : "College Access Active"}
+                                        <Check className="w-3.5 h-3.5" />
+                                        Premium Member
                                     </p>
-                                    {user.isPremium ? (
-                                        <button
+                                    <button
                                             onClick={async () => {
                                                 if (confirm("Simulate cancelling your premium subscription?")) {
                                                     hapticLight();
@@ -232,11 +231,6 @@ const ProfileBadge = () => {
                                         >
                                             Cancel Mock Subscription
                                         </button>
-                                    ) : (
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Premium packs are included through your linked college.
-                                        </p>
-                                    )}
                                 </div>
                             )}
 

@@ -8,6 +8,7 @@ import CategorySelect from "@/components/CategorySelect";
 import UserModeOnboarding from "@/components/UserModeOnboarding";
 import { useUserMode } from "@/hooks/useUserMode";
 import StudentAIPractice from "@/components/student/StudentAIPractice";
+import { isStudentCategoryAccessible } from "@/config/lockedCategories";
 
 const DifficultySelect = lazy(() => import("@/components/DifficultySelect"));
 const QuizGame = lazy(() => import("@/components/QuizGame"));
@@ -80,8 +81,20 @@ const SkillsPage = ({ ai = false, classic = false }: SkillsPageProps) => {
   }
 
   // If categoryId is present but invalid, redirect to /skills
-  if (categoryId && !questionCategories.some((c) => c.id === categoryId)) {
+  const selectedCategory = categoryId
+    ? questionCategories.find((category) => category.id === categoryId)
+    : undefined;
+
+  if (categoryId && !selectedCategory) {
     return <Navigate to="/skills" replace />;
+  }
+
+  if (
+    categoryId &&
+    selectedCategory?.audience === "student" &&
+    !isStudentCategoryAccessible(categoryId, user.isPremium)
+  ) {
+    return <Navigate to="/premium" replace />;
   }
 
   // Active quiz

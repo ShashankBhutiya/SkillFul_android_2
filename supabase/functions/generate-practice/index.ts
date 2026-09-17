@@ -163,6 +163,9 @@ serve(async (request) => {
 
   let stage = "starting";
   const reference = crypto.randomUUID().slice(0, 8);
+  let cleanupSupabaseUrl = "";
+  let cleanupServiceKey = "";
+  let trialReservationUserId: string | null = null;
   try {
     stage = "configuration";
     const authorization = request.headers.get("Authorization") || "";
@@ -171,6 +174,8 @@ serve(async (request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const openAIKey = Deno.env.get("OPENAI_API_KEY") || "";
     if (!supabaseUrl || !anonKey || !serviceKey) throw new Error("AI practice secrets are not configured.");
+    cleanupSupabaseUrl = supabaseUrl;
+    cleanupServiceKey = serviceKey;
 
     stage = "authentication";
     const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } } });
@@ -181,7 +186,7 @@ serve(async (request) => {
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: profile, error: profileError } = await admin
       .from("profiles")
-      .select("degree,academic_year")
+      .select("degree,academic_year,subscription_status")
       .eq("id", user.id)
       .maybeSingle();
     if (profileError) throw profileError;
@@ -196,6 +201,29 @@ serve(async (request) => {
     const questionCount = 10;
     if (topic.length < 2) {
       return Response.json({ error: "Enter a topic to practise." }, { status: 400, headers: corsHeaders });
+    }
+
+    const isPremium = profile?.subscription_status === "active";
+    if (!isPremium) {
+      stage = "trial access";
+      const { data: trial, error: trialError } = await admin.rpc("reserve_student_ai_trial", {
+        p_user_id: user.id,
+      });
+      if (trialError || typeof trial?.allowed !== "boolean") {
+        console.error("Student AI trial reservation failed", { reference, error: trialError });
+        throw new PublicGenerationError(
+          "AI trial access is temporarily unavailable. Please try again shortly.",
+          503,
+          "trial_service_unavailable",
+        );
+      }
+      if (!trial.allowed) {
+        return Response.json({
+          error: "Your free AI practice set has been used. Upgrade to Premium to generate more sets.",
+          code: "premium_required",
+        }, { status: 403, headers: corsHeaders });
+      }
+      trialReservationUserId = user.id;
     }
 
     stage = "practice history";
@@ -284,39 +312,41 @@ serve(async (request) => {
         "service_unavailable",
       );
     }
-    stage = "generation quota";
-    const { data: streak, error: streakError } = await admin
-      .from("user_streaks")
-      .select("current_streak,last_active_date,freezes")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    // Streak bonuses are optional. Schema drift or a temporary streak read
-    // failure must not block the base generation allowance.
-    if (streakError) console.warn("Streak bonus unavailable; using base quota", {
-      reference, code: streakError.code,
-    });
-    const dailyLimit = generationDailyLimit(Deno.env.get("AI_DAILY_GENERATION_LIMIT"), streakError ? null : streak);
-    const { data: quota, error: quotaError } = await admin.rpc("reserve_ai_generation", {
-      p_user_id: user.id,
-      // Reservations count whole ten-question sets, so never round up the quota.
-      p_daily_limit: Math.floor(dailyLimit / questionCount),
-    });
-    if (quotaError || typeof quota?.allowed !== "boolean") {
-      console.error("Generation quota reservation failed", { reference, error: quotaError });
-      throw new PublicGenerationError(
-        "Question generation is temporarily unavailable. Your daily allowance was not used; please try again shortly.",
-        503,
-        "quota_service_unavailable",
-      );
-    }
-    if (!quota.allowed) {
-      return Response.json({
-        error: quota.reason === "daily_quota"
-          ? `You don't have enough of today's ${dailyLimit}-question quota left for another ten-question set. It resets at 00:00 UTC (5:30 AM IST). You can still practise saved sets.`
-          : `Please wait ${quota.retryAfter} seconds before generating another set.`,
-        retryAfter: quota.retryAfter,
-        code: quota.reason,
-      }, { status: 429, headers: { ...corsHeaders, "Retry-After": String(quota.retryAfter) } });
+    if (isPremium) {
+      stage = "generation quota";
+      const { data: streak, error: streakError } = await admin
+        .from("user_streaks")
+        .select("current_streak,last_active_date,freezes")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      // Streak bonuses are optional. Schema drift or a temporary streak read
+      // failure must not block the base generation allowance.
+      if (streakError) console.warn("Streak bonus unavailable; using base quota", {
+        reference, code: streakError.code,
+      });
+      const dailyLimit = generationDailyLimit(Deno.env.get("AI_DAILY_GENERATION_LIMIT"), streakError ? null : streak);
+      const { data: quota, error: quotaError } = await admin.rpc("reserve_ai_generation", {
+        p_user_id: user.id,
+        // Reservations count whole ten-question sets, so never round up the quota.
+        p_daily_limit: Math.floor(dailyLimit / questionCount),
+      });
+      if (quotaError || typeof quota?.allowed !== "boolean") {
+        console.error("Generation quota reservation failed", { reference, error: quotaError });
+        throw new PublicGenerationError(
+          "Question generation is temporarily unavailable. Your daily allowance was not used; please try again shortly.",
+          503,
+          "quota_service_unavailable",
+        );
+      }
+      if (!quota.allowed) {
+        return Response.json({
+          error: quota.reason === "daily_quota"
+            ? `You don't have enough of today's ${dailyLimit}-question quota left for another ten-question set. It resets at 00:00 UTC (5:30 AM IST). You can still practise saved sets.`
+            : `Please wait ${quota.retryAfter} seconds before generating another set.`,
+          retryAfter: quota.retryAfter,
+          code: quota.reason,
+        }, { status: 429, headers: { ...corsHeaders, "Retry-After": String(quota.retryAfter) } });
+      }
     }
 
     stage = "question generation";
@@ -412,6 +442,7 @@ serve(async (request) => {
       reused_count: reused.length,
     }).select("id,created_at").single();
     if (saveError) throw saveError;
+    trialReservationUserId = null;
 
     // Rotation is best effort; the saved set is already durable.
     const { error: rotationError } = await admin.from("ai_question_bank").update({ last_served_at: new Date().toISOString() })
@@ -433,6 +464,16 @@ serve(async (request) => {
       },
     }, { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
+    if (trialReservationUserId && cleanupSupabaseUrl && cleanupServiceKey) {
+      const cleanupAdmin = createClient(cleanupSupabaseUrl, cleanupServiceKey);
+      const { error: cleanupError } = await cleanupAdmin
+        .from("student_ai_trial_reservations")
+        .delete()
+        .eq("user_id", trialReservationUserId);
+      if (cleanupError) console.error("Could not release failed AI trial reservation", {
+        reference, error: cleanupError,
+      });
+    }
     console.error("generate-practice failed", { reference, stage, error });
     const publicError = error instanceof PublicGenerationError
       ? error

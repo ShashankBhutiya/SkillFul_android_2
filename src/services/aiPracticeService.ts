@@ -105,9 +105,13 @@ export async function getPracticeHistory(): Promise<AIPracticeSet[]> {
   const local = readLocalHistory();
   if (!supabase) return local;
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return local;
+
   const { data, error } = await supabase
     .from("ai_question_sets")
     .select("id,title,topic,degree,academic_year,level,questions,created_at")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(12);
 
@@ -125,6 +129,18 @@ export async function getPracticeHistory(): Promise<AIPracticeSet[]> {
   }));
 
   return [...remote, ...local.filter((item) => !remote.some((remoteItem) => remoteItem.id === item.id))].slice(0, 12);
+}
+
+export async function hasUsedAIPracticeTrial(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { count, error } = await supabase
+    .from("ai_question_sets")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if (error) return false;
+  return (count || 0) > 0;
 }
 
 export async function savePracticeAttempt(

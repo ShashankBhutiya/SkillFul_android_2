@@ -43,8 +43,29 @@ serve(async (req) => {
       )
     }
 
-    // Determine amount in paise (₹299/mo or ₹1799/yr)
-    const amountInRupees = planType === 'monthly' ? 299 : 1799
+    // A verified college membership only changes the price; it does not grant
+    // Premium on its own. College-linked students may buy the annual plan for ₹25.
+    const { data: collegeMembership, error: membershipError } = await supabase
+      .from('institution_members')
+      .select('institution_id')
+      .eq('user_id', user.id)
+      .eq('role', 'student')
+      .maybeSingle()
+
+    if (membershipError) {
+      console.error('Could not check college membership:', membershipError)
+      throw new Error('Could not verify college membership.')
+    }
+
+    const isCollegeStudent = Boolean(collegeMembership)
+    if (isCollegeStudent && planType !== 'yearly') {
+      return new Response(
+        JSON.stringify({ error: 'College-linked students can subscribe to the ₹25 annual plan only.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const amountInRupees = isCollegeStudent ? 25 : planType === 'monthly' ? 299 : 1799
     const amountInPaise = amountInRupees * 100
 
     // 4. Connect to Razorpay API to create payment Order
@@ -69,6 +90,7 @@ serve(async (req) => {
         userId: user.id,
         userEmail: user.email || '',
         planType: planType,
+        offer: isCollegeStudent ? 'college_yearly' : `standard_${planType}`,
       }
     }
 

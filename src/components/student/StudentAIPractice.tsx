@@ -8,7 +8,7 @@ import AIPracticeQuiz from "@/components/student/AIPracticeQuiz";
 import QuizGame from "@/components/QuizGame";
 import ProfileSettingsModal from "@/components/ProfileSettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { generatePracticeSet, getPracticeHistory } from "@/services/aiPracticeService";
+import { generatePracticeSet, getPracticeHistory, hasUsedAIPracticeTrial } from "@/services/aiPracticeService";
 import type { AIPracticeSet, PracticeLevel } from "@/types/aiPractice";
 import { SeoHead } from "@/components/SeoHead";
 
@@ -25,19 +25,47 @@ export default function StudentAIPractice() {
   const [showQuotaDetails, setShowQuotaDetails] = useState(false);
   const [activeSet, setActiveSet] = useState<AIPracticeSet | null>(null);
   const [history, setHistory] = useState<AIPracticeSet[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    if (!user.isGuest) getPracticeHistory().then(setHistory).catch(() => undefined);
-  }, [user.isGuest]);
+    let cancelled = false;
+    setHistoryLoaded(false);
+    if (user.isGuest) {
+      setHistory([]);
+      setHasUsedTrial(false);
+      setHistoryLoaded(true);
+      return () => { cancelled = true; };
+    }
+    Promise.all([
+      getPracticeHistory(),
+      user.isPremium ? Promise.resolve(false) : hasUsedAIPracticeTrial(),
+    ])
+      .then(([sets, trialUsed]) => {
+        if (!cancelled) {
+          setHistory(sets);
+          setHasUsedTrial(trialUsed);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => { if (!cancelled) setHistoryLoaded(true); });
+    return () => { cancelled = true; };
+  }, [user.id, user.isGuest, user.isPremium]);
+
+  const trialUsed = !user.isPremium && hasUsedTrial;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (loading || isLoading) return;
     setError("");
+    if (trialUsed) {
+      setError("Your free AI practice set has been used. Upgrade to Premium to generate more sets.");
+      return;
+    }
     if (!topic.trim()) {
       setError("Enter a topic to practise.");
       return;
@@ -64,6 +92,7 @@ export default function StudentAIPractice() {
       });
       setActiveSet(set);
       setHistory((current) => [set, ...current.filter((item) => item.id !== set.id)].slice(0, 12));
+      if (!user.isPremium) setHasUsedTrial(true);
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "Could not generate questions. Please try again.");
     } finally {
@@ -172,19 +201,33 @@ export default function StudentAIPractice() {
               </button>
               {showQuotaDetails && (
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  One set can be generated per minute. Your daily quota starts at 40 questions and grows by 10 for each active streak day, up to 300. Quotas reset at 5:30 AM IST; saved sets are always free to practise.
+                  {user.isPremium
+                    ? "One set can be generated per minute. Your daily quota grows with your active streak. Saved sets are always free to practise."
+                    : "Your free access includes one ten-question AI practice set. Upgrade to Premium to generate additional sets; your saved trial remains available to practise."}
                 </p>
               )}
             </div>
+
+            {trialUsed && (
+              <div className="mt-5 rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-3 text-xs leading-relaxed text-foreground">
+                Your free AI trial is complete. You can replay the saved set below or upgrade to generate another topic.
+              </div>
+            )}
 
             <AnimatePresence>
               {error && <motion.p role="alert" aria-live="polite" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-lg bg-destructive/8 px-3 py-2.5 text-xs font-medium text-destructive">{error}</motion.p>}
             </AnimatePresence>
           </div>
 
-          <button type="submit" disabled={loading || isLoading} className="flex w-full items-center justify-center gap-2 border-t border-primary/20 bg-primary px-5 py-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-70">
-            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your questions…</> : <><BrainCircuit className="h-4 w-4" /> Start my practice <ArrowRight className="h-4 w-4" /></>}
-          </button>
+          {trialUsed ? (
+            <Link to="/premium" className="flex w-full items-center justify-center gap-2 border-t border-primary/20 bg-primary px-5 py-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+              <Sparkles className="h-4 w-4" /> Upgrade for more AI practice <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <button type="submit" disabled={loading || isLoading || !historyLoaded} className="flex w-full items-center justify-center gap-2 border-t border-primary/20 bg-primary px-5 py-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-70">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your questions…</> : <><BrainCircuit className="h-4 w-4" /> {user.isPremium ? "Start my practice" : "Generate my free trial"} <ArrowRight className="h-4 w-4" /></>}
+            </button>
+          )}
         </form>
 
         {history.length > 0 && (

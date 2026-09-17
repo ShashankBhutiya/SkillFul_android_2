@@ -4,7 +4,7 @@ import { motion as fm, AnimatePresence as Ap } from "framer-motion";
 import { X, Check, Star, Sparkles, ShieldCheck, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
-import { PLANS, razorpayService } from "@/services/razorpayService";
+import { COLLEGE_YEARLY_PLAN, PLANS, razorpayService } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -47,11 +47,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
-  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
+  const isCollegeStudent = !!user.hasLinkedCollege;
 
   if (!isOpen) return null;
 
-  const plan = PLANS[selectedPlan];
+  const plan = isCollegeStudent ? COLLEGE_YEARLY_PLAN : PLANS[selectedPlan];
   const originalYearlyCost = PLANS.monthly.price * 12; // 3588
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
@@ -87,9 +87,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         throw new Error("Supabase is not configured.");
       }
 
+      const planType = isCollegeStudent ? "yearly" : selectedPlan;
+
       // Request edge function to create a new standard Razorpay Order
       const { data, error } = await supabase.functions.invoke("razorpay-checkout", {
-        body: { planType: selectedPlan }
+        body: { planType }
       });
 
       if (error || !data) {
@@ -103,7 +105,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         currency: data.currency,
         order_id: data.order_id,
         name: "Skillful Premium",
-        description: `Upgrade to ${selectedPlan} Premium`,
+        description: `Upgrade to ${planType} Premium`,
         handler: async function (response: any) {
           try {
             toast({
@@ -117,7 +119,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
-                planType: selectedPlan
+                planType
               }
             });
 
@@ -207,7 +209,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <X className="w-4 h-4" />
               </button>
 
-              {paymentStatus === "success" || hasIncludedAccess ? (
+              {paymentStatus === "success" || user.isPremium ? (
                 <fm.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -217,14 +219,10 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     <ShieldCheck className="w-9 h-9" />
                   </div>
                   <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-                    {paymentStatus === "success" ? "Upgrade Successful!" : user.isPremium ? "Premium Active" : "College Access Active"}
+                    {paymentStatus === "success" ? "Upgrade Successful!" : "Premium Active"}
                   </h2>
                   <p className="text-muted-foreground text-sm max-w-xs mb-8">
-                    {paymentStatus === "success" || user.isPremium ? (
-                      <>Welcome to <strong className="text-foreground">Skillful Premium</strong>. All skills are now unlocked for you. Happy practicing!</>
-                    ) : (
-                      <>Your linked college includes access to premium skills. Happy practicing!</>
-                    )}
+                    <>Welcome to <strong className="text-foreground">Skillful Premium</strong>. All skills are now unlocked for you. Happy practicing!</>
                   </p>
                   <button
                     onClick={handleClose}
@@ -267,8 +265,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     ))}
                   </div>
 
-                  {/* Selector for Monthly vs Yearly */}
-                  <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1 rounded-2xl border border-border/40 mb-6">
+                  {!isCollegeStudent && <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1 rounded-2xl border border-border/40 mb-6">
                     <button
                       type="button"
                       onClick={() => {
@@ -300,7 +297,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                         -{savings}%
                       </span>
                     </button>
-                  </div>
+                  </div>}
 
                   {/* Price Details */}
                   <div className="mb-6 py-2">
@@ -312,7 +309,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                         / {plan.interval === "monthly" ? "month" : "year"}
                       </span>
                     </div>
-                    {selectedPlan === "yearly" && (
+                    {isCollegeStudent ? (
+                      <p className="text-[11px] text-primary font-bold mt-1">
+                        College-linked student price. Annual billing only.
+                      </p>
+                    ) : selectedPlan === "yearly" && (
                       <p className="text-[11px] text-primary font-bold mt-1">
                         Just ₹150 / month (billed yearly at ₹1,799)
                       </p>

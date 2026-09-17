@@ -65,7 +65,7 @@ export default function ReferPage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const hasIncludedAccess = user?.isPremium || !!user?.hasLinkedCollege;
+  const hasPremiumAccess = !!user?.isPremium;
 
   const referralLink = `${siteConfig.siteUrl}/?ref=${user?.referralCode || ""}`;
 
@@ -98,7 +98,7 @@ export default function ReferPage() {
   const lockedCategoriesInfo = LOCKED_CATEGORY_IDS.map((id, index) => {
     const matchingCat = categorySummaries.find(c => c.id === id);
     const requiredRefs = (index + 1) * REFERRALS_PER_UNLOCK;
-    const isUnlocked = hasIncludedAccess || (user?.unlockCount || 0) >= requiredRefs;
+    const isUnlocked = hasPremiumAccess || (user?.unlockCount || 0) >= requiredRefs;
 
     return {
       id,
@@ -110,7 +110,7 @@ export default function ReferPage() {
   });
 
   const totalLockedPacks = LOCKED_CATEGORY_IDS.length;
-  const unlockedPacksCount = hasIncludedAccess 
+  const unlockedPacksCount = hasPremiumAccess
     ? totalLockedPacks 
     : lockedCategoriesInfo.filter(c => c.isUnlocked).length;
 
@@ -208,8 +208,8 @@ export default function ReferPage() {
                     <div className="mb-2 flex items-center justify-between">
                       <span className="section-label">Unlock progress</span>
                       <span className="text-xs font-medium text-muted-foreground">
-                        {hasIncludedAccess
-                          ? user.isPremium ? "Premium active" : "College access active"
+                        {hasPremiumAccess
+                          ? "Premium active"
                           : `${user.unlockCount} referred`}
                       </span>
                     </div>
@@ -218,7 +218,7 @@ export default function ReferPage() {
                     <div className="mb-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full bg-primary transition-all duration-500"
-                        style={{ width: `${hasIncludedAccess ? 100 : Math.min(100, (user.unlockCount / totalLockedPacks) * 100)}%` }}
+                        style={{ width: `${hasPremiumAccess ? 100 : Math.min(100, (user.unlockCount / totalLockedPacks) * 100)}%` }}
                       />
                     </div>
 

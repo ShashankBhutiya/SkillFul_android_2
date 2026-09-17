@@ -4,7 +4,7 @@ import { Check, Star, Sparkles, ShieldCheck, Loader2, ArrowLeft, Shield } from "
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
-import { PLANS } from "@/services/razorpayService";
+import { COLLEGE_YEARLY_PLAN, PLANS } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -26,9 +26,8 @@ const PremiumPage = () => {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
-  const hasIncludedAccess = user.isPremium || !!user.hasLinkedCollege;
-
-  const plan = PLANS[selectedPlan];
+  const isCollegeStudent = !!user.hasLinkedCollege;
+  const plan = isCollegeStudent ? COLLEGE_YEARLY_PLAN : PLANS[selectedPlan];
   const originalYearlyCost = PLANS.monthly.price * 12; // 3588
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
@@ -64,9 +63,11 @@ const PremiumPage = () => {
         throw new Error("Supabase is not configured.");
       }
 
+      const planType = isCollegeStudent ? "yearly" : selectedPlan;
+
       // Request edge function to create a new standard Razorpay Order
       const { data, error } = await supabase.functions.invoke("razorpay-checkout", {
-        body: { planType: selectedPlan }
+        body: { planType }
       });
 
       if (error || !data) {
@@ -79,7 +80,7 @@ const PremiumPage = () => {
         currency: data.currency,
         order_id: data.order_id,
         name: "Skillful Premium",
-        description: `Upgrade to ${selectedPlan} Premium`,
+        description: `Upgrade to ${planType} Premium`,
         handler: async function (response: any) {
           try {
             toast({
@@ -93,7 +94,7 @@ const PremiumPage = () => {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
-                planType: selectedPlan
+                planType
               }
             });
 
@@ -172,7 +173,7 @@ const PremiumPage = () => {
           </button>
         </div>
 
-        {paymentStatus === "success" || hasIncludedAccess ? (
+        {paymentStatus === "success" || user.isPremium ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -182,19 +183,11 @@ const PremiumPage = () => {
               <ShieldCheck className="h-7 w-7" />
             </div>
             <h2 className="font-display text-2xl font-semibold text-foreground">
-              {paymentStatus === "success" ? "Upgrade successful" : user.isPremium ? "Premium active" : "College access active"}
+              {paymentStatus === "success" ? "Upgrade successful" : "Premium active"}
             </h2>
             <p className="mb-7 mt-2.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              {paymentStatus === "success" || user.isPremium ? (
-                <>
-                  Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
-                  premium skill topics and rapid-fire scenarios are now unlocked.
-                </>
-              ) : (
-                <>
-                  Your college link includes access to premium skill topics and rapid-fire scenarios.
-                </>
-              )}
+              Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
+              premium skill topics and rapid-fire scenarios are now unlocked.
             </p>
             <button
               onClick={handleStartPracticing}
@@ -271,11 +264,10 @@ const PremiumPage = () => {
                   Choose a plan
                 </h2>
                 <p className="mb-5 mt-1 text-xs text-muted-foreground">
-                  Simple pricing for professional growth
+                  {isCollegeStudent ? "Your college-linked student price" : "Simple pricing for professional growth"}
                 </p>
 
-                {/* Plan Toggle */}
-                <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/50 p-1">
+                {!isCollegeStudent && <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/50 p-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -309,7 +301,7 @@ const PremiumPage = () => {
                       −{savings}%
                     </span>
                   </button>
-                </div>
+                </div>}
 
                 {/* Dynamic Price Display */}
                 <div className="mb-5 border-y border-border py-5">
@@ -321,7 +313,11 @@ const PremiumPage = () => {
                       / {plan.interval === "monthly" ? "month" : "year"}
                     </span>
                   </div>
-                  {selectedPlan === "yearly" && (
+                  {isCollegeStudent ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      College-linked students can subscribe yearly for ₹25. Monthly billing is not available.
+                    </p>
+                  ) : selectedPlan === "yearly" && (
                     <p className="mt-2 text-xs text-muted-foreground">
                       Works out to ₹150 / month, billed yearly at ₹1,799.
                     </p>
@@ -340,7 +336,7 @@ const PremiumPage = () => {
                       Processing payment…
                     </>
                   ) : (
-                    "Upgrade to Premium"
+                    isCollegeStudent ? "Get yearly Premium" : "Upgrade to Premium"
                   )}
                 </button>
 

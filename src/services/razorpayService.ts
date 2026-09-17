@@ -23,6 +23,13 @@ export const PLANS: Record<"monthly" | "yearly", PlanDetails> = {
   },
 };
 
+export const COLLEGE_YEARLY_PLAN: PlanDetails = {
+  id: "plan_college_yearly",
+  name: "Skillful Premium - College Yearly",
+  price: 25,
+  interval: "yearly",
+};
+
 /**
  * Service to manage subscription billing with Razorpay.
  * Supports a local sandbox mode for seamless testing without keys.
