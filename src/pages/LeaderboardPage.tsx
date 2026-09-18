@@ -45,7 +45,7 @@ const PODIUM_CONFIG = {
     avatarSize: "h-14 w-14 text-xl",
     score: "text-lg text-orange-700",
     order: "order-3",
-    pedestal: "h-[40px] bg-orange-600/28",
+    pedestal: "h-[40px] bg-orange-600/30",
     glow: "shadow-[0_0_18px_-6px] shadow-orange-500/30",
     badge: "bg-orange-600 text-white border-orange-400/60",
   },

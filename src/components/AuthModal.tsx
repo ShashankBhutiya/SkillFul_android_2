@@ -2,7 +2,20 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, AlertCircle, Loader2, ChevronDown } from "lucide-react";
+import {
+    X,
+    AlertCircle,
+    Loader2,
+    ChevronDown,
+    Eye,
+    EyeOff,
+    Sparkles,
+    KeyRound,
+    UserPlus,
+    LogIn,
+    ArrowRight,
+    ShieldCheck,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { getStoredUserMode, type UserMode } from "@/config/userMode";
@@ -35,17 +48,16 @@ const formatAuthError = (errMessage: string): string => {
     return errMessage;
 };
 
-const labelClass = "block text-xs text-muted-foreground mb-1.5";
+const labelClass = "block text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5 font-semibold";
 const inputClass =
-    "w-full px-3 py-2.5 bg-background border border-border text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 rounded-md transition-colors";
-const primaryBtnClass =
-    "w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium rounded-md disabled:opacity-50 disabled:pointer-events-none transition-colors flex items-center justify-center gap-2";
+    "w-full px-3 py-2.5 bg-background border border-border text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-md transition-all";
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     const { signIn, signUp, signInWithGoogle } = useAuth();
     const [tab, setTab] = useState<Tab>("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [referralCode, setReferralCode] = useState(() => {
         return localStorage.getItem("pending_referral_code") || "";
     });
@@ -71,6 +83,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     const resetForm = () => {
         setEmail("");
         setPassword("");
+        setShowPassword(false);
         setReferralCode("");
         setUserMode(getStoredUserMode());
         setEmailConsent(false);
@@ -199,48 +212,100 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/95 backdrop-blur-sm"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-background/80 backdrop-blur-md"
                     onClick={onClose}
                 >
                     <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.15 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                        transition={{ type: "spring", damping: 26, stiffness: 360 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative w-full max-w-[400px] max-h-[90vh] overflow-y-auto custom-scrollbar"
+                        className="modal-chassis relative w-full max-w-[430px] max-h-[90vh] overflow-y-auto custom-scrollbar p-6"
                     >
+                        {/* 8-bit Corner Studs */}
+                        <div className="topic-prompt__stud topic-prompt__stud--tl" style={{ top: "6px", left: "6px" }} />
+                        <div className="topic-prompt__stud topic-prompt__stud--tr" style={{ top: "6px", right: "6px" }} />
+                        <div className="topic-prompt__stud topic-prompt__stud--bl" style={{ bottom: "6px", left: "6px" }} />
+                        <div className="topic-prompt__stud topic-prompt__stud--br" style={{ bottom: "6px", right: "6px" }} />
+
+                        {/* Ambient glow behind chassis */}
                         <div
-                            className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl"
+                            className="pointer-events-none absolute -top-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl"
                             aria-hidden
                         />
 
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            aria-label="Close"
-                            className="absolute -top-1 right-0 p-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+                        {/* Top Console Header Bar */}
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-border/70">
+                            <div className="flex items-center gap-2">
+                                <div className="relative flex h-2 w-2 items-center justify-center">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                                </div>
+                                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                                    SKILLFUL ID // {tab === "login" ? "ACCESS GATE" : "ENROLLMENT"}
+                                </span>
+                            </div>
 
-                        <div className="mb-8 pr-8">
-                            <h2 className="text-xl font-semibold text-foreground tracking-tight">
-                                {tab === "login" ? "Welcome to Skillful" : "Create your account"}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                aria-label="Close"
+                                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Modal Title */}
+                        <div className="mb-4">
+                            <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                                {tab === "login" ? (
+                                    <>
+                                        <KeyRound className="w-5 h-5 text-primary" />
+                                        <span>Welcome back</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-5 h-5 text-primary" />
+                                        <span>Create your account</span>
+                                    </>
+                                )}
                             </h2>
-                            <p className="mt-1.5 text-sm text-muted-foreground">
+                            <p className="mt-1 text-xs text-muted-foreground">
                                 {tab === "login"
-                                    ? "Sign in to continue your progress"
-                                    : "The new way to build skills"}
+                                    ? "Sign in to resume quests, sync stats, and climb ranks"
+                                    : "Build skills with interactive quests and AI mentorship"}
                             </p>
                         </div>
 
-                        <div className="mb-6">
+                        {/* Tactile 8-bit Tab Switcher */}
+                        <div className="modal-tab-track mb-5">
+                            <button
+                                type="button"
+                                onClick={() => toggleTab("login")}
+                                className={`modal-tab-btn ${tab === "login" ? "is-active" : ""}`}
+                            >
+                                <LogIn className="w-3.5 h-3.5" />
+                                <span>SIGN IN</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => toggleTab("signup")}
+                                className={`modal-tab-btn ${tab === "signup" ? "is-active" : ""}`}
+                            >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>CREATE ACCOUNT</span>
+                            </button>
+                        </div>
+
+                        {/* Google Sign-in */}
+                        <div className="mb-4">
                             <button
                                 type="button"
                                 onClick={handleGoogleSignIn}
                                 disabled={loading || googleLoading}
-                                className="w-full h-10 flex items-center justify-center gap-2 border border-border bg-card hover:bg-muted/50 text-sm text-foreground rounded-md disabled:opacity-50 transition-colors"
+                                className="w-full h-10.5 py-2.5 px-3 flex items-center justify-center gap-2.5 border border-border/90 bg-card hover:bg-muted/40 active:translate-y-[1px] text-xs sm:text-sm font-medium text-foreground rounded-md disabled:opacity-50 transition-all shadow-[0_2px_0_hsl(var(--border)),0_4px_8px_-2px_rgba(0,0,0,0.04)] active:shadow-none"
                             >
                                 {googleLoading ? (
                                     <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -268,6 +333,16 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                             </button>
                         </div>
 
+                        {/* Divider */}
+                        <div className="relative flex items-center justify-center my-4">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-border/70" />
+                            </div>
+                            <div className="relative bg-card px-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
+                                OR AUTHENTICATE WITH EMAIL
+                            </div>
+                        </div>
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className={labelClass} htmlFor="auth-email">
@@ -276,7 +351,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                 <input
                                     id="auth-email"
                                     type="email"
-                                    placeholder="Your email address"
+                                    placeholder="you@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     autoComplete="email"
@@ -285,18 +360,34 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                             </div>
 
                             <div>
-                                <label className={labelClass} htmlFor="auth-password">
-                                    Password
-                                </label>
-                                <input
-                                    id="auth-password"
-                                    type="password"
-                                    placeholder="Your password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    autoComplete={tab === "login" ? "current-password" : "new-password"}
-                                    className={inputClass}
-                                />
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className={labelClass} htmlFor="auth-password" style={{ marginBottom: 0 }}>
+                                        Password
+                                    </label>
+                                    <span className="text-[10px] font-mono text-muted-foreground/60">
+                                        {tab === "signup" ? "MIN 6 CHARACTERS" : ""}
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        id="auth-password"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        autoComplete={tab === "login" ? "current-password" : "new-password"}
+                                        className={`${inputClass} pr-10`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                                        tabIndex={-1}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
                             </div>
 
                             <AnimatePresence>
@@ -422,37 +513,56 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                 {error && (
                                     <motion.div
                                         key="error"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="flex items-start gap-2 px-3 py-2 border border-destructive/30 bg-destructive/5 text-destructive text-xs font-body rounded-none"
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        className="flex items-start gap-2.5 px-3 py-2.5 border border-destructive/40 bg-destructive/10 text-destructive text-xs font-mono rounded-md shadow-sm"
                                     >
-                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                                        <span>{error}</span>
+                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                                        <span className="leading-snug">{error}</span>
                                     </motion.div>
                                 )}
                                 {success && (
                                     <motion.div
                                         key="success"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="px-3 py-2 border border-success/30 bg-success/5 text-success text-xs font-body rounded-none"
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        className="flex items-start gap-2.5 px-3 py-2.5 border border-success/40 bg-success/10 text-success text-xs font-mono rounded-md shadow-sm"
                                     >
-                                        {success}
+                                        <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-success" />
+                                        <span className="leading-snug">{success}</span>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <button type="submit" disabled={loading || googleLoading} className={primaryBtnClass}>
-                                {loading ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : tab === "login" ? (
-                                    "Continue"
-                                ) : (
-                                    "Create account"
-                                )}
-                            </button>
+                            {/* Tactile 3D Submit Button with 8-bit Glow */}
+                            <div className="pixel-btn-wrapper pt-1">
+                                <div className="pixel-btn-glow" aria-hidden="true" />
+                                <button
+                                    type="submit"
+                                    disabled={loading || googleLoading}
+                                    className="pixel-btn-modern flex w-full items-center justify-center gap-2 py-3 text-sm font-bold tracking-wider uppercase disabled:opacity-60"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>AUTHENTICATING...</span>
+                                        </>
+                                    ) : tab === "login" ? (
+                                        <>
+                                            <span>SIGN IN TO SKILLFUL</span>
+                                            <ArrowRight className="w-4 h-4" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-4 h-4" />
+                                            <span>INITIALIZE ACCOUNT</span>
+                                            <ArrowRight className="w-4 h-4" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
 
                             {tab === "signup" && (
                                 <p className="text-[11px] text-muted-foreground text-center">
@@ -470,35 +580,38 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                             )}
                         </form>
 
-                        <p className="mt-8 text-center text-sm text-muted-foreground">
-                            {tab === "login" ? (
-                                <>
-                                    Don&apos;t have an account?{" "}
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleTab("signup")}
-                                        className="text-foreground underline underline-offset-2 hover:text-muted-foreground transition-colors"
-                                    >
-                                        Sign up
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    Already have an account?{" "}
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleTab("login")}
-                                        className="text-foreground underline underline-offset-2 hover:text-muted-foreground transition-colors"
-                                    >
-                                        Sign in
-                                    </button>
-                                </>
-                            )}
-                        </p>
+                        <div className="mt-6 pt-4 border-t border-border/50 text-center">
+                            <p className="text-xs text-muted-foreground">
+                                {tab === "login" ? (
+                                    <>
+                                        Don&apos;t have an account?{" "}
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleTab("signup")}
+                                            className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                        >
+                                            Create one here
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        Already have an account?{" "}
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleTab("login")}
+                                            className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                        >
+                                            Sign in here
+                                        </button>
+                                    </>
+                                )}
+                            </p>
 
-                        <p className="mt-4 text-center text-[11px] text-muted-foreground/70">
-                            An account saves your progress, streak, and leaderboard rank.
-                        </p>
+                            <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+                                <span className="inline-block w-1.5 h-1.5 bg-primary/40 rounded-none" />
+                                <span>Secure Session // 256-bit Encrypted</span>
+                            </div>
+                        </div>
                     </motion.div>
                 </motion.div>
             )}
@@ -508,3 +621,4 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 };
 
 export default AuthModal;
+

@@ -129,12 +129,13 @@ export default function StudentAIPractice() {
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_68%)]" />
 
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary">
-            <Sparkles className="h-4 w-4" />
-            Skillful AI
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+            <span className="flex h-2 w-2 rounded-none bg-primary shadow-[1px_1px_0_rgba(0,0,0,0.25)]" style={{ imageRendering: "pixelated" }} />
+            <Sparkles className="h-3.5 w-3.5" />
+            AI Practice
           </div>
-          <Link to="/skills/classic" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
-            <BookOpen className="h-3.5 w-3.5" /> Classic
+          <Link to="/skills/classic" className="inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+            <BookOpen className="h-3.5 w-3.5 text-primary" /> Classic
           </Link>
         </div>
 
@@ -177,34 +178,73 @@ export default function StudentAIPractice() {
               <span className="topic-prompt__caret" aria-hidden="true" />
             </div>
 
-            <p id="practice-visibility" className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {/* Quick Quest Inspiration Chips */}
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-muted-foreground mr-0.5">
+                Ideas:
+              </span>
+              {[
+                { label: "Binary Search Trees", icon: "⚡" },
+                { label: "Dynamic Programming", icon: "👾" },
+                { label: "SQL Joins & Indexing", icon: "💾" },
+                { label: "OS Scheduling", icon: "🕹️" },
+                { label: "System Design", icon: "🛡️" },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setTopic(item.label)}
+                  className="quest-chip"
+                >
+                  <span className="text-xs">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <p id="practice-visibility" className="mt-3 text-xs leading-relaxed text-muted-foreground">
               Visible to your Placement Head if your institution is linked.
             </p>
 
+            {/* 8-bit Power Gauge (Difficulty Meter) */}
             <fieldset className="mt-7">
-              <legend className="text-xs font-semibold text-foreground">Challenge level</legend>
-              <div className="mt-3">
-                <div className="mb-4 flex items-baseline gap-2">
-                  <span className="text-sm font-bold text-primary">{selectedLevel.label}</span>
-                  <span className="text-xs text-muted-foreground">· {selectedLevel.detail}</span>
+              <div className="flex items-center justify-between mb-3">
+                <legend className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  Challenge Level
+                </legend>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary font-mono">
+                  {levelIndex === 0 && <span>🌱 NOVICE</span>}
+                  {levelIndex === 1 && <span>⚡ ADEPT</span>}
+                  {levelIndex === 2 && <span>🔥 MASTER</span>}
+                  <span className="text-[11px] font-normal text-muted-foreground font-sans">· {selectedLevel.detail}</span>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={1}
-                  value={levelIndex}
-                  onChange={(event) => setLevel(LEVELS[Number(event.target.value)].value)}
-                  aria-label="Challenge level"
-                  aria-valuetext={selectedLevel.label}
-                  style={{
-                    background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${levelIndex * 50}%, hsl(var(--muted)) ${levelIndex * 50}%, hsl(var(--muted)) 100%)`,
-                  }}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full outline-none [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:shadow-md [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
-                />
-                <div className="mt-2 flex justify-between text-[11px] font-medium text-muted-foreground">
+              </div>
+
+              {/* 8-bit Pixel Energy Gauge */}
+              <div className="power-gauge">
+                <div className="power-gauge__track">
+                  {LEVELS.map((item, idx) => {
+                    const isActive = idx <= levelIndex;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setLevel(item.value)}
+                        className={`power-gauge__cell ${isActive ? "is-active" : ""}`}
+                        title={item.label}
+                        aria-label={`Set challenge level to ${item.label}`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex justify-between px-1 text-[11px] font-medium text-muted-foreground">
                   {LEVELS.map((item) => (
-                    <button key={item.value} type="button" onClick={() => setLevel(item.value)} className={item.value === level ? "text-primary" : "hover:text-foreground"}>
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => setLevel(item.value)}
+                      className={`transition-colors ${item.value === level ? "text-primary font-bold" : "hover:text-foreground"}`}
+                    >
                       {item.label}
                     </button>
                   ))}
@@ -217,7 +257,7 @@ export default function StudentAIPractice() {
                 type="button"
                 onClick={() => setShowQuotaDetails((show) => !show)}
                 aria-expanded={showQuotaDetails}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground font-medium"
               >
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showQuotaDetails ? "rotate-180" : ""}`} />
                 10 questions · How it works
@@ -238,35 +278,84 @@ export default function StudentAIPractice() {
             )}
 
             <AnimatePresence>
-              {error && <motion.p role="alert" aria-live="polite" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-lg bg-destructive/8 px-3 py-2.5 text-xs font-medium text-destructive">{error}</motion.p>}
+              {error && (
+                <motion.p role="alert" aria-live="polite" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-lg bg-destructive/8 px-3 py-2.5 text-xs font-medium text-destructive">
+                  {error}
+                </motion.p>
+              )}
             </AnimatePresence>
           </div>
 
-          {trialUsed ? (
-            <Link to="/premium" className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
-              <Sparkles className="h-4 w-4" /> Upgrade for more <ArrowRight className="h-4 w-4" />
-            </Link>
-          ) : (
-            <button type="submit" disabled={loading || isLoading || !historyLoaded} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-70">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</> : <><BrainCircuit className="h-4 w-4" /> {user.isPremium ? "Start practice" : "Generate free set"} <ArrowRight className="h-4 w-4" /></>}
-            </button>
-          )}
+          <div className="pixel-btn-wrapper mt-7">
+            {/* 8-bit Glow Behind Generate Button */}
+            <div className={`pixel-btn-glow${trialUsed ? " pixel-btn-glow--gold" : ""}`} aria-hidden="true" />
+
+            {trialUsed ? (
+              <Link
+                to="/premium"
+                className="pixel-btn-modern pixel-btn-gold flex w-full items-center justify-center gap-2 py-3.5 text-sm font-bold"
+              >
+                <Sparkles className="h-4 w-4" /> Upgrade for More Sets <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading || isLoading || !historyLoaded}
+                className="pixel-btn-modern flex w-full items-center justify-center gap-2 py-3.5 text-sm font-bold disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Synthesizing Questions…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs leading-none opacity-80">✦</span>
+                    <BrainCircuit className="h-4 w-4" />
+                    <span>{user.isPremium ? "Start Practice Set" : "Generate Free Set"}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </form>
 
         {history.length > 0 && (
-          <section className="mt-8">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-muted-foreground" />
-              <h2 className="font-display text-base font-semibold text-foreground">Recent practice</h2>
+          <section className="mt-9">
+            <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-display text-sm font-semibold text-foreground">
+                  Recent practice
+                </h2>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {history.length} {history.length === 1 ? "set" : "sets"}
+              </span>
             </div>
             <div className="mt-3 space-y-2">
               {history.slice(0, 4).map((item) => (
-                <button key={item.id} onClick={() => setActiveSet(item)} className="flex w-full items-center justify-between gap-4 rounded-xl border border-border bg-card p-3.5 text-left hover:border-primary/30">
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSet(item)}
+                  className="flex w-full items-center justify-between gap-4 rounded-lg border border-border/80 bg-card p-3.5 text-left transition-all hover:border-primary/40 hover:bg-muted/30"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{item.title || item.topic}</p>
-                    <p className="mt-0.5 text-[11px] capitalize text-muted-foreground">{item.level} · {item.questions.length} {item.questions.length === 1 ? "question" : "questions"} · {item.academicYear}</p>
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {item.title || item.topic}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize font-medium text-primary font-mono text-[11px]">
+                        [{item.level}]
+                      </span>
+                      <span>·</span>
+                      <span>{item.questions.length} {item.questions.length === 1 ? "question" : "questions"}</span>
+                      <span>·</span>
+                      <span className="truncate">{item.academicYear}</span>
+                    </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/70" />
                 </button>
               ))}
             </div>
