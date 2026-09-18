@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { useUserMode } from "@/hooks/useUserMode";
 import type { UserMode } from "@/config/userMode";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
     emptyInstitutionEnrollment,
     InstitutionEnrollmentFields,
@@ -286,6 +287,17 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                 <p className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
                                     Switching changes which skills you see. Your progress and streak
                                     are kept for both — nothing is lost.
+                                </p>
+                            </div>
+
+                            {/* Theme / Appearance */}
+                            <div className="space-y-2 rounded-2xl border border-border bg-muted/30 p-3">
+                                <label className="px-1 text-xs font-bold text-muted-foreground block">
+                                    Appearance
+                                </label>
+                                <ThemeToggle variant="segmented" />
+                                <p className="px-1 text-[11px] leading-relaxed text-muted-foreground/70">
+                                    Choose between light and dark appearance.
                                 </p>
                             </div>
 

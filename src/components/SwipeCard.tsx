@@ -112,24 +112,24 @@ const SwipeCard = ({ question, category, onSwipe, isTop }: SwipeCardProps) => {
   if (!isTop) {
     return (
       <motion.div
-        className="absolute inset-0 rounded-[1.75rem] bg-card/95 p-1 shadow-lg border border-border/50"
+        className="absolute inset-0 rounded-xl bg-card/95 p-1 shadow-lg border border-border/50"
         style={{ scale: 0.95, y: 15 }}
       >
-        <div className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-br from-primary/10 via-card to-accent/5 opacity-50" />
+        <div className="absolute inset-0 rounded-[10px] bg-gradient-to-br from-primary/10 via-card to-accent/5 opacity-50" />
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      className="absolute inset-0 rounded-[1.75rem] shadow-2xl cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden bg-card/95 p-[2px] border border-border/50"
+      className="absolute inset-0 rounded-xl shadow-2xl cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden bg-card/95 p-[2px] border border-border/50"
       style={{ x, rotate, opacity }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.8}
       onDragEnd={handleDragEnd}
     >
-      <div className="relative w-full h-full flex flex-col overflow-hidden rounded-[1.6rem] bg-gradient-to-br from-primary/10 via-card to-accent/10">
+      <div className="relative w-full h-full flex flex-col overflow-hidden rounded-[10px] bg-gradient-to-br from-primary/10 via-card to-accent/10">
         {/* Dynamic Background Gradients */}
         <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} opacity-[0.05]`} />
         
@@ -145,7 +145,7 @@ const SwipeCard = ({ question, category, onSwipe, isTop }: SwipeCardProps) => {
 
         {/* Card header */}
         <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-5 py-4">
-          <span className="rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 shadow-sm">
+          <span className="rounded-md bg-primary/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 shadow-sm">
             {category.icon ? (
               <img src={category.icon} alt="" className="w-3.5 h-3.5 rounded-[3px] object-cover" />
             ) : (
@@ -171,7 +171,7 @@ const SwipeCard = ({ question, category, onSwipe, isTop }: SwipeCardProps) => {
             type="button"
             onClick={handleFalseClick}
             style={{ scale: falseButtonScale, backgroundColor: falseButtonBg }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-destructive/30 py-3 text-sm font-bold text-destructive shadow-sm backdrop-blur-sm cursor-pointer hover:brightness-110 active:brightness-95 transition-all select-none"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-destructive/30 py-3 text-sm font-bold text-destructive shadow-sm backdrop-blur-sm cursor-pointer hover:brightness-110 active:brightness-95 transition-all select-none"
           >
             <X className="h-4 w-4 stroke-[3]" />
             False
@@ -180,7 +180,7 @@ const SwipeCard = ({ question, category, onSwipe, isTop }: SwipeCardProps) => {
             type="button"
             onClick={handleTrueClick}
             style={{ scale: trueButtonScale, backgroundColor: trueButtonBg }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-success/30 py-3 text-sm font-bold text-success shadow-sm backdrop-blur-sm cursor-pointer hover:brightness-110 active:brightness-95 transition-all select-none"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-success/30 py-3 text-sm font-bold text-success shadow-sm backdrop-blur-sm cursor-pointer hover:brightness-110 active:brightness-95 transition-all select-none"
           >
             True
             <Check className="h-4 w-4 stroke-[3]" />

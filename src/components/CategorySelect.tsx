@@ -564,7 +564,7 @@ const CategoryCarousel = ({
 
       <div className="relative border-t border-border">
         <div
-          className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8"
+          className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:gap-x-8 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-1"
         >
           {children}
         </div>

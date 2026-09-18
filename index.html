@@ -1,6 +1,22 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem("skillful_theme");
+          if (stored === "dark") {
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.colorScheme = "dark";
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.style.colorScheme = "light";
+          }
+        } catch (e) {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
     <!-- Google tag (gtag.js) with default Consent Mode v2 -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -28,7 +44,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#ffffff" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
       content="Master real-world judgment with Skillful. Swipe through engaging, true/false scenarios to improve your parenting, communication, leadership, and financial skills in just 2 minutes a day."

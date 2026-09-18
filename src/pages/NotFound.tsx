@@ -137,14 +137,14 @@ const NotFound = () => {
         {/* Interactive Swipe Card */}
         <div className="relative w-full max-w-[340px] aspect-[4/5] sm:aspect-[3/4] mb-8 z-10">
           <motion.div
-            className="absolute inset-0 rounded-[1.75rem] shadow-2xl cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden bg-card/95 p-[2px] border border-border/50"
+            className="absolute inset-0 rounded-xl shadow-2xl cursor-grab active:cursor-grabbing touch-none select-none overflow-hidden bg-card/95 p-[2px] border border-border/50"
             style={{ x, rotate, opacity }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.8}
             onDragEnd={handleDragEnd}
           >
-            <div className="relative w-full h-full flex flex-col overflow-hidden rounded-[1.6rem] bg-gradient-to-br from-primary/10 via-card to-accent/10">
+            <div className="relative w-full h-full flex flex-col overflow-hidden rounded-[10px] bg-gradient-to-br from-primary/10 via-card to-accent/10">
               {/* Overlays */}
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent to-green-500/20 mix-blend-overlay pointer-events-none"
@@ -157,7 +157,7 @@ const NotFound = () => {
 
               {/* Card Header */}
               <div className="relative z-10 flex items-center justify-between border-b border-border/40 px-5 py-4">
-                <span className="rounded-full bg-primary/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 shadow-sm">
+                <span className="rounded-md bg-primary/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 shadow-sm">
                   <HelpCircle className="w-3.5 h-3.5" />
                   Decision Point
                 </span>
@@ -169,7 +169,7 @@ const NotFound = () => {
                 <p className="font-display text-lg sm:text-xl font-bold leading-snug text-foreground">
                   Statement: A 404 error is just a test of your pathfinding judgment.
                 </p>
-                <div className="mt-6 space-y-2 text-xs text-left w-full max-w-[240px] bg-muted/50 p-3.5 rounded-xl border border-border">
+                <div className="mt-6 space-y-2 text-xs text-left w-full max-w-[240px] bg-muted/50 p-3.5 rounded-lg border border-border">
                   <p className="flex items-center gap-2">
                     <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded bg-destructive/20 text-[10px] font-bold text-destructive">F</span>
                     <span className="font-medium text-foreground">Swipe Left: Go Back (False)</span>
@@ -188,14 +188,14 @@ const NotFound = () => {
               <div className="relative z-10 flex items-center justify-between gap-4 border-t border-border/40 px-5 py-4">
                 <motion.div
                   style={{ scale: falseButtonScale, backgroundColor: falseButtonBg }}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-destructive/30 py-2.5 text-xs font-bold text-destructive shadow-sm backdrop-blur-sm font-display"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-destructive/30 py-2.5 text-xs font-bold text-destructive shadow-sm backdrop-blur-sm font-display"
                 >
                   <X className="h-3.5 w-3.5 stroke-[3]" />
                   False
                 </motion.div>
                 <motion.div
                   style={{ scale: trueButtonScale, backgroundColor: trueButtonBg }}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-success/30 py-2.5 text-xs font-bold text-success shadow-sm backdrop-blur-sm font-display"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-success/30 py-2.5 text-xs font-bold text-success shadow-sm backdrop-blur-sm font-display"
                 >
                   True
                   <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -211,16 +211,16 @@ const NotFound = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={triggerSwipeLeft}
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors shadow-sm font-display"
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors shadow-sm font-display"
           >
             <ArrowLeft className="h-4 w-4" />
-            Go Back
+            Back to Safety
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={triggerSwipeRight}
-            className="flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-xs sm:text-sm font-bold text-background shadow-md hover:opacity-90 transition-opacity font-display"
+            className="flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-xs sm:text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-md shadow-primary/20 font-display"
           >
             <Home className="h-4 w-4" />
             Go Home

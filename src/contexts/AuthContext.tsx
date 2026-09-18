@@ -18,7 +18,7 @@ import {
 } from "@/services/institutionService";
 
 // Wraps a promise with a timeout so auth operations don't hang indefinitely
-function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number, label = "Operation"): Promise<T> {
     let timer: ReturnType<typeof setTimeout>;
     return Promise.race([
         promise,
@@ -85,7 +85,7 @@ interface AuthContextType {
         phoneConsent?: boolean,
         whatsappConsent?: boolean,
         userMode?: UserMode
-    ) => Promise<{ error?: string }>;
+    ) => Promise<{ error?: string; session?: Session | null; user?: User | null }>;
     signIn: (email: string, password: string) => Promise<{ error?: string }>;
     signInWithGoogle: (referralCode?: string) => Promise<{ error?: string }>;
     signOut: () => Promise<void>;
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         .maybeSingle(),
                     getLinkedInstitution(),
                 ]),
-                6000,
+                3500,
                 "Profile fetch"
             );
 
@@ -379,6 +379,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         unlockCount: 0,
                         isPremium: false,
                     });
+                stopLoading();
                 setTimeout(() => {
                     if (!cancelled && version === sessionVersion) {
                         void handleSession(session, version);
@@ -390,7 +391,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const initializeSession = async () => {
             const initialVersion = sessionVersion;
             try {
-                const { data, error } = await supabase.auth.getSession();
+                const { data, error } = await withTimeout(
+                    supabase.auth.getSession(),
+                    3000,
+                    "Get session"
+                );
                 if (error) throw error;
                 // A newer auth event wins over this startup snapshot.
                 if (cancelled || initialVersion !== sessionVersion) return;
@@ -413,6 +418,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         unlockCount: 0,
                         isPremium: false,
                     });
+                    stopLoading();
                     setTimeout(() => {
                         if (!cancelled && version === sessionVersion) {
                             void handleSession(session, version);
@@ -434,7 +440,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.warn("Auth safety timeout fired — forcing loading=false");
                 stopLoading();
             }
-        }, 7000);
+        }, 3000);
 
         let appListener: any;
         if (Capacitor.isNativePlatform()) {
@@ -469,7 +475,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phoneConsent?: boolean,
         whatsappConsent?: boolean,
         userMode?: UserMode
-    ): Promise<{ error?: string }> => {
+    ): Promise<{ error?: string; session?: Session | null; user?: User | null }> => {
         if (!supabase) return { error: "Supabase is not configured" };
 
         let data: any, error: any;
@@ -495,21 +501,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                     }
                 }),
-                10000,
+                4500,
                 "Sign up"
             );
             data = result.data;
             error = result.error;
         } catch (err: any) {
-            return { error: err?.message || "An unexpected error occurred during signup." };
+            const isTimeout = /timed out/i.test(err?.message || "");
+            return {
+                error: isTimeout
+                    ? "Sign-up request timed out. Please check your connection and try again."
+                    : (err?.message || "An unexpected error occurred during signup.")
+            };
         }
 
         if (error) return { error: error.message };
         if (!data.user) return { error: "Signup succeeded but no user returned" };
 
+        // If a session was returned (auto-confirm or email verification disabled),
+        // make user immediately active and stop loading so the UI is unblocked instantly.
+        if (data.session?.user) {
+            setUser((current) => current.id === data.session.user.id && !current.isGuest
+                ? current
+                : {
+                    id: data.session.user.id,
+                    email: data.session.user.email,
+                    isGuest: false,
+                    unlockCount: 0,
+                    isPremium: false,
+                });
+            stopLoading();
+        }
+
         // Fire-and-forget: save email consent + referrer in the background.
         // Don't block the UI — the user sees success immediately.
-        const updateProfile = async (retries = 3) => {
+        const updateProfile = async (retries = 2) => {
             if (!supabase || !data.user) return;
             for (let i = 0; i < retries; i++) {
                 try {
@@ -540,7 +566,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     console.warn(`Profile update retry ${i + 1} failed:`, err);
                 }
                 // Wait before retrying (shorter delay)
-                await new Promise((resolve) => setTimeout(resolve, 500));
+                await new Promise((resolve) => setTimeout(resolve, 300));
             }
         };
 
@@ -555,7 +581,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // is fire-and-forget, and the catalog should not wait on it.
         if (userMode) broadcastUserMode(userMode);
 
-        return {};
+        return { session: data.session, user: data.user };
     }, [user]);
 
     // --- Sign In ---
@@ -566,13 +592,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const result = await withTimeout(
                 supabase.auth.signInWithPassword({ email, password }),
-                10000,
+                5000,
                 "Sign in"
             );
             data = result.data;
             error = result.error;
         } catch (err: any) {
-            return { error: err?.message || "An unexpected error occurred during login." };
+            const isTimeout = /timed out/i.test(err?.message || "");
+            return {
+                error: isTimeout
+                    ? "Sign-in timed out. Please check your connection and try again."
+                    : (err?.message || "An unexpected error occurred during login.")
+            };
         }
 
         if (error) return { error: error.message };
@@ -611,21 +642,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 ? "com.truthswipe.app://callback"
                 : `${window.location.origin}/auth/callback`;
 
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: {
-                    redirectTo,
-                    queryParams: {
-                        prompt: "select_account"
-                    },
-                    data: refCode ? { referred_by_code: refCode } : undefined
-                } as any
-            });
-            
-            if (error) return { error: error.message };
+            const result = await withTimeout(
+                supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: {
+                        redirectTo,
+                        queryParams: {
+                            prompt: "select_account"
+                        },
+                        data: refCode ? { referred_by_code: refCode } : undefined
+                    } as any
+                }),
+                6000,
+                "Google sign in"
+            );
+
+            if (result.error) return { error: result.error.message };
             return {};
         } catch (err: any) {
-            return { error: err?.message || "An unexpected error occurred during Google sign in." };
+            const isTimeout = /timed out/i.test(err?.message || "");
+            return {
+                error: isTimeout
+                    ? "Google sign-in timed out. Please check your connection and try again."
+                    : (err?.message || "An unexpected error occurred during Google sign in.")
+            };
         }
     }, []);
 

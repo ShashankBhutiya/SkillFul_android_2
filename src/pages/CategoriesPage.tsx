@@ -74,7 +74,7 @@ const CategoriesPage = () => {
               <Link
                 key={entry.id}
                 to={entry.path}
-                className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-card/60 shadow-lg transition-transform hover:-translate-y-1"
+                className="group overflow-hidden rounded-xl border border-white/10 bg-card/60 shadow-lg transition-transform hover:-translate-y-1"
               >
                 <div className="relative h-52 overflow-hidden">
                   <img

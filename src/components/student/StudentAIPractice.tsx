@@ -11,11 +11,66 @@ import { useAuth } from "@/contexts/AuthContext";
 import { generatePracticeSet, getPracticeHistory, hasUsedAIPracticeTrial } from "@/services/aiPracticeService";
 import type { AIPracticeSet, PracticeLevel } from "@/types/aiPractice";
 import { SeoHead } from "@/components/SeoHead";
+import { hapticLight } from "@/hooks/useHaptics";
 
-const LEVELS: { value: PracticeLevel; label: string; detail: string }[] = [
-  { value: "beginner", label: "Beginner", detail: "Build foundations" },
-  { value: "intermediate", label: "Intermediate", detail: "Apply concepts" },
-  { value: "advanced", label: "Advanced", detail: "Test mastery" },
+interface LevelOption {
+  value: PracticeLevel;
+  label: string;
+  codename: string;
+  icon: string;
+  gradient: string;
+  glow: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  detail: string;
+  desc: string;
+  multiplier: string;
+}
+
+const LEVELS: LevelOption[] = [
+  {
+    value: "beginner",
+    label: "Beginner",
+    codename: "NOVICE",
+    icon: "🌱",
+    gradient: "from-emerald-500 to-teal-400",
+    glow: "rgba(16, 185, 129, 0.35)",
+    badgeBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+    badgeText: "text-emerald-700 dark:text-emerald-400",
+    badgeBorder: "border-emerald-500/30",
+    detail: "Build foundations",
+    desc: "Core definitions, fundamentals & clear conceptual walkthroughs",
+    multiplier: "1.0x",
+  },
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    codename: "ADEPT",
+    icon: "⚡",
+    gradient: "from-violet-600 via-purple-500 to-indigo-500",
+    glow: "rgba(139, 92, 246, 0.35)",
+    badgeBg: "bg-violet-500/10 dark:bg-violet-500/20",
+    badgeText: "text-violet-700 dark:text-violet-400",
+    badgeBorder: "border-violet-500/30",
+    detail: "Apply concepts",
+    desc: "Real technical interview rigor, code logic & practical problem solving",
+    multiplier: "1.5x",
+  },
+  {
+    value: "advanced",
+    label: "Advanced",
+    codename: "MASTER",
+    icon: "🔥",
+    gradient: "from-amber-500 via-rose-500 to-red-600",
+    glow: "rgba(244, 63, 94, 0.35)",
+    badgeBg: "bg-rose-500/10 dark:bg-rose-500/20",
+    badgeText: "text-rose-700 dark:text-rose-400",
+    badgeBorder: "border-rose-500/30",
+    detail: "Test mastery",
+    desc: "Deep edge-cases, system bottlenecks, traps & complex scenarios",
+    multiplier: "2.0x",
+  },
 ];
 
 export default function StudentAIPractice() {
@@ -130,7 +185,7 @@ export default function StudentAIPractice() {
 
         <div className="flex items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
-            <span className="flex h-2 w-2 rounded-none bg-primary shadow-[1px_1px_0_rgba(0,0,0,0.25)]" style={{ imageRendering: "pixelated" }} />
+            <span className="flex h-2 w-2 rounded-full bg-primary" />
             <Sparkles className="h-3.5 w-3.5" />
             AI Practice
           </div>
@@ -148,107 +203,145 @@ export default function StudentAIPractice() {
         <form onSubmit={submit} className="mt-6">
           <div>
             <label htmlFor="practice-topic" className="text-sm font-semibold text-foreground">I want to practise</label>
-            <div className={`topic-prompt relative mt-4${topic.trim() ? " is-filled" : ""}`}>
-              <div className="topic-prompt__atmosphere" aria-hidden="true">
-                <div className="topic-prompt__glow topic-prompt__glow--ambient" />
-                <div className="topic-prompt__glow topic-prompt__glow--core" />
-                <span className="topic-prompt__mote topic-prompt__mote--1" />
-                <span className="topic-prompt__mote topic-prompt__mote--2" />
-                <span className="topic-prompt__mote topic-prompt__mote--3" />
-              </div>
-              <span className="topic-prompt__tab">Your topic</span>
-              <div className="topic-prompt__shell">
-                <span className="topic-prompt__stud topic-prompt__stud--tl" />
-                <span className="topic-prompt__stud topic-prompt__stud--tr" />
-                <span className="topic-prompt__stud topic-prompt__stud--bl" />
-                <span className="topic-prompt__stud topic-prompt__stud--br" />
-                <div className="topic-prompt__frame">
-                  <WandSparkles className="pointer-events-none absolute left-3 top-3 z-10 h-4 w-4 text-primary" />
-                  <textarea
-                    id="practice-topic"
-                    aria-describedby="practice-visibility"
-                    value={topic}
-                    onChange={(event) => setTopic(event.target.value)}
-                    maxLength={240}
-                    placeholder="e.g. Binary trees or thermodynamics chapter 2"
-                    className="topic-prompt__input min-h-[88px] w-full resize-none bg-background py-3 pl-10 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/65"
-                  />
-                </div>
-              </div>
-              <span className="topic-prompt__caret" aria-hidden="true" />
-            </div>
-
-            {/* Quick Quest Inspiration Chips */}
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground mr-0.5">
-                Ideas:
-              </span>
-              {[
-                { label: "Binary Search Trees", icon: "⚡" },
-                { label: "Dynamic Programming", icon: "👾" },
-                { label: "SQL Joins & Indexing", icon: "💾" },
-                { label: "OS Scheduling", icon: "🕹️" },
-                { label: "System Design", icon: "🛡️" },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setTopic(item.label)}
-                  className="quest-chip"
-                >
-                  <span className="text-xs">{item.icon}</span>
-                  <span>{item.label}</span>
-                </button>
-              ))}
+            <div className="relative mt-3">
+              <WandSparkles className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-primary" />
+              <textarea
+                id="practice-topic"
+                aria-describedby="practice-visibility"
+                value={topic}
+                onChange={(event) => setTopic(event.target.value)}
+                maxLength={240}
+                placeholder="e.g. Binary trees or thermodynamics chapter 2"
+                className="min-h-[96px] w-full resize-none rounded-xl border border-border bg-card py-3 pl-10 pr-3 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+              />
             </div>
 
             <p id="practice-visibility" className="mt-3 text-xs leading-relaxed text-muted-foreground">
               Visible to your Placement Head if your institution is linked.
             </p>
 
-            {/* 8-bit Power Gauge (Difficulty Meter) */}
-            <fieldset className="mt-7">
+            {/* Creative Kinetic Challenge Slider */}
+            <fieldset className="mt-7 select-none">
               <div className="flex items-center justify-between mb-3">
-                <legend className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Challenge Level
+                <legend className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
+                  <span>Challenge Level</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/90 text-muted-foreground border border-border/50">
+                    Difficulty Mode
+                  </span>
                 </legend>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary font-mono">
-                  {levelIndex === 0 && <span>🌱 NOVICE</span>}
-                  {levelIndex === 1 && <span>⚡ ADEPT</span>}
-                  {levelIndex === 2 && <span>🔥 MASTER</span>}
-                  <span className="text-[11px] font-normal text-muted-foreground font-sans">· {selectedLevel.detail}</span>
-                </div>
+                <motion.div
+                  key={selectedLevel.value}
+                  initial={{ scale: 0.88, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 450, damping: 25 }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold font-mono border shadow-sm ${selectedLevel.badgeBg} ${selectedLevel.badgeText} ${selectedLevel.badgeBorder}`}
+                >
+                  <span className="text-sm">{selectedLevel.icon}</span>
+                  <span>{selectedLevel.codename}</span>
+                  <span className="opacity-30">|</span>
+                  <span className="font-sans font-medium text-[11px] opacity-90">{selectedLevel.multiplier} XP</span>
+                </motion.div>
               </div>
 
-              {/* 8-bit Pixel Energy Gauge */}
-              <div className="power-gauge">
-                <div className="power-gauge__track">
+              {/* Futuristic Slider Console */}
+              <div className="relative p-3 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm">
+                {/* Track Base */}
+                <div className="relative h-2.5 w-full rounded-full bg-muted/80 overflow-hidden">
+                  {/* Glowing Fluid Progress Rail */}
+                  <motion.div
+                    className={`h-full rounded-full bg-gradient-to-r ${selectedLevel.gradient}`}
+                    initial={false}
+                    animate={{
+                      width: levelIndex === 0 ? "16%" : levelIndex === 1 ? "50%" : "100%",
+                    }}
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                </div>
+
+                {/* Interactive Kinetic Level Nodes */}
+                <div className="relative flex justify-between items-center -mt-5 px-0.5">
                   {LEVELS.map((item, idx) => {
-                    const isActive = idx <= levelIndex;
+                    const isSelected = item.value === level;
+                    const isPast = idx <= levelIndex;
                     return (
                       <button
                         key={item.value}
                         type="button"
-                        onClick={() => setLevel(item.value)}
-                        className={`power-gauge__cell ${isActive ? "is-active" : ""}`}
-                        title={item.label}
+                        onClick={() => {
+                          setLevel(item.value);
+                          hapticLight();
+                        }}
+                        className="group relative flex flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl cursor-pointer"
                         aria-label={`Set challenge level to ${item.label}`}
-                      />
+                      >
+                        {/* Node Halo & Bead */}
+                        <div className="relative flex items-center justify-center">
+                          {isSelected && (
+                            <motion.span
+                              layoutId="active-aura"
+                              className="absolute -inset-1.5 rounded-full bg-primary/20 blur-sm pointer-events-none"
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            />
+                          )}
+                          <motion.div
+                            animate={{
+                              scale: isSelected ? 1.15 : 1,
+                              boxShadow: isSelected
+                                ? `0 0 16px ${item.glow}, 0 2px 8px rgba(0,0,0,0.15)`
+                                : "0 1px 3px rgba(0,0,0,0.08)",
+                            }}
+                            whileHover={{ scale: isSelected ? 1.2 : 1.08 }}
+                            whileTap={{ scale: 0.92 }}
+                            transition={{ type: "spring", stiffness: 450, damping: 24 }}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${
+                              isSelected
+                                ? "bg-background border-primary text-foreground shadow-md ring-2 ring-primary/25"
+                                : isPast
+                                  ? "bg-background border-primary/60 text-foreground"
+                                  : "bg-muted border-border/80 text-muted-foreground group-hover:border-primary/40 group-hover:bg-background"
+                            }`}
+                          >
+                            <span className="text-base leading-none select-none drop-shadow-sm">
+                              {item.icon}
+                            </span>
+                          </motion.div>
+                        </div>
+
+                        {/* Level Title Below Node */}
+                        <div className="mt-2 text-center">
+                          <span
+                            className={`block text-xs transition-colors ${
+                              isSelected
+                                ? "text-foreground font-bold"
+                                : "text-muted-foreground/80 font-medium group-hover:text-foreground"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
-                <div className="mt-2 flex justify-between px-1 text-[11px] font-medium text-muted-foreground">
-                  {LEVELS.map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setLevel(item.value)}
-                      className={`transition-colors ${item.value === level ? "text-primary font-bold" : "hover:text-foreground"}`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+
+                {/* Dynamic Detail Hologram Box */}
+                <motion.div
+                  key={selectedLevel.value}
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className={`mt-3.5 p-2.5 rounded-lg border flex items-center justify-between gap-3 text-xs transition-colors ${selectedLevel.badgeBg} ${selectedLevel.badgeBorder}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="flex h-2 w-2 rounded-full shrink-0 bg-current animate-ping opacity-75" />
+                    <p className="truncate text-foreground font-medium text-[11px] sm:text-xs">
+                      {selectedLevel.desc}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-background/80 ${selectedLevel.badgeText} border border-current/20 shadow-xs`}>
+                    {selectedLevel.detail}
+                  </span>
+                </motion.div>
               </div>
             </fieldset>
 
@@ -286,14 +379,11 @@ export default function StudentAIPractice() {
             </AnimatePresence>
           </div>
 
-          <div className="pixel-btn-wrapper mt-7">
-            {/* 8-bit Glow Behind Generate Button */}
-            <div className={`pixel-btn-glow${trialUsed ? " pixel-btn-glow--gold" : ""}`} aria-hidden="true" />
-
+          <div className="mt-7">
             {trialUsed ? (
               <Link
                 to="/premium"
-                className="pixel-btn-modern pixel-btn-gold flex w-full items-center justify-center gap-2 py-3.5 text-sm font-bold"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3.5 px-5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-600 active:scale-[0.99]"
               >
                 <Sparkles className="h-4 w-4" /> Upgrade for More Sets <ArrowRight className="h-4 w-4" />
               </Link>
@@ -301,7 +391,7 @@ export default function StudentAIPractice() {
               <button
                 type="submit"
                 disabled={loading || isLoading || !historyLoaded}
-                className="pixel-btn-modern flex w-full items-center justify-center gap-2 py-3.5 text-sm font-bold disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.99] disabled:opacity-60"
               >
                 {loading ? (
                   <>
@@ -310,7 +400,6 @@ export default function StudentAIPractice() {
                   </>
                 ) : (
                   <>
-                    <span className="text-xs leading-none opacity-80">✦</span>
                     <BrainCircuit className="h-4 w-4" />
                     <span>{user.isPremium ? "Start Practice Set" : "Generate Free Set"}</span>
                     <ArrowRight className="h-4 w-4" />

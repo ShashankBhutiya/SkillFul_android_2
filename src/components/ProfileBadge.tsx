@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import ProfileSettingsModal from "./ProfileSettingsModal";
 import UserModeToggle from "./UserModeToggle";
+import ThemeToggle from "./ThemeToggle";
 import { hapticLight, hapticSuccess } from "@/hooks/useHaptics";
 import { razorpayService } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
@@ -178,6 +179,11 @@ const ProfileBadge = () => {
                                 <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/70">
                                     Changes which skills you see. Progress is kept for both.
                                 </p>
+                            </div>
+
+                            {/* Theme Toggle */}
+                            <div className="border-b border-border/40">
+                                <ThemeToggle variant="dropdown-item" />
                             </div>
 
                             {/* Profile Settings */}

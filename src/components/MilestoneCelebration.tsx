@@ -77,7 +77,7 @@ export const MilestoneCelebration = ({
         animate={{ y: 0, scale: 1, opacity: 1 }}
         exit={{ y: 50, scale: 0.9, opacity: 0 }}
         transition={{ type: "spring", damping: 20, stiffness: 300 }}
-        className="relative w-full max-w-sm bg-card/90 border border-primary/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl z-20 overflow-hidden flex flex-col items-center text-center"
+        className="relative w-full max-w-sm bg-card/90 border border-primary/20 rounded-xl p-6 shadow-2xl backdrop-blur-xl z-20 overflow-hidden flex flex-col items-center text-center"
       >
         {/* Glow behind trophy */}
         <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-gradient-to-tr ${category.gradient} opacity-20 blur-3xl -z-10`} />
@@ -87,7 +87,7 @@ export const MilestoneCelebration = ({
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: [0, 1.2, 1], rotate: 0 }}
           transition={{ delay: 0.2, type: "spring", damping: 12 }}
-          className="relative w-20 h-20 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4"
+          className="relative w-20 h-20 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4"
         >
           <Trophy className="w-10 h-10 text-yellow-500 fill-yellow-500/10 animate-bounce" />
           <motion.div
@@ -100,7 +100,7 @@ export const MilestoneCelebration = ({
         </motion.div>
 
         {/* Category name & badge */}
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary mb-1 inline-flex items-center gap-1.5">
+        <span className="text-xs font-semibold px-3 py-1 rounded-md bg-primary/10 text-primary mb-1 inline-flex items-center gap-1.5">
           <CategoryIcon categoryId={category.id} className="w-3.5 h-3.5 shrink-0" />
           {category.name}
         </span>
@@ -114,7 +114,7 @@ export const MilestoneCelebration = ({
         </p>
 
         {/* Milestone Stats Checkpoint Indicator */}
-        <div className="w-full bg-muted/60 rounded-2xl p-4 my-5 border border-border/40 text-left">
+        <div className="w-full bg-muted/60 rounded-lg p-4 my-5 border border-border/40 text-left">
           <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold mb-2">
             <span>CHECKPOINT REACHED</span>
             <span className="text-success flex items-center gap-1">
@@ -132,7 +132,7 @@ export const MilestoneCelebration = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="bg-muted/40 p-3 rounded-2xl border border-border/40"
+            className="bg-muted/40 p-3 rounded-lg border border-border/40"
           >
             <p className="font-display font-bold text-sm text-foreground italic leading-tight">
               "{message}"
@@ -145,7 +145,7 @@ export const MilestoneCelebration = ({
           whileHover={{ scale: 1.02, y: -1 }}
           whileTap={{ scale: 0.98 }}
           onClick={onDismiss}
-          className={`w-full py-4 rounded-2xl bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg flex items-center justify-center gap-2 cursor-pointer`}
+          className={`w-full py-3.5 rounded-lg bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-base shadow-lg flex items-center justify-center gap-2 cursor-pointer`}
         >
           Keep Swiping <Check className="w-5 h-5" />
         </motion.button>

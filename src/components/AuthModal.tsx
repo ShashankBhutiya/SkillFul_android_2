@@ -27,6 +27,7 @@ import {
     type InstitutionEnrollmentValue,
 } from "@/components/InstitutionEnrollmentFields";
 import { storePendingStudentCodeClaim } from "@/services/institutionService";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -117,15 +118,22 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             storePendingStudentCodeClaim(studentCodeClaim);
         }
 
+        // Auto-reset googleLoading after 5s so the button never stays frozen
+        const safetyTimer = setTimeout(() => {
+            setGoogleLoading(false);
+        }, 5000);
+
         try {
             const result = await signInWithGoogle(referralCode.trim() || undefined);
             if (result.error) {
+                clearTimeout(safetyTimer);
                 setError(formatAuthError(result.error));
                 setGoogleLoading(false);
             } else {
                 setSuccess("Redirecting to Google...");
             }
         } catch (err: unknown) {
+            clearTimeout(safetyTimer);
             const message = err instanceof Error ? err.message : "Google Sign-In failed.";
             setError(formatAuthError(message));
             setGoogleLoading(false);
@@ -173,9 +181,16 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
         setLoading(true);
 
+        // Auto-reset loading after 5s so the submit button never gets stuck in a spinner
+        const safetyTimer = setTimeout(() => {
+            setLoading(false);
+            setError("Request is taking longer than expected. Please check your network connection.");
+        }, 5000);
+
         try {
             if (tab === "login") {
                 const result = await signIn(email, password);
+                clearTimeout(safetyTimer);
                 if (result.error) {
                     setError(formatAuthError(result.error));
                 } else {
@@ -193,13 +208,25 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     whatsappConsent,
                     userMode ?? undefined
                 );
+                clearTimeout(safetyTimer);
                 if (result.error) {
                     setError(formatAuthError(result.error));
+                } else if (result.session) {
+                    toast({
+                        title: "Welcome to Skillful!",
+                        description: "Your account has been created and you're signed in.",
+                    });
+                    onClose();
+                    resetForm();
                 } else {
-                    setSuccess("Account created! Check your email to confirm.");
+                    setSuccess("Account created! Check your email to confirm your account.");
                 }
             }
+        } catch (err: any) {
+            clearTimeout(safetyTimer);
+            setError(formatAuthError(err?.message || "An unexpected error occurred."));
         } finally {
+            clearTimeout(safetyTimer);
             setLoading(false);
         }
     };
@@ -221,29 +248,20 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                         exit={{ opacity: 0, scale: 0.96, y: 12 }}
                         transition={{ type: "spring", damping: 26, stiffness: 360 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="modal-chassis relative w-full max-w-[430px] max-h-[90vh] overflow-y-auto custom-scrollbar p-6"
+                        className="relative w-full max-w-[420px] max-h-[90vh] overflow-y-auto custom-scrollbar rounded-xl border border-border bg-card p-6 shadow-2xl"
                     >
-                        {/* 8-bit Corner Studs */}
-                        <div className="topic-prompt__stud topic-prompt__stud--tl" style={{ top: "6px", left: "6px" }} />
-                        <div className="topic-prompt__stud topic-prompt__stud--tr" style={{ top: "6px", right: "6px" }} />
-                        <div className="topic-prompt__stud topic-prompt__stud--bl" style={{ bottom: "6px", left: "6px" }} />
-                        <div className="topic-prompt__stud topic-prompt__stud--br" style={{ bottom: "6px", right: "6px" }} />
-
-                        {/* Ambient glow behind chassis */}
+                        {/* Ambient glow */}
                         <div
                             className="pointer-events-none absolute -top-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl"
                             aria-hidden
                         />
 
-                        {/* Top Console Header Bar */}
-                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-border/70">
+                        {/* Top Header Bar */}
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b border-border/60">
                             <div className="flex items-center gap-2">
-                                <div className="relative flex h-2 w-2 items-center justify-center">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
-                                </div>
-                                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
-                                    SKILLFUL ID // {tab === "login" ? "ACCESS GATE" : "ENROLLMENT"}
+                                <Sparkles className="w-4 h-4 text-primary" />
+                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Skillful Account
                                 </span>
                             </div>
 
@@ -279,23 +297,31 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                             </p>
                         </div>
 
-                        {/* Tactile 8-bit Tab Switcher */}
-                        <div className="modal-tab-track mb-5">
+                        {/* Tab Switcher */}
+                        <div className="flex rounded-lg bg-muted p-1 mb-5">
                             <button
                                 type="button"
                                 onClick={() => toggleTab("login")}
-                                className={`modal-tab-btn ${tab === "login" ? "is-active" : ""}`}
+                                className={`flex flex-1 items-center justify-center gap-2 py-2 rounded-md text-xs font-semibold transition-all ${
+                                    tab === "login"
+                                        ? "bg-card text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
                             >
                                 <LogIn className="w-3.5 h-3.5" />
-                                <span>SIGN IN</span>
+                                <span>Sign In</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => toggleTab("signup")}
-                                className={`modal-tab-btn ${tab === "signup" ? "is-active" : ""}`}
+                                className={`flex flex-1 items-center justify-center gap-2 py-2 rounded-md text-xs font-semibold transition-all ${
+                                    tab === "signup"
+                                        ? "bg-card text-foreground shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
                             >
                                 <UserPlus className="w-3.5 h-3.5" />
-                                <span>CREATE ACCOUNT</span>
+                                <span>Create Account</span>
                             </button>
                         </div>
 
@@ -536,28 +562,27 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                 )}
                             </AnimatePresence>
 
-                            {/* Tactile 3D Submit Button with 8-bit Glow */}
-                            <div className="pixel-btn-wrapper pt-1">
-                                <div className="pixel-btn-glow" aria-hidden="true" />
+                            {/* Submit Button */}
+                            <div className="pt-1">
                                 <button
                                     type="submit"
                                     disabled={loading || googleLoading}
-                                    className="pixel-btn-modern flex w-full items-center justify-center gap-2 py-3 text-sm font-bold tracking-wider uppercase disabled:opacity-60"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.99] disabled:opacity-60"
                                 >
                                     {loading ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>AUTHENTICATING...</span>
+                                            <span>Signing In...</span>
                                         </>
                                     ) : tab === "login" ? (
                                         <>
-                                            <span>SIGN IN TO SKILLFUL</span>
+                                            <span>Sign In</span>
                                             <ArrowRight className="w-4 h-4" />
                                         </>
                                     ) : (
                                         <>
                                             <Sparkles className="w-4 h-4" />
-                                            <span>INITIALIZE ACCOUNT</span>
+                                            <span>Create Account</span>
                                             <ArrowRight className="w-4 h-4" />
                                         </>
                                     )}
@@ -606,11 +631,6 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                                     </>
                                 )}
                             </p>
-
-                            <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
-                                <span className="inline-block w-1.5 h-1.5 bg-primary/40 rounded-none" />
-                                <span>Secure Session // 256-bit Encrypted</span>
-                            </div>
                         </div>
                     </motion.div>
                 </motion.div>

@@ -22,6 +22,12 @@ vi.mock("@/lib/supabase", () => ({
         await authMock.callback?.("SIGNED_IN", { user });
         return { data: { user }, error: null };
       },
+      signUp: async () => {
+        const user = { id: "new-user", email: "new@example.com" };
+        const session = { user };
+        await authMock.callback?.("SIGNED_IN", session);
+        return { data: { user, session }, error: null };
+      },
     },
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: () => new Promise(() => {}) }) }),
@@ -76,5 +82,25 @@ describe("sign-in session handling", () => {
     });
 
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
+  });
+
+  it("finishes sign-up and exposes the user with session immediately", async () => {
+    let auth: ReturnType<typeof useAuth>;
+    function Probe() {
+      auth = useAuth();
+      return <span>{auth.user.isGuest ? "guest" : auth.user.email}</span>;
+    }
+
+    const screen = render(<AuthProvider><Probe /></AuthProvider>);
+    await waitFor(() => expect(authMock.callback).toBeTypeOf("function"));
+
+    let result: { error?: string; session?: any } | undefined;
+    await act(async () => {
+      result = await auth!.signUp("new@example.com", "password");
+    });
+
+    expect(result?.error).toBeUndefined();
+    expect(screen.getByText("new@example.com")).toBeInTheDocument();
+    expect(auth!.isLoading).toBe(false);
   });
 });

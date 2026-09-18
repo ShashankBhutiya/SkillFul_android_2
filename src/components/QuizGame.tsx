@@ -407,19 +407,19 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 z-0" />
 
       {/* Top Bar */}
-      <div className="relative z-10 flex items-center justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] shrink-0">
-        <button onClick={onBack} className="p-2 rounded-full bg-muted/80 backdrop-blur-sm hover:bg-muted transition-colors">
+      <div className="relative z-10 mx-auto max-w-xl w-full flex items-center justify-between gap-2 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] shrink-0">
+        <button onClick={onBack} className="p-2 rounded-lg bg-muted/80 backdrop-blur-sm hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
           {/* Difficulty badge */}
-          <span className={`text-xs font-display font-bold px-3 py-1 rounded-full backdrop-blur-sm ${difficulty === "easy"
+          <span className={`text-xs font-display font-bold px-3 py-1 rounded-md backdrop-blur-sm ${difficulty === "easy"
             ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
             : "bg-orange-500/20 text-orange-700 dark:text-orange-300"
             }`}>
             {diffLabel}
           </span>
-          <button onClick={toggleSound} className="p-2 rounded-full bg-muted/80 backdrop-blur-sm hover:bg-muted transition-colors">
+          <button onClick={toggleSound} className="p-2 rounded-lg bg-muted/80 backdrop-blur-sm hover:bg-muted transition-colors">
             {soundOn ? <Volume2 className="w-4 h-4 text-foreground" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
           </button>
           {streak > 0 && (
@@ -427,7 +427,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
               key={streak}
               initial={{ scale: 1.5 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-1 bg-secondary/20 backdrop-blur-sm rounded-full px-3 py-1"
+              className="flex items-center gap-1 bg-secondary/20 backdrop-blur-sm rounded-md px-2.5 py-1"
             >
               <Zap className="w-4 h-4 text-orange-500 fill-orange-500" />
               <span className="font-display font-bold text-foreground">{streak}</span>
@@ -437,7 +437,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
             key={score}
             initial={{ scale: 1.3 }}
             animate={{ scale: 1 }}
-            className="whitespace-nowrap bg-primary/90 backdrop-blur-sm rounded-full px-2.5 sm:px-4 py-1"
+            className="whitespace-nowrap bg-primary/90 backdrop-blur-sm rounded-md px-2.5 sm:px-3 py-1"
           >
             <span className="font-display font-bold text-primary-foreground">{score} pts</span>
           </motion.div>
@@ -446,7 +446,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
 
       {/* Milestone Progress Bar */}
       <div className="compact-landscape-hide relative z-10 px-3 sm:px-4 py-1 shrink-0">
-        <div className="max-w-md mx-auto bg-card/70 backdrop-blur-md rounded-2xl p-3 border border-border/40 shadow-sm flex flex-col gap-1.5">
+        <div className="max-w-md mx-auto bg-card/70 backdrop-blur-md rounded-xl p-3 border border-border/40 shadow-sm flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
             <span className="flex items-center gap-1 font-display">
               <Zap className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
@@ -456,9 +456,9 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
               {progressCount} / 5
             </span>
           </div>
-          <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden relative">
+          <div className="h-2.5 w-full bg-muted rounded-md overflow-hidden relative">
             <motion.div
-              className={`h-full rounded-full bg-gradient-to-r ${category.gradient}`}
+              className={`h-full rounded-md bg-gradient-to-r ${category.gradient}`}
               animate={{ width: `${(progressCount / 5) * 100}%` }}
               transition={{ type: "spring", damping: 20, stiffness: 120 }}
             />
@@ -537,8 +537,8 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                       transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
                       className="w-24 h-24 shrink-0 relative"
                     >
-                      <div className="absolute inset-0 bg-primary rounded-[2rem] rounded-bl-xl shadow-2xl border-2 border-primary-foreground/20 overflow-hidden">
-                        <div className="absolute top-2.5 left-2.5 right-2.5 bottom-2.5 bg-white/20 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-primary rounded-xl rounded-bl-md shadow-2xl border-2 border-primary-foreground/20 overflow-hidden">
+                        <div className="absolute top-2.5 left-2.5 right-2.5 bottom-2.5 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center gap-2">
                           <div className="w-2.5 h-3.5 bg-primary-foreground rounded-full animate-pulse" />
                           <div className="w-2.5 h-3.5 bg-primary-foreground rounded-full animate-pulse" />
                         </div>
@@ -547,12 +547,12 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                       <div className="absolute -top-1 left-1.5 w-3 h-5 bg-primary rounded-t-full -rotate-12 -z-10" />
                       <div className="absolute -top-1 right-1.5 w-3 h-5 bg-primary rounded-t-full rotate-12 -z-10" />
                     </motion.div>
-                    <div className="bg-success/90 text-success-foreground border border-success/30 shadow-2xl shadow-success/20 backdrop-blur-md rounded-2xl px-6 py-3 font-display font-bold text-2xl text-center">
+                    <div className="bg-success/90 text-success-foreground border border-success/30 shadow-2xl shadow-success/20 backdrop-blur-md rounded-xl px-6 py-3 font-display font-bold text-2xl text-center">
                       {feedbackMessage}
                     </div>
                   </>
                 ) : (
-                  <div className="bg-destructive/90 text-destructive-foreground border border-destructive/30 shadow-2xl shadow-destructive/20 backdrop-blur-md rounded-2xl px-6 py-3 font-display font-bold text-xl flex items-center gap-2">
+                  <div className="bg-destructive/90 text-destructive-foreground border border-destructive/30 shadow-2xl shadow-destructive/20 backdrop-blur-md rounded-xl px-6 py-3 font-display font-bold text-xl flex items-center gap-2">
                     <X className="w-6 h-6 stroke-[3]" />
                     {feedbackMessage}
                   </div>
@@ -570,7 +570,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                 exit={{ scale: 0.8, opacity: 0 }}
                 className="absolute inset-0 z-50 flex items-center justify-center"
               >
-                <div className="bg-card/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mx-4 border-2 border-destructive/30 max-w-sm w-full">
+                <div className="bg-card/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 mx-4 border-2 border-destructive/30 max-w-sm w-full">
                   <div className="text-center flex flex-col items-center">
                     <XCircle className="w-12 h-12 text-destructive mb-3" />
                     <p className="font-display font-bold text-lg text-foreground mb-1">{feedbackMessage}</p>
@@ -580,7 +580,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                         {currentCorrectAnswer ? "TRUE ✓" : "FALSE ✕"}
                       </span>
                     </p>
-                    <div className="bg-muted rounded-xl p-4 mb-4 text-left">
+                    <div className="bg-muted rounded-md p-4 mb-4 text-left">
                       <p className="text-sm text-foreground font-body leading-relaxed flex items-start gap-2">
                         <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                         <span>{currentExplanation}</span>
@@ -592,7 +592,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={dismissExplanation}
-                      className={`w-full py-3 rounded-xl bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg`}
+                      className={`w-full py-3 rounded-lg bg-gradient-to-r ${category.gradient} text-white font-display font-bold text-lg shadow-lg`}
                     >
                       Got it! →
                     </motion.button>
@@ -623,7 +623,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                 exit={{ scale: 0.8, opacity: 0 }}
                 className="absolute inset-0 z-50 flex items-center justify-center"
               >
-                <div className="bg-card/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mx-4 border-2 border-primary/30 max-w-sm w-full">
+                <div className="bg-card/95 backdrop-blur-lg rounded-xl shadow-2xl p-6 mx-4 border-2 border-primary/30 max-w-sm w-full">
                   <div className="text-center flex flex-col items-center">
                     <Lock className="w-12 h-12 text-primary mb-3" />
                     <h3 className="font-display font-bold text-2xl text-foreground mb-1">
@@ -640,7 +640,7 @@ const QuizGame = ({ categoryId, difficulty, onBack, onHome, onSwitchDifficulty, 
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowAuthModal(true)}
-                      className={`w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-display font-bold text-lg shadow-lg mb-3`}
+                      className={`w-full py-3 rounded-lg bg-gradient-to-r from-primary to-accent text-white font-display font-bold text-lg shadow-lg mb-3`}
                     >
                       Sign In / Sign Up
                     </motion.button>
