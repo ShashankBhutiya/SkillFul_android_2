@@ -180,7 +180,7 @@ export default function StudentAIPractice() {
   return (
     <MainLayout>
       <SeoHead title="AI Practice" description="Generate personalised practice questions for your degree, level, and topic." path="/skills" />
-      <div className="relative mx-auto w-full max-w-2xl px-4 pb-12 pt-3 sm:px-6">
+      <div className="relative mx-auto w-full max-w-2xl px-4 pb-12 pt-3 sm:px-6 min-w-0">
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_68%)]" />
 
         <div className="flex items-center justify-between gap-3">
@@ -200,8 +200,8 @@ export default function StudentAIPractice() {
           </p>
         </motion.div>
 
-        <form onSubmit={submit} className="mt-6">
-          <div>
+        <form onSubmit={submit} className="mt-6 w-full min-w-0">
+          <div className="w-full min-w-0">
             <label htmlFor="practice-topic" className="text-sm font-semibold text-foreground">I want to practise</label>
             <div className="relative mt-3">
               <WandSparkles className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-primary" />
@@ -221,8 +221,8 @@ export default function StudentAIPractice() {
             </p>
 
             {/* Creative Kinetic Challenge Slider */}
-            <fieldset className="mt-7 select-none">
-              <div className="flex items-center justify-between mb-3">
+            <fieldset className="mt-7 select-none min-w-0 w-full">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <legend className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                   <span>Challenge Level</span>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/90 text-muted-foreground border border-border/50">
@@ -244,7 +244,7 @@ export default function StudentAIPractice() {
               </div>
 
               {/* Futuristic Slider Console */}
-              <div className="relative p-3 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm">
+              <div className="relative p-3 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm w-full min-w-0">
                 {/* Track Base */}
                 <div className="relative h-2.5 w-full rounded-full bg-muted/80 overflow-hidden">
                   {/* Glowing Fluid Progress Rail */}
@@ -259,7 +259,7 @@ export default function StudentAIPractice() {
                 </div>
 
                 {/* Interactive Kinetic Level Nodes */}
-                <div className="relative flex justify-between items-center -mt-5 px-0.5">
+                <div className="relative flex justify-between items-center -mt-5 px-1 sm:px-2 w-full">
                   {LEVELS.map((item, idx) => {
                     const isSelected = item.value === level;
                     const isPast = idx <= levelIndex;
@@ -271,7 +271,7 @@ export default function StudentAIPractice() {
                           setLevel(item.value);
                           hapticLight();
                         }}
-                        className="group relative flex flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl cursor-pointer"
+                        className="group relative flex flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl cursor-pointer shrink-0"
                         aria-label={`Set challenge level to ${item.label}`}
                       >
                         {/* Node Halo & Bead */}
@@ -330,15 +330,15 @@ export default function StudentAIPractice() {
                   initial={{ opacity: 0, y: 3 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.18 }}
-                  className={`mt-3.5 p-2.5 rounded-lg border flex items-center justify-between gap-3 text-xs transition-colors ${selectedLevel.badgeBg} ${selectedLevel.badgeBorder}`}
+                  className={`mt-3.5 p-2.5 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs transition-colors ${selectedLevel.badgeBg} ${selectedLevel.badgeBorder}`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="flex h-2 w-2 rounded-full shrink-0 bg-current animate-ping opacity-75" />
-                    <p className="truncate text-foreground font-medium text-[11px] sm:text-xs">
+                    <p className="line-clamp-2 sm:truncate text-foreground font-medium text-[11px] sm:text-xs">
                       {selectedLevel.desc}
                     </p>
                   </div>
-                  <span className={`shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-background/80 ${selectedLevel.badgeText} border border-current/20 shadow-xs`}>
+                  <span className={`self-start sm:self-auto shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-background/80 ${selectedLevel.badgeText} border border-current/20 shadow-xs`}>
                     {selectedLevel.detail}
                   </span>
                 </motion.div>

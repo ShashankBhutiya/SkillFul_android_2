@@ -169,9 +169,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFixedViewportRoute = location.pathname === "/streak";
 
-  // Check if running inside native Capacitor mobile wrapper
-  const isCapacitor = typeof window !== "undefined" && (window as Window & { Capacitor?: unknown }).Capacitor !== undefined;
-
   // Scroll to top when path changes
   useEffect(() => {
     if (scrollRef.current) {
@@ -180,25 +177,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     window.scrollTo({ top: 0 });
   }, [location.pathname]);
 
-  // If in native mobile Capacitor wrapper, preserve app-viewport containment
-  if (isCapacitor) {
-    return (
-      <div className="app-viewport relative bg-background flex flex-col overflow-hidden">
-        <PwaInstallPrompt />
-        <AppHeader pathname={location.pathname} />
-        <main
-          id="main-content"
-          ref={scrollRef}
-          className={`app-scroll-content flex-1 min-h-0 relative z-10 w-full overflow-x-hidden ${isFixedViewportRoute ? "overflow-y-hidden" : "overflow-y-auto"}`}
-        >
-          {children}
-        </main>
-        <BottomTabBar pathname={location.pathname} className="absolute" />
-      </div>
-    );
-  }
-
-  // Unified Responsive Web Layout (Mobile < 768px, Tablet 768px-1023px, Desktop >= 1024px)
+  // Unified Responsive Layout (Mobile < 768px, Tablet 768px-1023px, Desktop >= 1024px)
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background text-foreground flex flex-col relative selection:bg-primary/20">
       <PwaInstallPrompt />
