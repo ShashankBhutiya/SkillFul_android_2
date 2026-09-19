@@ -156,9 +156,18 @@ export function InstitutionEnrollmentFields({
                         aria-describedby={errors.code ? "college-student-code-error" : undefined}
                         aria-invalid={!!errors.code}
                         value={value.code}
-                        onChange={(event) => change("code", event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                        onChange={(event) => {
+                            const clean = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+                            change("code", clean);
+                        }}
+                        onPaste={(event) => {
+                            event.preventDefault();
+                            const pasted = event.clipboardData?.getData("text") || "";
+                            const clean = pasted.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+                            change("code", clean);
+                        }}
                         disabled={disabled}
-                        maxLength={20}
+                        maxLength={32}
                         autoCapitalize="characters"
                         autoComplete="off"
                         spellCheck={false}
@@ -176,11 +185,24 @@ export function InstitutionEnrollmentFields({
                     aria-describedby={errors.rollNumber ? "college-roll-number-error" : undefined}
                     aria-invalid={!!errors.rollNumber}
                     value={value.rollNumber}
-                    onChange={(event) => change("rollNumber", Array.from(event.target.value.toUpperCase())
-                        .filter((character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127)
-                        .join(""))}
+                    onChange={(event) => {
+                        const clean = Array.from(event.target.value.toUpperCase())
+                            .filter((character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127)
+                            .join("")
+                            .slice(0, 40);
+                        change("rollNumber", clean);
+                    }}
+                    onPaste={(event) => {
+                        event.preventDefault();
+                        const pasted = event.clipboardData?.getData("text") || "";
+                        const clean = Array.from(pasted.trim().toUpperCase())
+                            .filter((character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127)
+                            .join("")
+                            .slice(0, 40);
+                        change("rollNumber", clean);
+                    }}
                     disabled={disabled}
-                    maxLength={40}
+                    maxLength={50}
                     autoCapitalize="characters"
                     autoComplete="off"
                     spellCheck={false}

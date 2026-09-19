@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, AlertCircle, Loader2, CheckCircle2, Unlink, Save } from "lucide-react";
@@ -65,9 +65,11 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [institutionLoading, setInstitutionLoading] = useState(false);
     const [collegeResetLoading, setCollegeResetLoading] = useState(false);
 
-    // Initialize state when modal opens or user profile loads
+    const prevIsOpenRef = useRef(false);
+
+    // Initialize state only when modal opens
     useEffect(() => {
-        if (isOpen && user) {
+        if (isOpen && !prevIsOpenRef.current && user) {
             setFirstName(user.firstName || "");
             setLastName(user.lastName || "");
             setDegree(user.degree || "");
@@ -80,7 +82,9 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             setCollegeError("");
             setSuccess("");
             setInstitutionEnrollment(emptyInstitutionEnrollment);
+            setInstitutionErrors({});
         }
+        prevIsOpenRef.current = isOpen;
     }, [isOpen, user]);
 
     const saveProfileFields = () => updateProfileSettings(
@@ -139,20 +143,21 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
         setLoading(true);
 
         try {
-            const result = await saveProfileFields();
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
             let institutionName = "";
             if (collegeClaim) {
                 institutionName = await claimStudentCode(collegeClaim, user.id);
                 clearPendingStudentCodeClaim();
-                await refreshProfile();
                 setInstitutionEnrollment(emptyInstitutionEnrollment);
                 setInstitutionErrors({});
                 setCollegeError("");
             }
+
+            const result = await saveProfileFields();
+            if (result.error && !institutionName) {
+                throw new Error(result.error);
+            }
+
+            await refreshProfile();
 
             const message = institutionName
                 ? `Your settings were saved and you are now linked to ${institutionName}.`
@@ -169,13 +174,14 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                 : err?.message || "Your changes could not be saved. Please try again.";
             if (collegeClaim) {
                 setCollegeError(message);
+            } else {
+                setError(message);
+                toast({
+                    title: "Changes were not saved",
+                    description: message,
+                    variant: "destructive",
+                });
             }
-            setError(message);
-            toast({
-                title: collegeClaim ? "College was not linked" : "Changes were not saved",
-                description: message,
-                variant: "destructive",
-            });
         } finally {
             setLoading(false);
         }
@@ -191,7 +197,6 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
         if (Object.keys(validationErrors).length) {
             const message = "Check the highlighted college details and try again.";
             setCollegeError(message);
-            setError(message);
             return;
         }
         const claim = toStudentCodeClaim(institutionEnrollment, {
@@ -202,13 +207,17 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
 
         setInstitutionLoading(true);
         try {
-            if (phone.trim() && !/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
-                throw new Error("Please enter a valid phone number before linking your college.");
-            }
-            const profileResult = await saveProfileFields();
-            if (profileResult.error) throw new Error(profileResult.error);
+            // Claim the student access code directly. Profile fields (e.g. phone) must not block college linking.
             const institutionName = await claimStudentCode(claim, user.id);
             clearPendingStudentCodeClaim();
+
+            // Background-sync general profile fields if modified, without failing college linking
+            if (phone.trim() || firstName.trim() || lastName.trim()) {
+                if (!phone.trim() || /^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
+                    void saveProfileFields().catch((err) => console.warn("Background profile save note:", err));
+                }
+            }
+
             await refreshProfile();
             setInstitutionEnrollment(emptyInstitutionEnrollment);
             setInstitutionErrors({});
@@ -218,8 +227,6 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
         } catch (err: any) {
             const message = formatStudentCodeClaimError(err);
             setCollegeError(message);
-            setError(message);
-            toast({ title: "College was not linked", description: message, variant: "destructive" });
         } finally {
             setInstitutionLoading(false);
         }

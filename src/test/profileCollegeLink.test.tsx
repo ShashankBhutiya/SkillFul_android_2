@@ -123,5 +123,51 @@ describe("Profile Settings college link", () => {
     const errorAlert = await screen.findByRole("alert");
     expect(errorAlert).toHaveTextContent("Invalid student code for this college.");
   });
+
+  it("links the college successfully on the first attempt even if profile fields update returns an error", async () => {
+    mocks.updateProfileSettings.mockResolvedValueOnce({ error: "Profile write delayed" });
+    mocks.claimStudentCode.mockResolvedValueOnce("Test College");
+
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    fireEvent.change(screen.getByLabelText("College"), { target: { value: "college-1" } });
+    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "ABCDEF1234567890ABCD" } });
+    fireEvent.change(screen.getByLabelText("Roll number"), { target: { value: "22CSE104" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Link my college" }));
+
+    await waitFor(() => expect(mocks.claimStudentCode).toHaveBeenCalledWith({
+      institutionId: "college-1",
+      code: "ABCDEF1234567890ABCD",
+      rollNumber: "22CSE104",
+      degree: "",
+      academicYear: "",
+    }, "user-1"));
+    expect(mocks.clearPendingStudentCodeClaim).toHaveBeenCalled();
+    expect(mocks.refreshProfile).toHaveBeenCalled();
+  });
+
+  it("handles paste events with whitespace and non-alphanumeric characters properly", async () => {
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    const codeInput = screen.getByLabelText("Student code") as HTMLInputElement;
+    const rollInput = screen.getByLabelText("Roll number") as HTMLInputElement;
+
+    fireEvent.paste(codeInput, {
+      clipboardData: {
+        getData: () => "  1234-5678-90ab-cdef-1234  \n",
+      },
+    });
+    fireEvent.paste(rollInput, {
+      clipboardData: {
+        getData: () => "  roll-22cse104  \n",
+      },
+    });
+
+    expect(codeInput.value).toBe("1234567890ABCDEF1234");
+    expect(rollInput.value).toBe("ROLL-22CSE104");
+  });
 });
 
