@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   claimStudentCode: vi.fn(async () => "Test College"),
   clearPendingStudentCodeClaim: vi.fn(),
   listAvailableInstitutions: vi.fn(async () => [{ id: "college-1", name: "Test College", city: "Pune" }]),
+  toast: vi.fn(),
 }));
 
 vi.mock("@/contexts/AuthContext", () => ({
@@ -38,7 +39,7 @@ vi.mock("@/services/institutionService", () => ({
   leaveStudentCollege: vi.fn(),
 }));
 
-vi.mock("@/hooks/use-toast", () => ({ toast: vi.fn() }));
+vi.mock("@/hooks/use-toast", () => ({ toast: mocks.toast }));
 
 describe("Profile Settings college link", () => {
   beforeEach(() => {
@@ -122,6 +123,7 @@ describe("Profile Settings college link", () => {
 
     const errorAlert = await screen.findByRole("alert");
     expect(errorAlert).toHaveTextContent("Invalid student code for this college.");
+    expect(mocks.toast).not.toHaveBeenCalled();
   });
 
   it("links the college successfully on the first attempt even if profile fields update returns an error", async () => {
