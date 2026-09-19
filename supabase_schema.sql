@@ -80,7 +80,7 @@
     last_name TEXT,
     degree TEXT,
     academic_year TEXT,
-    subscription_status TEXT DEFAULT 'inactive',
+    subscription_status TEXT DEFAULT 'trialing',
     subscription_id TEXT,
     subscription_period_end TIMESTAMPTZ,
     customer_id TEXT,
@@ -239,7 +239,9 @@
       whatsapp_consent,
       phone_verified,
       first_name,
-      last_name
+      last_name,
+      subscription_status,
+      subscription_period_end
     )
     VALUES (
       new.id,
@@ -252,7 +254,9 @@
       COALESCE((new.raw_user_meta_data->>'whatsapp_consent')::boolean, false),
       COALESCE((new.raw_user_meta_data->>'phone_verified')::boolean, false),
       COALESCE(new.raw_user_meta_data->>'first_name', new.raw_user_meta_data->>'given_name'),
-      COALESCE(new.raw_user_meta_data->>'last_name', new.raw_user_meta_data->>'family_name')
+      COALESCE(new.raw_user_meta_data->>'last_name', new.raw_user_meta_data->>'family_name'),
+      'trialing',
+      NOW() + INTERVAL '30 days'
     );
     RETURN new;
   EXCEPTION WHEN OTHERS THEN

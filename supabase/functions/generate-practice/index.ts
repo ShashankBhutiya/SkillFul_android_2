@@ -186,7 +186,7 @@ serve(async (request) => {
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: profile, error: profileError } = await admin
       .from("profiles")
-      .select("degree,academic_year,subscription_status")
+      .select("degree,academic_year,subscription_status,subscription_period_end")
       .eq("id", user.id)
       .maybeSingle();
     if (profileError) throw profileError;
@@ -203,7 +203,10 @@ serve(async (request) => {
       return Response.json({ error: "Enter a topic to practise." }, { status: 400, headers: corsHeaders });
     }
 
-    const isPremium = profile?.subscription_status === "active";
+    const isSubscriptionPeriodValid = !profile?.subscription_period_end ||
+      new Date(profile.subscription_period_end).getTime() > Date.now();
+    const isPremium = (profile?.subscription_status === "active" || profile?.subscription_status === "trialing") &&
+      isSubscriptionPeriodValid;
     if (!isPremium) {
       stage = "trial access";
       const { data: trial, error: trialError } = await admin.rpc("reserve_student_ai_trial", {

@@ -104,23 +104,84 @@ interface AuthContextType {
     ) => Promise<{ error?: string }>;
 }
 
+export const TRIAL_DURATION_DAYS = 30;
+export const GUEST_TRIAL_START_KEY = "skillful_guest_trial_start";
+
+/**
+ * Checks whether a subscription or free trial is currently active and unexpired.
+ */
+export function isSubscriptionActive(
+    status?: string | null,
+    periodEnd?: string | null
+): boolean {
+    if (!status) return false;
+    const validStatuses = ["active", "trialing"];
+    if (!validStatuses.includes(status)) return false;
+
+    if (periodEnd) {
+        const endMs = new Date(periodEnd).getTime();
+        if (!isNaN(endMs) && endMs <= Date.now()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Retrieves the 30-day free trial state for guest users.
+ */
+export function getGuestTrialState(): {
+    isPremium: boolean;
+    subscriptionStatus: string;
+    subscriptionPeriodEnd: string;
+} {
+    let startStr: string | null = null;
+    try {
+        startStr = localStorage.getItem(GUEST_TRIAL_START_KEY);
+        if (!startStr) {
+            startStr = new Date().toISOString();
+            localStorage.setItem(GUEST_TRIAL_START_KEY, startStr);
+        }
+    } catch {
+        startStr = new Date().toISOString();
+    }
+
+    const startTime = new Date(startStr).getTime();
+    const durationMs = TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000;
+    const endTime = (isNaN(startTime) ? Date.now() : startTime) + durationMs;
+    const isPremium = Date.now() < endTime;
+    return {
+        isPremium,
+        subscriptionStatus: isPremium ? "trialing" : "expired",
+        subscriptionPeriodEnd: new Date(endTime).toISOString(),
+    };
+}
+
 const GUEST_KEY = "quiz_guest_id";
 
 function getOrCreateGuestId(): string {
-    let id = localStorage.getItem(GUEST_KEY);
-    if (!id) {
+    let id: string | null = null;
+    try {
+        id = localStorage.getItem(GUEST_KEY);
+        if (!id) {
+            id = "guest_" + crypto.randomUUID();
+            localStorage.setItem(GUEST_KEY, id);
+        }
+    } catch {
         id = "guest_" + crypto.randomUUID();
-        localStorage.setItem(GUEST_KEY, id);
     }
     return id;
 }
 
 function makeGuestUser(): AppUser {
+    const trial = getGuestTrialState();
     return {
         id: getOrCreateGuestId(),
         isGuest: true,
         unlockCount: 0,
-        isPremium: false
+        isPremium: trial.isPremium,
+        subscriptionStatus: trial.subscriptionStatus,
+        subscriptionPeriodEnd: trial.subscriptionPeriodEnd,
     };
 }
 
@@ -201,6 +262,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     ? false
                     : fallbackUser.hasLinkedCollege;
 
+            let resolvedStatus = profile?.subscription_status || "inactive";
+            let resolvedPeriodEnd = profile?.subscription_period_end || "";
+
+            // Option A: If an existing registered user has no subscription status or is inactive with no period end,
+            // initialize their 30-day trial starting now.
+            if (profile && (!profile.subscription_status || profile.subscription_status === "inactive") && !profile.subscription_period_end) {
+                resolvedStatus = "trialing";
+                resolvedPeriodEnd = new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+                if (supabase && typeof (supabase as any).from === "function") {
+                    try {
+                        const table = supabase.from("profiles");
+                        if (table && typeof table.update === "function") {
+                            table
+                                .update({
+                                    subscription_status: "trialing",
+                                    subscription_period_end: resolvedPeriodEnd,
+                                })
+                                .eq("id", uid)
+                                .then(({ error }: any) => {
+                                    if (error) console.warn("Could not set trial for existing user:", error);
+                                });
+                        }
+                    } catch (e) {
+                        console.warn("Error updating user trial:", e);
+                    }
+                }
+            }
+
+            const isPremium = isSubscriptionActive(resolvedStatus, resolvedPeriodEnd);
+
             return {
                 ...fallbackUser,
                 referralCode: profile ? (profile.referral_code || fallbackCode) : fallbackUser.referralCode,
@@ -215,10 +306,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     lastName: profile.last_name ?? fallbackUser.lastName ?? "",
                     degree: profile.degree ?? fallbackUser.degree ?? "",
                     academicYear: profile.academic_year ?? fallbackUser.academicYear ?? "",
-                    isPremium: profile.subscription_status === "active",
-                    subscriptionStatus: profile.subscription_status || "inactive",
+                    isPremium,
+                    subscriptionStatus: isPremium ? resolvedStatus : (resolvedStatus === "trialing" ? "expired" : resolvedStatus),
                     subscriptionId: profile.subscription_id || "",
-                    subscriptionPeriodEnd: profile.subscription_period_end || "",
+                    subscriptionPeriodEnd: resolvedPeriodEnd,
                     userMode: isUserMode(profile.user_mode) ? profile.user_mode : fallbackUser.userMode,
                 } : {}),
                 hasLinkedCollege,

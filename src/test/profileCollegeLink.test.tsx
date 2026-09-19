@@ -108,4 +108,20 @@ describe("Profile Settings college link", () => {
 
     expect(await screen.findByRole("option", { name: "Test College — Pune" })).toBeInTheDocument();
   });
+
+  it("displays the error message inside the modal when linking the college fails", async () => {
+    mocks.claimStudentCode.mockRejectedValueOnce(new Error("Invalid student code for this college."));
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    fireEvent.change(screen.getByLabelText("College"), { target: { value: "college-1" } });
+    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "ABCDEF1234567890ABCD" } });
+    fireEvent.change(screen.getByLabelText("Roll number"), { target: { value: "22CSE104" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Link my college" }));
+
+    const errorAlert = await screen.findByRole("alert");
+    expect(errorAlert).toHaveTextContent("Invalid student code for this college.");
+  });
 });
+

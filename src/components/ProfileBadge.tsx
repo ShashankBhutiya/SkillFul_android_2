@@ -96,12 +96,12 @@ const ProfileBadge = () => {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.92, y: -8 }}
                             transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                            className="absolute right-0 top-full mt-2.5 w-72 bg-card backdrop-blur-xl rounded-2xl shadow-xl border border-border/50 overflow-hidden z-50 text-foreground"
+                            className="absolute right-0 top-full mt-2.5 w-72 bg-card backdrop-blur-xl rounded-lg shadow-xl border border-border/50 overflow-hidden z-50 text-foreground"
                         >
                              {/* User Header */}
                             <div className="px-5 py-4 border-b border-border/40">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
+                                    <div className={`w-9 h-9 rounded-md flex items-center justify-center text-white text-sm font-bold shrink-0 ${
                                         hasPremiumAccess ? "bg-gradient-to-r from-amber-500 to-yellow-500" : "bg-primary"
                                     }`}>
                                         {avatarLetter}
@@ -109,10 +109,10 @@ const ProfileBadge = () => {
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-1.5">
                                             <p className="text-sm font-bold text-foreground truncate">
-                                                {displayName}
+                                                 {displayName}
                                             </p>
                                             {hasPremiumAccess && (
-                                                <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                                <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/20 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 border border-amber-500/30">
                                                     Pro
                                                 </span>
                                             )}
@@ -137,7 +137,7 @@ const ProfileBadge = () => {
                                 </p>
                                 <button
                                     onClick={handleCopy}
-                                    className="w-full flex items-center justify-between bg-muted/40 hover:bg-muted/70 border border-border/40 rounded-xl px-3.5 py-2.5 transition-all active:scale-[0.98] group"
+                                    className="w-full flex items-center justify-between bg-muted/40 hover:bg-muted/70 border border-border/40 rounded-md px-3.5 py-2.5 transition-all active:scale-[0.98] group"
                                 >
                                     <div className="flex items-center gap-2.5">
                                         <Users className="w-4 h-4 text-primary" />

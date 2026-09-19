@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, AlertCircle, Loader2, CheckCircle2, Unlink } from "lucide-react";
+import { X, AlertCircle, Loader2, CheckCircle2, Unlink, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserModeSelect from "@/components/UserModeSelect";
 import { useUserMode } from "@/hooks/useUserMode";
@@ -57,6 +57,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [emailConsent, setEmailConsent] = useState(false);
     const [whatsappConsent, setWhatsappConsent] = useState(false);
     const [error, setError] = useState("");
+    const [collegeError, setCollegeError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
     const [institutionEnrollment, setInstitutionEnrollment] = useState<InstitutionEnrollmentValue>(emptyInstitutionEnrollment);
@@ -76,6 +77,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             setEmailConsent(!!user.emailConsent);
             setWhatsappConsent(!!user.whatsappConsent);
             setError("");
+            setCollegeError("");
             setSuccess("");
             setInstitutionEnrollment(emptyInstitutionEnrollment);
         }
@@ -95,6 +97,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setCollegeError("");
         setSuccess("");
 
         // Optional basic format check: if they entered a phone number, make sure it has some digits
@@ -117,7 +120,9 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             const validationErrors = validateInstitutionEnrollment(institutionEnrollment);
             setInstitutionErrors(validationErrors);
             if (Object.keys(validationErrors).length) {
-                setError("Check the highlighted college details and try again.");
+                const message = "Check the highlighted college details and try again.";
+                setCollegeError(message);
+                setError(message);
                 return;
             }
         }
@@ -125,7 +130,9 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             ? toStudentCodeClaim(institutionEnrollment, { degree, academicYear })
             : null;
         if (hasCollegeEntry && !collegeClaim) {
-            setError("Select your college, enter your roll number, and enter the student code from your TPO.");
+            const message = "Select your college, enter your roll number, and enter the student code from your TPO.";
+            setCollegeError(message);
+            setError(message);
             return;
         }
 
@@ -144,6 +151,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                 await refreshProfile();
                 setInstitutionEnrollment(emptyInstitutionEnrollment);
                 setInstitutionErrors({});
+                setCollegeError("");
             }
 
             const message = institutionName
@@ -159,6 +167,9 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             const message = collegeClaim
                 ? formatStudentCodeClaimError(err)
                 : err?.message || "Your changes could not be saved. Please try again.";
+            if (collegeClaim) {
+                setCollegeError(message);
+            }
             setError(message);
             toast({
                 title: collegeClaim ? "College was not linked" : "Changes were not saved",
@@ -173,11 +184,14 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const handleClaimCollege = async () => {
         if (loading || institutionLoading) return;
         setError("");
+        setCollegeError("");
         setSuccess("");
         const validationErrors = validateInstitutionEnrollment(institutionEnrollment);
         setInstitutionErrors(validationErrors);
         if (Object.keys(validationErrors).length) {
-            setError("Check the highlighted college details and try again.");
+            const message = "Check the highlighted college details and try again.";
+            setCollegeError(message);
+            setError(message);
             return;
         }
         const claim = toStudentCodeClaim(institutionEnrollment, {
@@ -198,10 +212,12 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             await refreshProfile();
             setInstitutionEnrollment(emptyInstitutionEnrollment);
             setInstitutionErrors({});
+            setCollegeError("");
             setSuccess(`You are now linked to ${institutionName}.`);
             toast({ title: "College linked", description: `You are now linked to ${institutionName}.` });
         } catch (err: any) {
             const message = formatStudentCodeClaimError(err);
+            setCollegeError(message);
             setError(message);
             toast({ title: "College was not linked", description: message, variant: "destructive" });
         } finally {
@@ -215,14 +231,18 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
         }
 
         setError("");
+        setCollegeError("");
         setSuccess("");
         setCollegeResetLoading(true);
         try {
             const institutionName = await leaveStudentCollege();
             await refreshProfile();
+            setCollegeError("");
             setSuccess(`You exited ${institutionName}. You can link another college with a fresh student code.`);
         } catch (err: any) {
-            setError(err?.message || "Could not reset your college link. Please try again.");
+            const message = err?.message || "Could not reset your college link. Please try again.";
+            setCollegeError(message);
+            setError(message);
         } finally {
             setCollegeResetLoading(false);
         }
@@ -246,12 +266,12 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                         exit={{ scale: 0.9, y: 30, opacity: 0 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10"
+                        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10"
                     >
                         {/* Close Button */}
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-full bg-muted/50 hover:bg-muted transition-colors z-10"
+                            className="absolute top-4 right-4 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors z-10"
                         >
                             <X className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -269,7 +289,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                         {/* Form */}
                         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
                             {/* Student / Professional mode */}
-                            <div className="space-y-2 rounded-2xl border border-border bg-muted/30 p-3">
+                            <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
                                 <div className="flex items-center justify-between gap-2 px-1">
                                     <label className="text-xs font-bold text-muted-foreground">
                                         I am a
@@ -291,7 +311,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                             </div>
 
                             {/* Theme / Appearance */}
-                            <div className="space-y-2 rounded-2xl border border-border bg-muted/30 p-3">
+                            <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
                                 <label className="px-1 text-xs font-bold text-muted-foreground block">
                                     Appearance
                                 </label>
@@ -302,15 +322,15 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                             </div>
 
                             {mode === "student" && (
-                                <div className="space-y-3 rounded-2xl border border-border bg-muted/20 p-4">
+                                <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
                                     <p className="text-xs font-bold text-foreground">Academic details</p>
                                     <label className="block text-xs font-semibold text-muted-foreground">
                                         Degree / programme
-                                        <input value={degree} onChange={(event) => setDegree(event.target.value)} maxLength={80} placeholder="e.g. B.Tech Computer Science" className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50" />
+                                        <input value={degree} onChange={(event) => setDegree(event.target.value)} maxLength={80} placeholder="e.g. B.Tech Computer Science" className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50" />
                                     </label>
                                     <label className="block text-xs font-semibold text-muted-foreground">
                                         Current year
-                                        <select value={academicYear} onChange={(event) => setAcademicYear(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50">
+                                        <select value={academicYear} onChange={(event) => setAcademicYear(event.target.value)} className="mt-1.5 h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50">
                                             <option value="">Select your year</option>
                                             {ACADEMIC_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
                                         </select>
@@ -320,7 +340,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                             )}
 
                             {mode === "student" && !user.hasLinkedCollege && (
-                                <div className="space-y-2 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+                                <div className="space-y-2 rounded-lg border border-primary/25 bg-primary/5 p-3">
                                     <p className="px-1 text-xs font-bold text-foreground">Link my college</p>
                                     <InstitutionEnrollmentFields
                                         value={institutionEnrollment}
@@ -328,15 +348,25 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                             setInstitutionEnrollment(next);
                                             setInstitutionErrors({});
                                             if (error) setError("");
+                                            if (collegeError) setCollegeError("");
                                         }}
                                         errors={institutionErrors}
                                         disabled={loading || institutionLoading}
                                     />
+                                    {collegeError && (
+                                        <div
+                                            role="alert"
+                                            className="flex items-start gap-2 p-2.5 bg-destructive/15 border border-destructive/30 rounded-md text-destructive text-xs font-body animate-in fade-in slide-in-from-top-1"
+                                        >
+                                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                                            <span className="leading-snug">{collegeError}</span>
+                                        </div>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={handleClaimCollege}
                                         disabled={loading || institutionLoading}
-                                        className="flex h-10 w-full items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60"
+                                        className="flex h-10 w-full items-center justify-center rounded-md border border-primary/30 bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60"
                                     >
                                         {institutionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link my college"}
                                     </button>
@@ -344,7 +374,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                             )}
 
                             {mode === "student" && user.hasLinkedCollege && (
-                                <div className="space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+                                <div className="space-y-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
                                     <div className="flex items-start gap-2">
                                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                                         <div className="min-w-0">
@@ -359,11 +389,20 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                             )}
                                         </div>
                                     </div>
+                                    {collegeError && (
+                                        <div
+                                            role="alert"
+                                            className="flex items-start gap-2 p-2.5 bg-destructive/15 border border-destructive/30 rounded-md text-destructive text-xs font-body animate-in fade-in slide-in-from-top-1"
+                                        >
+                                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+                                            <span className="leading-snug">{collegeError}</span>
+                                        </div>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={() => void handleLeaveCollege()}
                                         disabled={loading || collegeResetLoading}
-                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-60"
+                                        className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-60"
                                     >
                                         {collegeResetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlink className="h-4 w-4" />}
                                         Exit / reset college
@@ -383,7 +422,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         placeholder="First Name"
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
-                                        className="w-full px-4 py-3 bg-muted/30 backdrop-blur-sm rounded-xl border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
+                                        className="w-full px-4 py-3 bg-muted/30 backdrop-blur-sm rounded-md border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -393,7 +432,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         placeholder="Last Name"
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
-                                        className="w-full px-4 py-3 bg-muted/30 backdrop-blur-sm rounded-xl border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
+                                        className="w-full px-4 py-3 bg-muted/30 backdrop-blur-sm rounded-md border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
                                     />
                                 </div>
                             </div>
@@ -408,7 +447,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         placeholder="+1 (555) 000-0000"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 bg-muted/30 backdrop-blur-sm rounded-xl border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
+                                        className="w-full pl-10 pr-4 py-3 bg-muted/30 backdrop-blur-sm rounded-md border border-white/10 text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-card transition-all"
                                     />
                                 </div>
                                 
@@ -419,7 +458,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
 
                             {/* WhatsApp Updates Consent */}
                             <div
-                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
+                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-lg bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
                                 onClick={() => setWhatsappConsent(!whatsappConsent)}
                             >
                                 <div className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${whatsappConsent
@@ -440,7 +479,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
 
                             {/* SMS Updates Consent */}
                             <div
-                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
+                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-lg bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
                                 onClick={() => setPhoneConsent(!phoneConsent)}
                             >
                                 <div className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${phoneConsent
@@ -461,7 +500,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
 
                             {/* Email Updates Consent */}
                             <div
-                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
+                                className="flex items-start gap-3 cursor-pointer group p-3 rounded-lg bg-muted/20 border border-white/5 hover:bg-muted/30 transition-colors"
                                 onClick={() => setEmailConsent(!emailConsent)}
                             >
                                 <div className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${emailConsent
@@ -488,7 +527,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         initial={{ opacity: 0, y: -5 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -5 }}
-                                        className="flex items-start gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-xs font-body"
+                                        className="flex items-start gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-xs font-body"
                                     >
                                         <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                         <span>{error}</span>
@@ -500,7 +539,7 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                         initial={{ opacity: 0, y: -5 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -5 }}
-                                        className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 text-xs font-body"
+                                        className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-emerald-500 text-xs font-body"
                                     >
                                         <span>{success}</span>
                                     </motion.div>
@@ -509,16 +548,22 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
 
                             {/* Submit Button */}
                             <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-display font-bold text-base shadow-lg disabled:opacity-60 transition-all flex items-center justify-center gap-2 mt-2"
+                                className="w-full py-3 bg-gradient-to-r from-primary to-accent text-white font-heading font-semibold text-sm rounded-lg shadow-lg hover:opacity-95 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {loading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Saving Changes...</span>
+                                    </>
                                 ) : (
-                                    "Save Changes"
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        <span>Save Changes</span>
+                                    </>
                                 )}
                             </motion.button>
                         </form>

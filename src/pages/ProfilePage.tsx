@@ -119,7 +119,7 @@ export const ProfilePage = () => {
             className="mb-5"
           >
             <div className="mb-2 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
+              <span className="inline-flex items-center gap-1.5 rounded border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                 Account & Settings
               </span>
             </div>
@@ -129,7 +129,7 @@ export const ProfilePage = () => {
                 initial={{ scale: 0, rotate: -20 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ ...spring, delay: 0.05 }}
-                className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary shadow-sm"
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary shadow-sm"
               >
                 <User className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </motion.div>
@@ -160,7 +160,7 @@ export const ProfilePage = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, ...spring }}
-            className="relative mb-5 overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm"
+            className="relative mb-5 overflow-hidden rounded-lg border border-border bg-card p-5 shadow-sm"
           >
             {!user.isGuest ? (
               /* Authenticated User Details */
@@ -169,7 +169,7 @@ export const ProfilePage = () => {
                   <div className="flex items-center gap-3.5">
                     {/* User Avatar */}
                     <div
-                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-xl font-bold ${
+                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-lg text-xl font-bold ${
                         user.isPremium
                           ? "bg-gradient-to-b from-amber-400 to-amber-600 text-white shadow-md shadow-amber-500/20"
                           : "bg-primary text-primary-foreground shadow-md shadow-primary/20"
@@ -189,12 +189,12 @@ export const ProfilePage = () => {
                           {displayName}
                         </h2>
                         {user.isPremium ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
+                          <span className="inline-flex items-center gap-1 rounded border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
                             <Sparkles className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                             PRO
                           </span>
                         ) : (
-                          <span className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                          <span className="rounded border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
                             FREE
                           </span>
                         )}
@@ -207,7 +207,7 @@ export const ProfilePage = () => {
 
                       {/* Mode & Academic Badges */}
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                        <span className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
                           {mode === "student" ? (
                             <>
                               <GraduationCap className="h-3 w-3" />
@@ -222,7 +222,7 @@ export const ProfilePage = () => {
                         </span>
 
                         {user.linkedCollege?.name && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                             <School className="h-3 w-3" />
                             <span className="max-w-[130px] truncate">{user.linkedCollege.name}</span>
                           </span>
@@ -236,7 +236,7 @@ export const ProfilePage = () => {
                     <button
                       type="button"
                       onClick={() => setShowSettingsModal(true)}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-muted/50 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:flex-initial"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border/80 bg-muted/50 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98] sm:flex-initial"
                     >
                       <Settings className="h-3.5 w-3.5" />
                       Settings
@@ -244,7 +244,7 @@ export const ProfilePage = () => {
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98]"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98]"
                     >
                       <LogOut className="h-3.5 w-3.5" />
                       Sign Out
@@ -256,7 +256,7 @@ export const ProfilePage = () => {
               /* Guest User Card */
               <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/40 text-lg font-bold text-muted-foreground">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/40 text-lg font-bold text-muted-foreground">
                     ?
                   </div>
                   <div>
@@ -271,7 +271,7 @@ export const ProfilePage = () => {
                 <button
                   type="button"
                   onClick={() => setShowAuthModal(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-all active:scale-[0.98]"
                 >
                   <User className="h-3.5 w-3.5" />
                   Sign In / Register
@@ -285,10 +285,10 @@ export const ProfilePage = () => {
             {/* 1. Daily Streak */}
             <Link
               to="/streak"
-              className="group relative block overflow-hidden rounded-xl border border-border bg-card p-3.5 shadow-sm transition-all hover:border-orange-500/50 active:scale-[0.98]"
+              className="group relative block overflow-hidden rounded-lg border border-border bg-card p-3.5 shadow-sm transition-all hover:border-orange-500/50 active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-orange-500/10 text-orange-500">
                   <Flame className="h-4 w-4" strokeWidth={2.2} />
                 </div>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
@@ -306,10 +306,10 @@ export const ProfilePage = () => {
             {/* 2. Leaderboard */}
             <Link
               to="/leaderboard"
-              className="group relative block overflow-hidden rounded-xl border border-border bg-card p-3.5 shadow-sm transition-all hover:border-amber-500/50 active:scale-[0.98]"
+              className="group relative block overflow-hidden rounded-lg border border-border bg-card p-3.5 shadow-sm transition-all hover:border-amber-500/50 active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500/10 text-amber-500">
                   <Trophy className="h-4 w-4" strokeWidth={2.2} />
                 </div>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
@@ -327,10 +327,10 @@ export const ProfilePage = () => {
             {/* 3. Refer & Earn */}
             <Link
               to="/refer"
-              className="group relative block overflow-hidden rounded-xl border border-border bg-card p-3.5 shadow-sm transition-all hover:border-rose-500/50 active:scale-[0.98]"
+              className="group relative block overflow-hidden rounded-lg border border-border bg-card p-3.5 shadow-sm transition-all hover:border-rose-500/50 active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-rose-500/10 text-rose-500">
                   <Gift className="h-4 w-4" strokeWidth={2.2} />
                 </div>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
@@ -348,7 +348,7 @@ export const ProfilePage = () => {
             {/* 4. Premium Status */}
             <Link
               to="/premium"
-              className={`group relative block overflow-hidden rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98] ${
+              className={`group relative block overflow-hidden rounded-lg border p-3.5 shadow-sm transition-all active:scale-[0.98] ${
                 user.isPremium
                   ? "border-amber-400/50 bg-amber-500/5 hover:border-amber-400"
                   : "border-border bg-card hover:border-violet-500/50"
@@ -356,7 +356,7 @@ export const ProfilePage = () => {
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-md ${
                     user.isPremium
                       ? "bg-amber-400/20 text-amber-500"
                       : "bg-violet-500/10 text-violet-500"
@@ -387,7 +387,7 @@ export const ProfilePage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.16, ...spring }}
-              className="relative mb-5 overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm"
+              className="relative mb-5 overflow-hidden rounded-lg border border-primary/20 bg-primary/5 p-4 shadow-sm"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -401,7 +401,7 @@ export const ProfilePage = () => {
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-card px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary/10 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-primary/30 bg-card px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-primary/10 transition-colors"
                 >
                   <span>{user.referralCode}</span>
                   {copied ? (
@@ -419,7 +419,7 @@ export const ProfilePage = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, ...spring }}
-            className="relative mb-6 overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm"
+            className="relative mb-6 overflow-hidden rounded-lg border border-border bg-card p-5 shadow-sm"
           >
             <div className="mb-4 flex items-center justify-between border-b border-border/50 pb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -439,14 +439,14 @@ export const ProfilePage = () => {
                     Tailors interview scenarios and practice question bank
                   </div>
                 </div>
-                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+                <div className="flex items-center rounded-md border border-border bg-muted/50 p-1">
                   <button
                     type="button"
                     onClick={() => {
                       hapticLight();
                       setMode("student");
                     }}
-                    className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 rounded px-3 py-1 text-xs font-semibold transition-all ${
                       mode === "student"
                         ? "bg-card text-primary shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -461,7 +461,7 @@ export const ProfilePage = () => {
                       hapticLight();
                       setMode("professional");
                     }}
-                    className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 rounded px-3 py-1 text-xs font-semibold transition-all ${
                       mode === "professional"
                         ? "bg-card text-primary shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -483,14 +483,14 @@ export const ProfilePage = () => {
                     Switch between Light and Dark interface modes
                   </div>
                 </div>
-                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+                <div className="flex items-center rounded-md border border-border bg-muted/50 p-1">
                   <button
                     type="button"
                     onClick={() => {
                       hapticLight();
                       setTheme("light");
                     }}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
                       !isDarkMode
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -505,7 +505,7 @@ export const ProfilePage = () => {
                       hapticLight();
                       setTheme("dark");
                     }}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold transition-all ${
                       isDarkMode
                         ? "bg-card text-primary shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -531,7 +531,7 @@ export const ProfilePage = () => {
                   <button
                     type="button"
                     onClick={() => setShowSettingsModal(true)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
+                    className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
                   >
                     <Settings className="h-3.5 w-3.5" />
                     Configure
@@ -546,7 +546,7 @@ export const ProfilePage = () => {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.24, ...spring }}
-            className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm"
+            className="relative overflow-hidden rounded-lg border border-border bg-card p-5 shadow-sm"
           >
             <div className="mb-3 flex items-center justify-between border-b border-border/50 pb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-foreground">

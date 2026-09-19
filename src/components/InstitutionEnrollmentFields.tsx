@@ -61,7 +61,7 @@ export function InstitutionEnrollmentFields({
     const minimal = variant === "minimal";
     const fieldClass = minimal
         ? "h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 disabled:opacity-60 transition-colors"
-        : "h-11 w-full rounded-xl border bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 disabled:opacity-60";
+        : "h-11 w-full rounded-md border bg-muted/30 px-3 text-sm text-foreground outline-none focus:ring-2 disabled:opacity-60";
     const fieldBorder = (hasError: boolean) =>
         hasError
             ? minimal
@@ -104,7 +104,7 @@ export function InstitutionEnrollmentFields({
             className={
                 minimal
                     ? "space-y-3 rounded-md border border-border bg-primary/[0.03] p-3"
-                    : "space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-3"
+                    : "space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3"
             }
         >
             {!minimal && (
@@ -191,7 +191,7 @@ export function InstitutionEnrollmentFields({
             </div>
 
             {loadError && (
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-[11px] text-destructive" role="alert">
+                <div className="flex items-center justify-between gap-2 rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-[11px] text-destructive" role="alert">
                     <span className="flex items-center gap-1.5"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{loadError}</span>
                     <button type="button" onClick={() => setLoadAttempt((attempt) => attempt + 1)} disabled={disabled || loading} className="flex shrink-0 items-center gap-1 font-bold hover:underline disabled:opacity-60">
                         <RefreshCw className="h-3 w-3" /> Retry
