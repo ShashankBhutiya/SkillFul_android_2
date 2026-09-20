@@ -20,13 +20,21 @@ export const emptyInstitutionEnrollment: InstitutionEnrollmentValue = {
 
 export type InstitutionEnrollmentErrors = Partial<Record<keyof InstitutionEnrollmentValue, string>>;
 
+export function normalizeStudentCode(raw: string): string {
+    return raw
+        .toUpperCase()
+        .replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D_]/g, "-")
+        .replace(/[^A-Z0-9-]/g, "")
+        .slice(0, 64);
+}
+
 export function validateInstitutionEnrollment(value: InstitutionEnrollmentValue): InstitutionEnrollmentErrors {
     const errors: InstitutionEnrollmentErrors = {};
-    const code = value.code.trim();
+    const code = normalizeStudentCode(value.code);
 
     if (!value.institutionId) errors.institutionId = "Select your college.";
     if (!code) errors.code = "Enter the student code from your TPO.";
-    else if (code.length !== 20) errors.code = "Student codes contain 20 letters and numbers.";
+    else if (code.replace(/[^A-Za-z0-9]/g, "").length < 10 || code.length > 64) errors.code = "Enter a valid student code from your TPO.";
     if (!value.rollNumber.trim()) errors.rollNumber = "Enter your college roll number.";
 
     return errors;
@@ -39,7 +47,7 @@ export function toStudentCodeClaim(
     if (!value.institutionId || !value.code.trim() || !value.rollNumber.trim()) return null;
     return {
         institutionId: value.institutionId,
-        code: value.code.trim().toUpperCase(),
+        code: normalizeStudentCode(value.code),
         rollNumber: value.rollNumber.trim().toUpperCase(),
         ...academicDetails,
     };
@@ -157,17 +165,15 @@ export function InstitutionEnrollmentFields({
                         aria-invalid={!!errors.code}
                         value={value.code}
                         onChange={(event) => {
-                            const clean = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
-                            change("code", clean);
+                            change("code", normalizeStudentCode(event.target.value));
                         }}
                         onPaste={(event) => {
                             event.preventDefault();
                             const pasted = event.clipboardData?.getData("text") || "";
-                            const clean = pasted.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
-                            change("code", clean);
+                            change("code", normalizeStudentCode(pasted));
                         }}
                         disabled={disabled}
-                        maxLength={32}
+                        maxLength={64}
                         autoCapitalize="characters"
                         autoComplete="off"
                         spellCheck={false}

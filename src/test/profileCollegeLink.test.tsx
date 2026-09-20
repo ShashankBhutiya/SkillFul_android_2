@@ -78,23 +78,50 @@ describe("Profile Settings college link", () => {
     fireEvent.click(screen.getByRole("button", { name: "Link my college" }));
 
     expect(await screen.findByText("Select your college.")).toBeInTheDocument();
-    expect(screen.getByText("Student codes contain 20 letters and numbers.")).toBeInTheDocument();
+    expect(screen.getByText("Enter a valid student code from your TPO.")).toBeInTheDocument();
     expect(screen.getByText("Enter your college roll number.")).toBeInTheDocument();
     expect(screen.getByLabelText("College")).toHaveAttribute("aria-invalid", "true");
     expect(mocks.updateProfileSettings).not.toHaveBeenCalled();
     expect(mocks.claimStudentCode).not.toHaveBeenCalled();
   });
 
-  it("normalizes pasted student codes and roll numbers", async () => {
+  it("accepts and claims student codes prefixed with college name", async () => {
+    render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
+
+    await screen.findByRole("option", { name: "Test College — Pune" });
+    fireEvent.change(screen.getByLabelText("College"), { target: { value: "college-1" } });
+    fireEvent.change(screen.getByLabelText("Student code"), { target: { value: "TEST-COLLEGE-4F1A8C2E9B3D" } });
+    fireEvent.change(screen.getByLabelText("Roll number"), { target: { value: "22CSE104" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Link my college" }));
+
+    await waitFor(() => expect(mocks.claimStudentCode).toHaveBeenCalledWith({
+      institutionId: "college-1",
+      code: "TEST-COLLEGE-4F1A8C2E9B3D",
+      rollNumber: "22CSE104",
+      degree: "",
+      academicYear: "",
+    }, "user-1"));
+  });
+
+  it("normalizes typed and pasted student codes and roll numbers", async () => {
     render(<ProfileSettingsModal isOpen onClose={vi.fn()} />);
 
     await screen.findByRole("option", { name: "Test College — Pune" });
     const code = screen.getByLabelText("Student code") as HTMLInputElement;
     const rollNumber = screen.getByLabelText("Roll number") as HTMLInputElement;
+
+    fireEvent.change(code, { target: { value: "ABC-COLLEGE-0843776F0115" } });
+    expect(code.value).toBe("ABC-COLLEGE-0843776F0115");
+
+    // Converts unicode dashes/en-dash/em-dash to standard ASCII hyphen
+    fireEvent.change(code, { target: { value: "abc–college—0843776f0115" } });
+    expect(code.value).toBe("ABC-COLLEGE-0843776F0115");
+
     fireEvent.change(code, { target: { value: "abcd-ef12 3456-7890-abcd" } });
     fireEvent.change(rollNumber, { target: { value: "22cse104" } });
 
-    expect(code.value).toBe("ABCDEF1234567890ABCD");
+    expect(code.value).toBe("ABCD-EF123456-7890-ABCD");
     expect(rollNumber.value).toBe("22CSE104");
   });
 
@@ -168,7 +195,7 @@ describe("Profile Settings college link", () => {
       },
     });
 
-    expect(codeInput.value).toBe("1234567890ABCDEF1234");
+    expect(codeInput.value).toBe("1234-5678-90AB-CDEF-1234");
     expect(rollInput.value).toBe("ROLL-22CSE104");
   });
 });
