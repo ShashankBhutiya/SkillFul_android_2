@@ -116,7 +116,7 @@ serve(async (req) => {
 
     const offer = order.notes?.offer
     const expectedAmount = offer === 'college_yearly'
-      ? 2500
+      ? 5000
       : offer === 'standard_monthly'
         ? 29900
         : offer === 'standard_yearly'

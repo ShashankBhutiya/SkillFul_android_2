@@ -208,7 +208,7 @@ const ProfileBadge = () => {
                                     className="w-full flex items-center gap-2.5 px-5 py-3 text-sm hover:bg-amber-500/10 transition-colors font-bold text-amber-500 bg-amber-500/5 group border-t border-border/40"
                                 >
                                     <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
-                                    {user.hasLinkedCollege ? "Get Premium for ₹25/year" : "Upgrade to Premium"}
+                                    {user.hasLinkedCollege ? "Get Premium for ₹50/year" : "Upgrade to Premium"}
                                 </button>
                             ) : (
                                 <div className="px-5 py-3 border-t border-border/40 bg-emerald-500/5 text-left">

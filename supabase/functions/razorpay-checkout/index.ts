@@ -44,7 +44,7 @@ serve(async (req) => {
     }
 
     // A verified college membership only changes the price; it does not grant
-    // Premium on its own. College-linked students may buy the annual plan for ₹25.
+    // Premium on its own. College-linked students may buy the annual plan for ₹50.
     const { data: collegeMembership, error: membershipError } = await supabase
       .from('institution_members')
       .select('institution_id')
@@ -60,12 +60,12 @@ serve(async (req) => {
     const isCollegeStudent = Boolean(collegeMembership)
     if (isCollegeStudent && planType !== 'yearly') {
       return new Response(
-        JSON.stringify({ error: 'College-linked students can subscribe to the ₹25 annual plan only.' }),
+        JSON.stringify({ error: 'College-linked students can subscribe to the ₹50 annual plan only.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const amountInRupees = isCollegeStudent ? 25 : planType === 'monthly' ? 299 : 1799
+    const amountInRupees = isCollegeStudent ? 50 : planType === 'monthly' ? 299 : 1799
     const amountInPaise = amountInRupees * 100
 
     // 4. Connect to Razorpay API to create payment Order

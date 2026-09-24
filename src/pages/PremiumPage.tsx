@@ -318,7 +318,7 @@ const PremiumPage = () => {
                   </div>
                   {isCollegeStudent ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      College-linked students can subscribe yearly for ₹25. Monthly billing is not available.
+                      College-linked students can subscribe yearly for ₹50. Monthly billing is not available.
                     </p>
                   ) : selectedPlan === "yearly" && (
                     <p className="mt-2 text-xs text-muted-foreground">
