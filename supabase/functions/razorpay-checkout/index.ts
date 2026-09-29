@@ -36,9 +36,10 @@ serve(async (req) => {
 
     // 3. Extract planType details from POST request
     const { planType } = await req.json()
-    if (!planType || (planType !== 'monthly' && planType !== 'yearly')) {
+    const validPlanTypes = ['monthly', 'yearly', 'college_yearly', 'college_interview_yearly', 'college_interview_upgrade']
+    if (!validPlanTypes.includes(planType)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid or missing planType (monthly/yearly)' }),
+        JSON.stringify({ error: 'Invalid or missing subscription plan.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -58,14 +59,39 @@ serve(async (req) => {
     }
 
     const isCollegeStudent = Boolean(collegeMembership)
-    if (isCollegeStudent && planType !== 'yearly') {
+    const collegePlan = planType.startsWith('college_')
+    if (collegePlan && !isCollegeStudent) {
       return new Response(
-        JSON.stringify({ error: 'College-linked students can subscribe to the ₹50 annual plan only.' }),
+        JSON.stringify({ error: 'This student price requires a linked college account.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (isCollegeStudent && !collegePlan) {
+      return new Response(
+        JSON.stringify({ error: 'Choose one of the college-linked annual plans.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const amountInRupees = isCollegeStudent ? 50 : planType === 'monthly' ? 299 : 1799
+    if (planType === 'college_interview_upgrade') {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_status,subscription_period_end,subscription_tier')
+        .eq('id', user.id)
+        .maybeSingle()
+      const periodEnd = profile?.subscription_period_end ? new Date(profile.subscription_period_end).getTime() : 0
+      if (profileError || profile?.subscription_status !== 'active' || profile?.subscription_tier === 'interview' || periodEnd <= Date.now()) {
+        return new Response(
+          JSON.stringify({ error: 'The ₹200 upgrade requires an active ₹50 Student Premium plan.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    const amountInRupees = planType === 'college_yearly' ? 50
+      : planType === 'college_interview_yearly' ? 250
+      : planType === 'college_interview_upgrade' ? 200
+      : planType === 'monthly' ? 299 : 1799
     const amountInPaise = amountInRupees * 100
 
     // 4. Connect to Razorpay API to create payment Order
@@ -90,7 +116,7 @@ serve(async (req) => {
         userId: user.id,
         userEmail: user.email || '',
         planType: planType,
-        offer: isCollegeStudent ? 'college_yearly' : `standard_${planType}`,
+        offer: collegePlan ? planType : `standard_${planType}`,
       }
     }
 

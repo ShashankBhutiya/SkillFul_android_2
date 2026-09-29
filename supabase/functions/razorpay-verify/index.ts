@@ -44,7 +44,8 @@ serve(async (req) => {
       )
     }
 
-    if (planType !== 'monthly' && planType !== 'yearly') {
+    const validPlanTypes = ['monthly', 'yearly', 'college_yearly', 'college_interview_yearly', 'college_interview_upgrade']
+    if (!validPlanTypes.includes(planType)) {
       return new Response(
         JSON.stringify({ error: 'Invalid subscription plan.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -115,15 +116,17 @@ serve(async (req) => {
     }
 
     const offer = order.notes?.offer
-    const expectedAmount = offer === 'college_yearly'
-      ? 5000
+    const expectedAmount = offer === 'college_yearly' ? 5000
+      : offer === 'college_interview_yearly' ? 25000
+      : offer === 'college_interview_upgrade' ? 20000
       : offer === 'standard_monthly'
         ? 29900
         : offer === 'standard_yearly'
           ? 179900
           : null
-    const expectedPlanType = offer === 'college_yearly'
-      ? 'yearly'
+    const expectedPlanType = offer === 'college_yearly' ? 'college_yearly'
+      : offer === 'college_interview_yearly' ? 'college_interview_yearly'
+      : offer === 'college_interview_upgrade' ? 'college_interview_upgrade'
       : offer === 'standard_monthly'
         ? 'monthly'
         : offer === 'standard_yearly'
@@ -149,9 +152,30 @@ serve(async (req) => {
       auth: { persistSession: false }
     })
 
-    const days = planType === 'monthly' ? 30 : 365
-    const periodEnd = new Date()
-    periodEnd.setDate(periodEnd.getDate() + days)
+    let periodEnd = new Date()
+    if (planType === 'college_interview_upgrade') {
+      const { data: currentProfile, error: currentProfileError } = await supabaseAdmin
+        .from('profiles')
+        .select('subscription_status,subscription_period_end,subscription_tier')
+        .eq('id', user.id)
+        .maybeSingle()
+      const currentEnd = currentProfile?.subscription_period_end
+        ? new Date(currentProfile.subscription_period_end)
+        : null
+      if (currentProfileError || currentProfile?.subscription_status !== 'active' ||
+        currentProfile?.subscription_tier === 'interview' || !currentEnd || currentEnd.getTime() <= Date.now()) {
+        return new Response(
+          JSON.stringify({ error: 'The Student Premium plan is no longer eligible for this upgrade.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      periodEnd = currentEnd
+    } else {
+      const days = planType === 'monthly' ? 30 : 365
+      periodEnd.setDate(periodEnd.getDate() + days)
+    }
+
+    const subscriptionTier = planType === 'college_yearly' ? 'basic' : 'interview'
 
     const { error: dbError } = await supabaseAdmin
       .from('profiles')
@@ -159,6 +183,7 @@ serve(async (req) => {
         subscription_status: 'active',
         subscription_id: paymentId,
         subscription_period_end: periodEnd.toISOString(),
+        subscription_tier: subscriptionTier,
       })
       .eq('id', user.id)
 

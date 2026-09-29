@@ -30,6 +30,20 @@ export const COLLEGE_YEARLY_PLAN: PlanDetails = {
   interval: "yearly",
 };
 
+export const COLLEGE_INTERVIEW_PLAN: PlanDetails = {
+  id: "plan_college_interview_yearly",
+  name: "Skillful Interview Premium - College Yearly",
+  price: 250,
+  interval: "yearly",
+};
+
+export const COLLEGE_INTERVIEW_UPGRADE: PlanDetails = {
+  id: "plan_college_interview_upgrade",
+  name: "Skillful Interview Premium Upgrade",
+  price: 200,
+  interval: "yearly",
+};
+
 /**
  * Service to manage subscription billing with Razorpay.
  * Supports a local sandbox mode for seamless testing without keys.

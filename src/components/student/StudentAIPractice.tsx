@@ -12,6 +12,7 @@ import { generatePracticeSet, getPracticeHistory, hasUsedAIPracticeTrial } from 
 import type { AIPracticeSet, PracticeLevel } from "@/types/aiPractice";
 import { SeoHead } from "@/components/SeoHead";
 import { hapticLight } from "@/hooks/useHaptics";
+import StudentInterviewPractice from "@/components/student/StudentInterviewPractice";
 
 interface LevelOption {
   value: PracticeLevel;
@@ -74,6 +75,9 @@ const LEVELS: LevelOption[] = [
 ];
 
 export default function StudentAIPractice() {
+  const [practiceMode, setPracticeMode] = useState<"topic" | "interview">(() =>
+    new URLSearchParams(window.location.search).get("mode") === "interview" ? "interview" : "topic"
+  );
   const { user, isLoading } = useAuth();
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState<PracticeLevel>("intermediate");
@@ -112,6 +116,10 @@ export default function StudentAIPractice() {
       .finally(() => { if (!cancelled) setHistoryLoaded(true); });
     return () => { cancelled = true; };
   }, [user.id, user.isGuest, user.isPremium]);
+
+  if (practiceMode === "interview") {
+    return <StudentInterviewPractice onSwitchToTopic={() => setPracticeMode("topic")} />;
+  }
 
   const trialUsed = !user.isPremium && hasUsedTrial;
 
@@ -181,6 +189,10 @@ export default function StudentAIPractice() {
     <MainLayout>
       <SeoHead title="AI Practice" description="Generate personalised practice questions for your degree, level, and topic." path="/skills" />
       <div className="relative mx-auto w-full max-w-2xl px-4 pb-12 pt-3 sm:px-6 min-w-0">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/45 p-1">
+          <button type="button" className="rounded-lg bg-card px-3 py-2.5 text-sm font-semibold text-primary shadow-sm">Topic Practice</button>
+          <button type="button" onClick={() => setPracticeMode("interview")} className="rounded-lg px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground">Job Interview</button>
+        </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_68%)]" />
 
         <div className="flex items-center justify-between gap-3">

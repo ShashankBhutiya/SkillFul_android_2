@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion as fm, AnimatePresence as Ap } from "framer-motion";
-import { X, Check, Star, Sparkles, ShieldCheck, Loader2 } from "lucide-react";
+import { X, Check, Sparkles, ShieldCheck, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
-import { COLLEGE_YEARLY_PLAN, PLANS, razorpayService } from "@/services/razorpayService";
+import { COLLEGE_INTERVIEW_PLAN, COLLEGE_INTERVIEW_UPGRADE, COLLEGE_YEARLY_PLAN, PLANS } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -45,13 +45,20 @@ const extractErrorMessage = async (error: any): Promise<string> => {
 const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const { user, refreshProfile } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
+  const [selectedCollegePlan, setSelectedCollegePlan] = useState<"basic" | "interview">("interview");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
   const isCollegeStudent = !!user.hasLinkedCollege;
+  const canUpgradeInterview = isCollegeStudent && user.isPremium && user.subscriptionStatus === "active" &&
+    user.subscriptionTier === "basic" && !user.hasInterviewAccess;
 
   if (!isOpen) return null;
 
-  const plan = isCollegeStudent ? COLLEGE_YEARLY_PLAN : PLANS[selectedPlan];
+  const plan = isCollegeStudent
+    ? canUpgradeInterview
+      ? COLLEGE_INTERVIEW_UPGRADE
+      : selectedCollegePlan === "interview" ? COLLEGE_INTERVIEW_PLAN : COLLEGE_YEARLY_PLAN
+    : PLANS[selectedPlan];
   const originalYearlyCost = PLANS.monthly.price * 12; // 3588
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
@@ -87,7 +94,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         throw new Error("Supabase is not configured.");
       }
 
-      const planType = isCollegeStudent ? "yearly" : selectedPlan;
+      const planType = isCollegeStudent
+        ? canUpgradeInterview
+          ? "college_interview_upgrade"
+          : selectedCollegePlan === "interview" ? "college_interview_yearly" : "college_yearly"
+        : selectedPlan;
 
       // Request edge function to create a new standard Razorpay Order
       const { data, error } = await supabase.functions.invoke("razorpay-checkout", {
@@ -214,7 +225,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <X className="w-4 h-4" />
               </button>
 
-              {paymentStatus === "success" || user.isPremium ? (
+              {paymentStatus === "success" || user.hasInterviewAccess ? (
                 <fm.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -227,7 +238,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     {paymentStatus === "success" ? "Upgrade Successful!" : "Premium Active"}
                   </h2>
                   <p className="text-muted-foreground text-sm max-w-xs mb-8">
-                    <>Welcome to <strong className="text-foreground">Skillful Premium</strong>. All skills are now unlocked for you. Happy practicing!</>
+                    <>Welcome to <strong className="text-foreground">Interview Premium</strong>. Continuous job-description interview practice is now unlocked.</>
                   </p>
                   <button
                     onClick={handleClose}
@@ -258,6 +269,8 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     {[
                       "Unlock all locked premium categories instantly",
                       "Unlimited questions, scenarios, and swipes",
+                      ...(isCollegeStudent && (canUpgradeInterview || selectedCollegePlan === "interview")
+                        ? ["Continuous interview questions from any job description"] : []),
                       "Support our creation of new modules and guides",
                       "Seamless and premium ad-free experience",
                     ].map((feat, idx) => (
@@ -269,6 +282,11 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                       </div>
                     ))}
                   </div>
+
+                  {isCollegeStudent && !canUpgradeInterview && <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1 rounded-2xl border border-border/40 mb-6">
+                    <button type="button" onClick={() => setSelectedCollegePlan("basic")} className={`relative py-3.5 rounded-xl text-xs font-bold transition-all ${selectedCollegePlan === "basic" ? "bg-card text-foreground shadow-sm border border-border/40" : "text-muted-foreground hover:text-foreground"}`}>₹50 Student</button>
+                    <button type="button" onClick={() => setSelectedCollegePlan("interview")} className={`relative py-3.5 rounded-xl text-xs font-bold transition-all ${selectedCollegePlan === "interview" ? "bg-card text-foreground shadow-sm border border-border/40" : "text-muted-foreground hover:text-foreground"}`}>₹250 Interview</button>
+                  </div>}
 
                   {!isCollegeStudent && <div className="grid grid-cols-2 gap-2 bg-muted/40 p-1 rounded-2xl border border-border/40 mb-6">
                     <button
@@ -316,7 +334,9 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     </div>
                     {isCollegeStudent ? (
                       <p className="text-[11px] text-primary font-bold mt-1">
-                        College-linked student price. Annual billing only.
+                        {canUpgradeInterview
+                          ? "Upgrade for the rest of your current annual term."
+                          : selectedCollegePlan === "interview" ? "Includes continuous interview practice." : "Student Premium features only."}
                       </p>
                     ) : selectedPlan === "yearly" && (
                       <p className="text-[11px] text-primary font-bold mt-1">
@@ -338,7 +358,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                       </>
                     ) : (
                       <>
-                        Upgrade to Premium
+                        {canUpgradeInterview ? "Upgrade for ₹200" : selectedCollegePlan === "interview" ? "Get Interview Premium" : "Get Student Premium"}
                       </>
                     )}
                   </button>

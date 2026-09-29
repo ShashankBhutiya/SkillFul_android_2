@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Star, Sparkles, ShieldCheck, Loader2, ArrowLeft, Shield } from "lucide-react";
+import { BriefcaseBusiness, Check, Star, Sparkles, ShieldCheck, Loader2, ArrowLeft, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
-import { COLLEGE_YEARLY_PLAN, PLANS } from "@/services/razorpayService";
+import { COLLEGE_INTERVIEW_PLAN, COLLEGE_INTERVIEW_UPGRADE, COLLEGE_YEARLY_PLAN, PLANS } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -24,10 +24,17 @@ const PremiumPage = () => {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
+  const [selectedCollegePlan, setSelectedCollegePlan] = useState<"basic" | "interview">("interview");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "error">("idle");
   const isCollegeStudent = !!user.hasLinkedCollege;
-  const plan = isCollegeStudent ? COLLEGE_YEARLY_PLAN : PLANS[selectedPlan];
+  const canUpgradeInterview = isCollegeStudent && user.isPremium && user.subscriptionStatus === "active" &&
+    user.subscriptionTier === "basic" && !user.hasInterviewAccess;
+  const plan = isCollegeStudent
+    ? canUpgradeInterview
+      ? COLLEGE_INTERVIEW_UPGRADE
+      : selectedCollegePlan === "interview" ? COLLEGE_INTERVIEW_PLAN : COLLEGE_YEARLY_PLAN
+    : PLANS[selectedPlan];
   const originalYearlyCost = PLANS.monthly.price * 12; // 3588
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
@@ -63,7 +70,11 @@ const PremiumPage = () => {
         throw new Error("Supabase is not configured.");
       }
 
-      const planType = isCollegeStudent ? "yearly" : selectedPlan;
+      const planType = isCollegeStudent
+        ? canUpgradeInterview
+          ? "college_interview_upgrade"
+          : selectedCollegePlan === "interview" ? "college_interview_yearly" : "college_yearly"
+        : selectedPlan;
 
       // Request edge function to create a new standard Razorpay Order
       const { data, error } = await supabase.functions.invoke("razorpay-checkout", {
@@ -176,7 +187,7 @@ const PremiumPage = () => {
           </button>
         </div>
 
-        {paymentStatus === "success" || user.isPremium ? (
+        {paymentStatus === "success" || user.hasInterviewAccess ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,8 +200,8 @@ const PremiumPage = () => {
               {paymentStatus === "success" ? "Upgrade successful" : "Premium active"}
             </h2>
             <p className="mb-7 mt-2.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Welcome to <strong className="font-medium text-foreground">Skillful Premium</strong>. All
-              premium skill topics and rapid-fire scenarios are now unlocked.
+              Welcome to <strong className="font-medium text-foreground">Interview Premium</strong>. Your
+              premium topics and continuous job-description interview practice are unlocked.
             </p>
             <button
               onClick={handleStartPracticing}
@@ -238,7 +249,12 @@ const PremiumPage = () => {
                     title: "Premium Experience",
                     desc: "Zero distractive ads or popups. Focus on your growth.",
                     icon: Check
-                  }
+                  },
+                  ...(!isCollegeStudent || canUpgradeInterview || selectedCollegePlan === "interview" ? [{
+                    title: "Interview Premium",
+                    desc: "Turn any job description into a continuous stream of tailored interview questions.",
+                    icon: BriefcaseBusiness
+                  }] : [])
                 ].map((feat, idx) => (
                   <li key={idx} className="flex gap-3">
                     <feat.icon
@@ -267,8 +283,13 @@ const PremiumPage = () => {
                   Choose a plan
                 </h2>
                 <p className="mb-5 mt-1 text-xs text-muted-foreground">
-                  {isCollegeStudent ? "Your college-linked student price" : "Simple pricing for professional growth"}
+                  {isCollegeStudent ? (canUpgradeInterview ? "Upgrade your active Student Premium plan" : "Choose your college-linked annual plan") : "Simple pricing for professional growth"}
                 </p>
+
+                {isCollegeStudent && !canUpgradeInterview && <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/50 p-1">
+                  <button type="button" onClick={() => setSelectedCollegePlan("basic")} className={`rounded-md py-2.5 text-xs font-semibold transition-colors ${selectedCollegePlan === "basic" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>₹50 Student</button>
+                  <button type="button" onClick={() => setSelectedCollegePlan("interview")} className={`rounded-md py-2.5 text-xs font-semibold transition-colors ${selectedCollegePlan === "interview" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>₹250 Interview</button>
+                </div>}
 
                 {!isCollegeStudent && <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/50 p-1">
                   <button
@@ -318,7 +339,11 @@ const PremiumPage = () => {
                   </div>
                   {isCollegeStudent ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      College-linked students can subscribe yearly for ₹50. Monthly billing is not available.
+                      {canUpgradeInterview
+                        ? "One-time upgrade for the rest of your current annual term. Your renewal date stays the same."
+                        : selectedCollegePlan === "interview"
+                          ? "Includes continuous job-description interview questions plus every Student Premium feature."
+                          : "Includes all existing Student Premium features. Interview Practice requires the ₹250 plan."}
                     </p>
                   ) : selectedPlan === "yearly" && (
                     <p className="mt-2 text-xs text-muted-foreground">
@@ -339,7 +364,9 @@ const PremiumPage = () => {
                       Processing payment…
                     </>
                   ) : (
-                    isCollegeStudent ? "Get yearly Premium" : "Upgrade to Premium"
+                    isCollegeStudent
+                      ? canUpgradeInterview ? "Upgrade for ₹200" : selectedCollegePlan === "interview" ? "Get Interview Premium" : "Get Student Premium"
+                      : "Upgrade to Premium"
                   )}
                 </button>
 

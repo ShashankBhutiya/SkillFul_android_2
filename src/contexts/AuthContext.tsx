@@ -8,6 +8,7 @@ import { clearGuestMemoryCache } from "@/services/progressService";
 import { toast } from "@/hooks/use-toast";
 import { isUserMode, type UserMode } from "@/config/userMode";
 import { broadcastUserMode } from "@/hooks/useUserMode";
+import { isInterviewSubscriptionActive, type SubscriptionTier } from "@/config/subscriptionTiers";
 import {
     claimStudentCode,
     clearPendingStudentCodeClaim,
@@ -70,6 +71,8 @@ export interface AppUser {
     subscriptionStatus?: string;
     subscriptionId?: string;
     subscriptionPeriodEnd?: string;
+    subscriptionTier?: SubscriptionTier;
+    hasInterviewAccess?: boolean;
     userMode?: UserMode;
 }
 
@@ -220,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 Promise.allSettled([
                     supabase
                         .from("profiles")
-                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, degree, academic_year, subscription_status, subscription_id, subscription_period_end, user_mode")
+                        .select("referral_code, phone, phone_consent, email_consent, whatsapp_consent, phone_verified, first_name, last_name, degree, academic_year, subscription_status, subscription_id, subscription_period_end, subscription_tier, user_mode")
                         .eq("id", uid)
                         .maybeSingle(),
                     supabase.rpc("get_valid_referrals", { referrer_id: uid }),
@@ -291,6 +294,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             const isPremium = isSubscriptionActive(resolvedStatus, resolvedPeriodEnd);
+            const subscriptionTier: SubscriptionTier = profile?.subscription_tier === "interview" ? "interview" : "basic";
+            const hasInterviewAccess = isInterviewSubscriptionActive(
+                resolvedStatus,
+                resolvedPeriodEnd,
+                subscriptionTier,
+            );
 
             return {
                 ...fallbackUser,
@@ -310,6 +319,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     subscriptionStatus: isPremium ? resolvedStatus : (resolvedStatus === "trialing" ? "expired" : resolvedStatus),
                     subscriptionId: profile.subscription_id || "",
                     subscriptionPeriodEnd: resolvedPeriodEnd,
+                    subscriptionTier,
+                    hasInterviewAccess,
                     userMode: isUserMode(profile.user_mode) ? profile.user_mode : fallbackUser.userMode,
                 } : {}),
                 hasLinkedCollege,
