@@ -7,6 +7,7 @@ import { hapticSuccess, hapticError, hapticLight } from "@/hooks/useHaptics";
 import { COLLEGE_INTERVIEW_PLAN, COLLEGE_INTERVIEW_UPGRADE, COLLEGE_YEARLY_PLAN, PLANS } from "@/services/razorpayService";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { extractFunctionError } from "@/services/edgeFunctionError";
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -21,25 +22,6 @@ const loadRazorpayScript = () => {
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
-};
-
-const extractErrorMessage = async (error: any): Promise<string> => {
-  if (!error) return "An unknown error occurred.";
-  if (error.context instanceof Response) {
-    try {
-      const responseClone = error.context.clone();
-      const errorData = await responseClone.json();
-      return errorData.error || errorData.message || error.message;
-    } catch (_) {
-      try {
-        const text = await error.context.clone().text();
-        return text || error.message;
-      } catch (_) {
-        return error.message;
-      }
-    }
-  }
-  return error.message || "Failed to perform operation.";
 };
 
 const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
@@ -63,6 +45,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
   const handleCheckout = async () => {
+    if (isProcessing) return;
     if (user.isGuest) {
       hapticError();
       toast({
@@ -106,7 +89,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
       });
 
       if (error || !data) {
-        const message = await extractErrorMessage(error);
+        const message = await extractFunctionError(error, "Checkout could not start. Please try again.");
         throw new Error(message);
       }
 
@@ -140,7 +123,7 @@ const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
             });
 
             if (verifyError || !verifyData || !verifyData.success) {
-              const message = await extractErrorMessage(verifyError);
+              const message = await extractFunctionError(verifyError, verifyData?.error || "Payment verification failed. Contact support if your account was charged.");
               throw new Error(message);
             }
 

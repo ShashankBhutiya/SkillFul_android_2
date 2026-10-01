@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { corsHeaders } from '../shared/cors.ts'
+import { isPaidSubscriptionActive } from '../shared/subscription.ts'
 
 serve(async (req) => {
   // 1. Handle CORS Preflight
@@ -8,6 +9,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const reference = crypto.randomUUID().slice(0, 8)
   try {
     // 2. Initialize Supabase Client & Authenticate User JWT
     const authHeader = req.headers.get('Authorization')
@@ -20,6 +22,10 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRole) {
+      throw new Error('Supabase payment configuration is incomplete.')
+    }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -34,10 +40,14 @@ serve(async (req) => {
       )
     }
 
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole, {
+      auth: { persistSession: false },
+    })
+
     // 3. Extract planType details from POST request
     const { planType } = await req.json()
     const validPlanTypes = ['monthly', 'yearly', 'college_yearly', 'college_interview_yearly', 'college_interview_upgrade']
-    if (!validPlanTypes.includes(planType)) {
+    if (typeof planType !== 'string' || !validPlanTypes.includes(planType)) {
       return new Response(
         JSON.stringify({ error: 'Invalid or missing subscription plan.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -46,7 +56,7 @@ serve(async (req) => {
 
     // A verified college membership only changes the price; it does not grant
     // Premium on its own. College-linked students may buy the annual plan for ₹50.
-    const { data: collegeMembership, error: membershipError } = await supabase
+    const { data: collegeMembership, error: membershipError } = await supabaseAdmin
       .from('institution_members')
       .select('institution_id')
       .eq('user_id', user.id)
@@ -74,15 +84,20 @@ serve(async (req) => {
     }
 
     if (planType === 'college_interview_upgrade') {
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('subscription_status,subscription_period_end,subscription_tier')
         .eq('id', user.id)
         .maybeSingle()
-      const periodEnd = profile?.subscription_period_end ? new Date(profile.subscription_period_end).getTime() : 0
-      if (profileError || profile?.subscription_status !== 'active' || profile?.subscription_tier === 'interview' || periodEnd <= Date.now()) {
+      if (profileError?.code === '42703') {
         return new Response(
-          JSON.stringify({ error: 'The ₹200 upgrade requires an active ₹50 Student Premium plan.' }),
+          JSON.stringify({ error: 'The payment service update is not complete yet. Please try again shortly.', code: 'database_not_ready', reference }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      if (profileError || !isPaidSubscriptionActive(profile?.subscription_status, profile?.subscription_period_end) || profile?.subscription_tier === 'interview') {
+        return new Response(
+          JSON.stringify({ error: 'The ₹200 upgrade requires an active ₹50 Student Premium plan.', code: 'upgrade_not_eligible', reference }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -129,13 +144,15 @@ serve(async (req) => {
       body: JSON.stringify(payload),
     })
 
-    const razorpayData = await response.json()
+    const razorpayRaw = await response.text()
+    let razorpayData: any = {}
+    try { razorpayData = JSON.parse(razorpayRaw) } catch { /* handled below */ }
 
     if (!response.ok) {
       console.error('Razorpay Order API error:', razorpayData)
       return new Response(
-        JSON.stringify({ error: razorpayData.error?.description || 'Razorpay order creation failed' }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: razorpayData.error?.description || 'Razorpay could not create the payment order. Please retry.', code: 'razorpay_order_failed', reference }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -151,9 +168,9 @@ serve(async (req) => {
     )
 
   } catch (err: any) {
-    console.error('Checkout Order function error:', err)
+    console.error('Checkout Order function error:', { reference, err })
     return new Response(
-      JSON.stringify({ error: err.message || 'Internal server error' }),
+      JSON.stringify({ error: 'The payment service could not start checkout. Please try again shortly.', code: 'checkout_failed', reference }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

@@ -11,7 +11,7 @@ where p.subscription_status = 'active'
   and not exists (
     select 1
     from public.institution_members member
-    where member.user_id = p.id
+    where member.user_id::text = p.id::text
       and member.role = 'student'
   );
 

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8'
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts"
 import { corsHeaders } from '../shared/cors.ts'
+import { isPaidSubscriptionActive, resolveUpgradePeriodEnd } from '../shared/subscription.ts'
 
 serve(async (req) => {
   // 1. Handle CORS Preflight
@@ -9,6 +10,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const reference = crypto.randomUUID().slice(0, 8)
   try {
     // 2. Initialize Supabase Client & Authenticate User JWT
     const authHeader = req.headers.get('Authorization')
@@ -37,7 +39,7 @@ serve(async (req) => {
 
     // 3. Extract parameters from POST request
     const { orderId, paymentId, signature, planType } = await req.json()
-    if (!orderId || !paymentId || !signature || !planType) {
+    if (![orderId, paymentId, signature, planType].every((value) => typeof value === 'string' && value.length > 0)) {
       return new Response(
         JSON.stringify({ error: 'Missing required checkout verification fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -82,7 +84,9 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(signatureBuffer))
     const computedSignature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
-    const isValid = computedSignature === signature
+    const isValid = computedSignature.length === signature.length &&
+      Array.from(computedSignature).reduce((difference, character, index) =>
+        difference | (character.charCodeAt(0) ^ signature.charCodeAt(index)), 0) === 0
 
     if (!isValid) {
       console.warn(`Payment verification failed: Signature mismatch for user ${user.id}`)
@@ -106,7 +110,9 @@ serve(async (req) => {
     const orderResponse = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(orderId)}`, {
       headers: { 'Authorization': `Basic ${authString}` },
     })
-    const order = await orderResponse.json()
+    const orderRaw = await orderResponse.text()
+    let order: any = {}
+    try { order = JSON.parse(orderRaw) } catch { /* handled below */ }
     if (!orderResponse.ok) {
       console.error('Could not retrieve Razorpay order:', order)
       return new Response(
@@ -146,26 +152,57 @@ serve(async (req) => {
       )
     }
 
+    const paymentResponse = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { 'Authorization': `Basic ${authString}` },
+    })
+    const paymentRaw = await paymentResponse.text()
+    let payment: any = {}
+    try { payment = JSON.parse(paymentRaw) } catch { /* handled below */ }
+    if (!paymentResponse.ok || payment.order_id !== orderId || payment.amount !== expectedAmount ||
+      !['authorized', 'captured'].includes(payment.status)) {
+      console.warn(`Payment verification failed: invalid payment details for user ${user.id}`)
+      return new Response(
+        JSON.stringify({ error: 'The payment could not be confirmed. If your account was charged, contact support with the payment ID.', code: 'payment_not_confirmed', reference }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // 5. Signature Valid: Update Database Profile record using admin client (bypassing RLS)
     const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (!supabaseServiceRole) {
+      throw new Error('Supabase service role key is not configured.')
+    }
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole, {
       auth: { persistSession: false }
     })
 
+    const expectedTier = planType === 'college_yearly' ? 'basic' : 'interview'
+    const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('subscription_status,subscription_id,subscription_period_end,subscription_tier')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (existingProfileError?.code === '42703') {
+      return new Response(
+        JSON.stringify({ error: 'Your payment was received, but the account upgrade service is still being updated. Contact support with the payment ID.', code: 'database_not_ready', reference }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    if (existingProfileError) throw existingProfileError
+    if (existingProfile?.subscription_id === paymentId && existingProfile?.subscription_tier === expectedTier) {
+      return new Response(
+        JSON.stringify({ success: true, message: 'Payment was already verified.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     let periodEnd = new Date()
     if (planType === 'college_interview_upgrade') {
-      const { data: currentProfile, error: currentProfileError } = await supabaseAdmin
-        .from('profiles')
-        .select('subscription_status,subscription_period_end,subscription_tier')
-        .eq('id', user.id)
-        .maybeSingle()
-      const currentEnd = currentProfile?.subscription_period_end
-        ? new Date(currentProfile.subscription_period_end)
-        : null
-      if (currentProfileError || currentProfile?.subscription_status !== 'active' ||
-        currentProfile?.subscription_tier === 'interview' || !currentEnd || currentEnd.getTime() <= Date.now()) {
+      const currentEnd = resolveUpgradePeriodEnd(existingProfile?.subscription_period_end)
+      if (!isPaidSubscriptionActive(existingProfile?.subscription_status, existingProfile?.subscription_period_end) ||
+        existingProfile?.subscription_tier === 'interview' || !currentEnd) {
         return new Response(
-          JSON.stringify({ error: 'The Student Premium plan is no longer eligible for this upgrade.' }),
+          JSON.stringify({ error: 'The Student Premium plan is no longer eligible for this upgrade.', code: 'upgrade_not_eligible', reference }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -175,7 +212,7 @@ serve(async (req) => {
       periodEnd.setDate(periodEnd.getDate() + days)
     }
 
-    const subscriptionTier = planType === 'college_yearly' ? 'basic' : 'interview'
+    const subscriptionTier = expectedTier
 
     const { error: dbError } = await supabaseAdmin
       .from('profiles')
@@ -199,9 +236,9 @@ serve(async (req) => {
     )
 
   } catch (err: any) {
-    console.error('Signature verification function error:', err)
+    console.error('Signature verification function error:', { reference, err })
     return new Response(
-      JSON.stringify({ error: err.message || 'Internal server error' }),
+      JSON.stringify({ error: 'Payment verification could not finish. If your account was charged, contact support with the payment ID.', code: 'verification_failed', reference }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

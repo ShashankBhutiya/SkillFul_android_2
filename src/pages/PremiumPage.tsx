@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SeoHead } from "@/components/SeoHead";
+import { extractFunctionError } from "@/services/edgeFunctionError";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -39,6 +40,7 @@ const PremiumPage = () => {
   const savings = Math.round(((originalYearlyCost - PLANS.yearly.price) / originalYearlyCost) * 100);
 
   const handleCheckout = async () => {
+    if (isProcessing) return;
     if (user.isGuest) {
       hapticError();
       toast({
@@ -82,7 +84,7 @@ const PremiumPage = () => {
       });
 
       if (error || !data) {
-        throw new Error(error?.message || "Failed to create payment order.");
+        throw new Error(await extractFunctionError(error, "Checkout could not start. Please try again."));
       }
 
       const options = {
@@ -113,7 +115,7 @@ const PremiumPage = () => {
             });
 
             if (verifyError || !verifyData || !verifyData.success) {
-              throw new Error(verifyError?.message || "Signature verification failed.");
+              throw new Error(await extractFunctionError(verifyError, verifyData?.error || "Payment verification failed. Contact support if your account was charged."));
             }
 
             hapticSuccess();
