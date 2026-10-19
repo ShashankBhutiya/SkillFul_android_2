@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,7 +54,7 @@ const inputClass =
     "w-full px-3 py-2.5 bg-background border border-border text-foreground text-sm font-body placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-md transition-all";
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
-    const { signIn, signUp, signInWithGoogle } = useAuth();
+    const { user, signIn, signUp, signInWithGoogle } = useAuth();
     const [tab, setTab] = useState<Tab>("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -72,6 +72,19 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     const [googleLoading, setGoogleLoading] = useState(false);
     const [success, setSuccess] = useState("");
     const [collegeOpen, setCollegeOpen] = useState(false);
+
+    // Session changes also arrive through OAuth/deep links or after a request
+    // times out. Close using the committed auth state so the app is ready.
+    useEffect(() => {
+        if (isOpen && !user.isGuest) {
+            setPassword("");
+            setError("");
+            setSuccess("");
+            setLoading(false);
+            setGoogleLoading(false);
+            onClose();
+        }
+    }, [isOpen, user.isGuest, onClose]);
 
     const handleUserModeChange = (mode: UserMode) => {
         setUserMode(mode);
@@ -193,9 +206,6 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 clearTimeout(safetyTimer);
                 if (result.error) {
                     setError(formatAuthError(result.error));
-                } else {
-                    onClose();
-                    resetForm();
                 }
             } else {
                 const result = await signUp(
@@ -216,8 +226,6 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                         title: "Welcome to Skillful!",
                         description: "Your account has been created and you're signed in.",
                     });
-                    onClose();
-                    resetForm();
                 } else {
                     setSuccess("Account created! Check your email to confirm your account.");
                 }
