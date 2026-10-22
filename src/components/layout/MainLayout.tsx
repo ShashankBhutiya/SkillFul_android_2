@@ -1,16 +1,20 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Compass, 
   Trophy, 
   User, 
   Zap,
-  Sparkles
+  Sparkles,
+  CircleHelp
 } from "lucide-react";
 import ProfileBadge from "@/components/ProfileBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
-import { useEffect, useRef } from "react";
+import { NotificationPermissionBox } from "@/components/layout/NotificationPermissionBox";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import FirstTimeTutorial from "@/components/FirstTimeTutorial";
+import { rememberTutorial, shouldShowTutorial } from "@/config/tutorial";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -108,9 +112,10 @@ const BottomTabBar = ({ pathname, className = "fixed" }: BottomTabBarProps) => (
 interface AppHeaderProps {
   pathname: string;
   extraClass?: string;
+  onTutorial: () => void;
 }
 
-const AppHeader = ({ pathname, extraClass = "" }: AppHeaderProps) => (
+const AppHeader = ({ pathname, extraClass = "", onTutorial }: AppHeaderProps) => (
   <header className={`sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl shrink-0 safe-top ${extraClass}`}>
     <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
       {/* Brand & Desktop Navigation */}
@@ -157,6 +162,9 @@ const AppHeader = ({ pathname, extraClass = "" }: AppHeaderProps) => (
 
       {/* Right Controls */}
       <div className="flex items-center gap-2">
+        <button type="button" onClick={onTutorial} aria-label="Open tutorial" title="Quick tour" className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <CircleHelp className="h-5 w-5" />
+        </button>
         <ThemeToggle variant="icon" />
         <ProfileBadge />
       </div>
@@ -166,8 +174,15 @@ const AppHeader = ({ pathname, extraClass = "" }: AppHeaderProps) => (
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [tutorialOpen, setTutorialOpen] = useState(() => shouldShowTutorial(location.pathname));
+  const [tutorialRun, setTutorialRun] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFixedViewportRoute = location.pathname === "/streak";
+  const closeTutorial = () => {
+    rememberTutorial();
+    setTutorialOpen(false);
+  };
 
   // Scroll to top when path changes
   useEffect(() => {
@@ -180,10 +195,17 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   // Unified Responsive Layout (Mobile < 768px, Tablet 768px-1023px, Desktop >= 1024px)
   return (
     <div className="min-h-screen min-h-[100dvh] bg-background text-foreground flex flex-col relative selection:bg-primary/20">
-      <PwaInstallPrompt />
+      {!tutorialOpen && <PwaInstallPrompt />}
+      <FirstTimeTutorial key={tutorialRun} open={tutorialOpen} onClose={closeTutorial} onStart={() => {
+        closeTutorial();
+        navigate("/skills");
+      }} />
 
       {/* Top Header: Sticky at top with responsive desktop navigation */}
-      <AppHeader pathname={location.pathname} />
+      <AppHeader pathname={location.pathname} onTutorial={() => {
+        setTutorialRun((run) => run + 1);
+        setTutorialOpen(true);
+      }} />
 
       {/* Main Content Area: Responsive spacing, fluid scrolling */}
       <main
@@ -191,6 +213,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         ref={scrollRef}
         className={`flex-1 w-full relative z-10 flex flex-col pb-20 md:pb-8 ${isFixedViewportRoute ? "overflow-hidden" : ""}`}
       >
+        {!tutorialOpen && ["/", "/skills", "/skills/ai", "/skills/classic"].includes(location.pathname) && <NotificationPermissionBox />}
         {children}
       </main>
 
