@@ -16,6 +16,8 @@ import { useForceUpdate } from "@/hooks/useForceUpdate";
 import ForceUpdateModal from "@/components/ForceUpdateModal";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Loader2 } from "lucide-react";
+import { needsOnboarding, readOnboardingDraft } from "@/config/onboarding";
+import { getStoredUserMode } from "@/config/userMode";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -32,8 +34,9 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const ReferPage = lazy(() => import("./pages/ReferPage"));
 const PremiumPage = lazy(() => import("./pages/PremiumPage"));
 const InfoPage = lazy(() => import("./pages/InfoPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const ProfilePage = lazy(() => import("./pages/ProfileSettingsPage"));
 const StreakPage = lazy(() => import("./pages/StreakPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 
 const queryClient = new QueryClient();
 
@@ -96,7 +99,7 @@ const AuthCallback = () => {
         if (!active) return;
         if (sessionError) throw sessionError;
         if (data.session?.user) {
-          navigate("/skills", { replace: true });
+          navigate(readOnboardingDraft()?.pendingAuth ? "/onboarding" : "/skills", { replace: true });
         } else {
           setError("Sign-in could not be completed. Please return and try Google sign-in again.");
         }
@@ -113,7 +116,7 @@ const AuthCallback = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!user.isGuest && !error) navigate("/skills", { replace: true });
+    if (!user.isGuest && !error) navigate(readOnboardingDraft()?.pendingAuth ? "/onboarding" : "/skills", { replace: true });
   }, [user.isGuest, error, navigate]);
 
   return (
@@ -145,10 +148,12 @@ const AuthCallback = () => {
 };
 
 const RootRoute = () => {
+  const { user, isLoading } = useAuth();
   const params = new URLSearchParams(window.location.search);
+  if (isLoading) return <div className="min-h-screen bg-background" />;
   return params.has("code") || params.has("error") || params.has("error_description") || window.location.hash.includes("access_token=")
     ? <AuthCallback />
-    : <Navigate to="/streak" replace />;
+    : <Navigate to={readOnboardingDraft()?.pendingAuth || (user.isGuest && needsOnboarding() && !getStoredUserMode()) ? "/onboarding" : "/streak"} replace />;
 };
 
 const App = () => {
@@ -189,6 +194,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<RootRoute />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/skills" element={<SkillsPage />} />
                   <Route path="/skills/ai" element={<SkillsPage ai />} />
                   <Route path="/skills/classic" element={<SkillsPage classic />} />

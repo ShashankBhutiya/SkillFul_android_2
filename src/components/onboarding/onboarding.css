@@ -1,0 +1,96 @@
+.skillful-design { --primary:263 70% 51%; --background:0 0% 100%; --foreground:264 8% 12%; --border:221 46% 91%; --input:221 46% 91%; --ring:263 70% 51%; --muted-foreground:225 13% 47%; font-family:Inter,system-ui,sans-serif; color:#1d1b20; background:#fff; }
+.skillful-design h1,.skillful-design h2,.skillful-design h3 { font-family:Inter,system-ui,sans-serif; letter-spacing:-.025em; }
+.onboarding-background { min-height:100dvh; padding:env(safe-area-inset-top) max(0px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(0px,env(safe-area-inset-left)); }
+.onboarding-screen { position:relative; width:100%; max-width:420px; min-height:800px; margin:0 auto; padding:61px 24px 21px; }
+.onboarding-brand { display:flex; align-items:center; gap:17px; padding-left:12px; font-size:24px; font-weight:700; line-height:40px; }
+.onboarding-brand img { flex-shrink:0; width:40px; height:40px; object-fit:contain; }
+.onboarding-brand.is-centered { justify-content:center; padding-left:0; transform:translateX(-29px); }
+.onboarding-screen .onboarding-back { position:absolute; left:14px; top:3px; color:#1d1b20; background:transparent; }
+.onboarding-screen .onboarding-primary,.onboarding-screen .onboarding-secondary { width:100%; height:52px; border-radius:14px; font-size:16px; font-weight:700; background:#7029d9; color:#fff; }
+.onboarding-screen .onboarding-primary:hover { background:#6020c2; }
+.onboarding-screen .onboarding-secondary { background:white; color:#7029d9; border:1px solid #7029d9; font-size:14px; font-weight:500; }
+.onboarding-screen .onboarding-secondary:hover { background:#f3edff; }
+.welcome-art { display:block; width:300px; height:300px; max-width:100%; object-fit:contain; margin:30px 0 0; }
+.welcome-title { margin:23px 0 0; font-size:26px; font-weight:700; line-height:31px; text-align:center; }
+.welcome-title span { display:block; color:#7029d9; }
+.welcome-copy { margin:23px auto 0; max-width:260px; font-size:14px; line-height:17px; font-weight:700; text-align:center; color:#687087; }
+.welcome-actions { margin-top:46px; display:grid; gap:23px; }
+.onboarding-heading { margin-top:47px; font-size:24px; line-height:29px; font-weight:700; }
+.onboarding-description { margin-top:26px; font-size:16px; line-height:19px; font-weight:700; color:#687087; }
+.role-screen .onboarding-heading,.role-screen .onboarding-description { margin-left:-8px; margin-right:-8px; }
+.role-screen .onboarding-description { margin-right:-17px; }
+.onboarding-roles { margin-top:52px; display:grid; gap:42px; }
+.onboarding-role { width:100%; min-height:100px; border:1px solid #dce3f2; border-radius:16px; padding:22px 11px; text-align:left; background:#fff; transition:background .15s,border-color .15s; }
+.onboarding-role[aria-pressed=true] { border-color:#7029d9; background:#f3edff; }
+.onboarding-role-title { display:flex; gap:9px; align-items:center; font-size:20px; font-weight:600; line-height:24px; color:#000; }
+.onboarding-role-title img { width:24px; height:24px; }
+.onboarding-role p { font-size:14px; line-height:17px; margin-top:8px; color:#687087; }
+.role-screen .onboarding-primary { margin-top:62px; }
+.details-screen .onboarding-heading { text-align:center; margin-left:-12px; margin-right:-12px; }
+.details-screen .onboarding-description { text-align:center; margin-left:-12px; margin-right:-12px; }
+.onboarding-details-form { margin-top:39px; }
+.onboarding-field { margin-bottom:21px; }
+.onboarding-field label { display:block; margin-bottom:21px; font-size:18px; font-weight:600; line-height:22px; color:#000; }
+.onboarding-screen .onboarding-input { width:100%; height:48px; border:1px solid #dce3f2; border-radius:10px; background:#fff; color:#1d1b20; padding:0 18px; font-size:14px; font-weight:600; }
+.onboarding-input::placeholder,.onboarding-input[data-placeholder] { color:#687087; }
+.onboarding-details-form .onboarding-primary { margin-top:16px; }
+.professional-screen .onboarding-details-form { margin-top:33px; }
+.professional-screen .onboarding-description { margin-top:18px; }
+.professional-screen .onboarding-field { margin-bottom:25px; }
+.professional-screen .onboarding-field label { margin-bottom:25px; }
+.professional-screen .onboarding-field:nth-child(even) label { margin-bottom:17px; }
+.professional-screen .onboarding-field:last-of-type { margin-bottom:22px; }
+.professional-screen .onboarding-details-form .onboarding-primary { margin-top:0; }
+.auth-screen { padding:73px 20px 20px; }
+.auth-art { display:block; width:120px; height:120px; object-fit:contain; margin:6px auto 8px; transform:translateX(-14px); }
+.auth-screen .onboarding-heading { margin-top:0; font-size:22px; line-height:27px; }
+.auth-screen .onboarding-description { margin-top:12px; font-size:14px; line-height:17px; }
+.onboarding-auth-form { margin-top:36px; }
+.auth-input-wrap { position:relative; margin-bottom:35px; }
+.auth-input-wrap:last-of-type { margin-bottom:30px; }
+.auth-input-wrap .onboarding-input { height:52px; padding-left:64px; font-size:16px; font-weight:400; border-radius:14px; }
+.auth-input-wrap>img { position:absolute; z-index:1; left:20px; top:14px; width:24px; height:24px; }
+.auth-icon { position:absolute; z-index:1; left:20px; top:14px; width:24px; height:24px; display:grid; place-items:center; background:#687087; }
+.auth-icon img { max-width:none; }
+.auth-input-wrap .password-toggle { position:absolute; right:7px; top:6px; color:#687087; }
+.auth-input-wrap input[type=password],.auth-input-wrap input[name=password] { padding-right:42px; }
+.auth-divider { text-align:center; font-size:16px; line-height:19px; color:#687087; margin:12px 0; font-weight:300; }
+.auth-screen .google-button { color:#1d1b20; border-color:#dce3f2; font-size:16px; font-weight:600; }
+.auth-switch { margin-top:22px; text-align:center; font-size:14px; color:#687087; }
+.auth-switch button { color:#7029d9; }
+.onboarding-status { margin:12px 0; padding:12px; border-radius:10px; font-size:14px; line-height:1.5; background:#f3edff; color:#5620a0; }
+.onboarding-status.error { color:#b42318; background:#fff3f3; }
+.completed-screen { padding-top:86px; }
+.completed-art { display:block; margin:28px auto 0; width:267px; height:267px; object-fit:contain; }
+.completed-title { margin-top:29px; text-align:center; font-size:24px; font-weight:700; line-height:29px; }
+.completed-copy { margin:28px -11px 0; text-align:center; font-size:18px; font-weight:600; line-height:22px; color:#687087; }
+.completed-screen .onboarding-primary { margin-top:67px; }
+.profile-design { min-height:100dvh; padding:calc(15px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left)); }
+.profile-design-inner { max-width:420px; margin:auto; }
+.profile-design-header { display:flex; align-items:flex-start; gap:19px; margin-bottom:12px; }
+.profile-design-header h1 { font-size:22px; font-weight:700; line-height:27px; }
+.profile-design-header p { margin-top:4px; font-size:12px; line-height:15px; color:#687087; }
+.profile-back { position:relative; flex:none; width:40px; height:40px; display:grid; place-items:center; color:#7029d9; }
+.profile-back>img { position:absolute; inset:0; width:40px; height:40px; }
+.profile-back svg { position:relative; width:24px; height:24px; }
+.profile-summary { display:flex; position:relative; align-items:center; gap:20px; min-height:101px; border:1px solid #dce3f2; border-radius:16px; background:#f3edff; padding:14px 8px; }
+.profile-avatar { position:relative; flex:none; width:60px; height:60px; display:grid; place-items:center; color:white; font-size:20px; font-weight:700; }
+.profile-avatar img { position:absolute; inset:0; width:60px; height:60px; }.profile-avatar span{position:relative;}
+.profile-identity { min-width:0; flex:1; padding-right:110px; }
+.profile-identity h2 { font-size:16px; line-height:19px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.profile-identity p { color:#687087; font-size:12px; line-height:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.profile-role-badge { display:inline-block; border:1px solid #7029d9; color:#7029d9; font-size:11px; line-height:16px; padding:5px 6px; border-radius:4px; margin-top:6px; }
+.profile-edit { position:absolute; right:8px; top:10px; height:34px; display:flex; align-items:center; gap:8px; padding:0 6px; border:1px solid #7029d9; border-radius:10px; background:white; color:#7029d9; font-size:12px; }
+.profile-edit img{width:22.0667px;height:21.9282px;}
+.profile-section { margin-top:4px; }.profile-summary + .profile-section{margin-top:17px;}.profile-section h2{font-size:16px;font-weight:600;margin:0 2px 2px;}
+.profile-section:nth-of-type(3) .profile-setting-row { min-height:48px; }
+.profile-settings-group { border:1px solid #dce3f2; border-radius:14px; overflow:hidden; }
+.profile-setting-row { width:100%; min-height:44px; padding:5px 12px; display:flex; gap:17px; align-items:center; text-align:left; background:white; }
+.profile-setting-row:hover { background:#faf7ff; }.profile-setting-icon{position:relative;flex:none;width:24px;height:24px;display:grid;place-items:center;}
+.profile-setting-icon > svg { position:relative; width:14px; height:14px; color:#7029d9; }
+.profile-setting-icon .icon-circle{position:absolute;inset:0;width:24px;height:24px;}.profile-setting-icon>img:not(.icon-circle){position:relative;max-width:none;}.profile-setting-copy{min-width:0;flex:1;}.profile-setting-copy strong{display:block;font-size:14px;font-weight:600;line-height:17px;color:#101426;}.profile-setting-copy small{display:block;font-size:10px;line-height:13px;color:#687087;overflow-wrap:anywhere;}.profile-chevron{color:#91a0c4;width:14px;height:14px;}
+.profile-logout { display:flex; width:100%; height:54px; justify-content:center; align-items:center; gap:10px; margin-top:16px; border:1px solid #ffd9d9; border-radius:12px; background:#fff3f3; color:#e53935; font-size:14px; }.profile-logout img{width:24px;height:24px;}
+.profile-more { margin-top:18px; font-size:12px; color:#687087; }.profile-more summary{cursor:pointer;color:#7029d9;font-weight:600;}.profile-more-links{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;}
+@media(min-width:600px){.onboarding-background{background:#f8f6fc;padding-top:24px;padding-bottom:24px;}.onboarding-screen{background:#fff;border-radius:24px;box-shadow:0 8px 48px #28104c0a;}.profile-design-inner{max-width:520px;}.profile-setting-row{min-height:52px;}}
+@media(max-width:359px){.onboarding-screen{padding-left:18px;padding-right:18px;}.onboarding-heading{font-size:22px;}.onboarding-description{font-size:14px;}.onboarding-role-title{font-size:18px;}.onboarding-role p{font-size:12px;}.profile-identity{padding-right:80px;}.profile-summary{gap:12px;}}
+@media(prefers-reduced-motion:reduce){.skillful-design *{scroll-behavior:auto;transition:none!important;}}

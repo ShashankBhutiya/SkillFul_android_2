@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Cookie, Settings, Check, X } from "lucide-react";
 import { updateGAConsent } from "@/utils/analytics";
+import { useLocation } from "react-router-dom";
 
 export const CookieConsent = () => {
+  const { pathname } = useLocation();
   const [showBanner, setShowBanner] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] = useState(true);
@@ -39,6 +41,10 @@ export const CookieConsent = () => {
     updateGAConsent(analyticsConsent);
     setShowBanner(false);
   };
+
+  // Show the existing consent controls after account setup, keeping the
+  // first-run form and its bottom actions unobstructed on small screens.
+  if (pathname === "/onboarding") return null;
 
   return (
     <AnimatePresence>
