@@ -22,6 +22,8 @@ import {
     leaveStudentCollege,
 } from "@/services/institutionService";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { emptyOnboarding, type OnboardingDetails } from "@/config/onboarding";
 
 const ACADEMIC_YEARS = ["1st year", "2nd year", "3rd year", "4th year", "5th year", "Postgraduate"];
 
@@ -64,6 +66,24 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
     const [institutionErrors, setInstitutionErrors] = useState<InstitutionEnrollmentErrors>({});
     const [institutionLoading, setInstitutionLoading] = useState(false);
     const [collegeResetLoading, setCollegeResetLoading] = useState(false);
+    const [learningDetails, setLearningDetails] = useState<OnboardingDetails>(emptyOnboarding);
+    const [learningDetailsDirty, setLearningDetailsDirty] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        if (isOpen && supabase?.auth?.getSession) {
+            setLearningDetailsDirty(false);
+            void supabase.auth.getSession().then(({ data }) => {
+                if (active) setLearningDetails({ ...emptyOnboarding, ...data.session?.user.user_metadata?.onboarding });
+            }).catch(() => {});
+        }
+        return () => { active = false; };
+    }, [isOpen, user.id]);
+
+    const changeLearningDetail = (key: keyof OnboardingDetails, value: string) => {
+        setLearningDetails(current => ({ ...current, [key]: value }));
+        setLearningDetailsDirty(true);
+    };
 
     const prevIsOpenRef = useRef(false);
 
@@ -155,6 +175,14 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
             const result = await saveProfileFields();
             if (result.error && !institutionName) {
                 throw new Error(result.error);
+            }
+
+            if (learningDetailsDirty && supabase) {
+                const { error: learningError } = await supabase.auth.updateUser({ data: {
+                    onboarding: { ...learningDetails, mode, degree, academicYear, fullName: `${firstName} ${lastName}`.trim() },
+                } });
+                if (learningError) throw learningError;
+                setLearningDetailsDirty(false);
             }
 
             await refreshProfile();
@@ -345,6 +373,19 @@ const ProfileSettingsModal = ({ isOpen, onClose, requireAcademicDetails = false 
                                     <p className="text-[11px] leading-relaxed text-muted-foreground">Used to tailor practice questions. Update these here when your year changes.</p>
                                 </div>
                             )}
+
+                            <div className="space-y-3 rounded-xl border border-border p-4">
+                                <p className="text-sm font-semibold">{mode === "student" ? "Learning journey" : "Professional details"}</p>
+                                {(mode === "student"
+                                    ? [["institution", "College / University"], ["graduationYear", "Expected Graduation Year"]]
+                                    : [["jobTitle", "Current Job Title"], ["industry", "Industry"], ["experience", "Work Experience"], ["careerGoal", "Career Goal"]]
+                                ).map(([key, label]) => <label key={key} className="block text-xs font-semibold text-muted-foreground">{label}<input
+                                    value={learningDetails[key as keyof OnboardingDetails]}
+                                    onChange={event => changeLearningDetail(key as keyof OnboardingDetails, event.target.value)}
+                                    maxLength={160}
+                                    className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/50"
+                                /></label>)}
+                            </div>
 
                             {mode === "student" && !user.hasLinkedCollege && (
                                 <div className="space-y-2 rounded-lg border border-primary/25 bg-primary/5 p-3">

@@ -5,7 +5,6 @@ import { categories as questionCategories } from "@/data/questions";
 import { useAuth } from "@/contexts/AuthContext";
 import { pullProgressFromDB } from "@/services/progressService";
 import CategorySelect from "@/components/CategorySelect";
-import UserModeOnboarding from "@/components/UserModeOnboarding";
 import { useUserMode } from "@/hooks/useUserMode";
 import StudentAIPractice from "@/components/student/StudentAIPractice";
 import { isStudentCategoryAccessible } from "@/config/lockedCategories";
@@ -72,7 +71,7 @@ const SkillsPage = ({ ai = false, classic = false }: SkillsPageProps) => {
   // would flash the default mode before the stored one is applied.
   if (!modeReady) return <LoadingSkeleton />;
 
-  if (!modeChosen) return <UserModeOnboarding />;
+  if (!modeChosen) return <Navigate to="/onboarding" replace />;
 
   // AI practice is the student's primary workspace. The classic catalog stays
   // available at /skills/classic, while /skills/ai remains a stable direct URL.
