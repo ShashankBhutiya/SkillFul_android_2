@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth, withTimeout } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import Index from "./pages/Index";
 import { Analytics } from "@vercel/analytics/react";
 import { initGA } from "@/utils/analytics";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -16,8 +15,7 @@ import { useForceUpdate } from "@/hooks/useForceUpdate";
 import ForceUpdateModal from "@/components/ForceUpdateModal";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Loader2 } from "lucide-react";
-import { needsOnboarding, readOnboardingDraft } from "@/config/onboarding";
-import { getStoredUserMode } from "@/config/userMode";
+import { readOnboardingDraft } from "@/config/onboarding";
 
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -148,12 +146,12 @@ const AuthCallback = () => {
 };
 
 const RootRoute = () => {
-  const { user, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const params = new URLSearchParams(window.location.search);
   if (isLoading) return <div className="min-h-screen bg-background" />;
   return params.has("code") || params.has("error") || params.has("error_description") || window.location.hash.includes("access_token=")
     ? <AuthCallback />
-    : <Navigate to={readOnboardingDraft()?.pendingAuth || (user.isGuest && needsOnboarding() && !getStoredUserMode()) ? "/onboarding" : "/streak"} replace />;
+    : <Navigate to="/onboarding" replace />;
 };
 
 const App = () => {
